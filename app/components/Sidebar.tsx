@@ -172,7 +172,13 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   if (collapsed) {
     return (
-      <aside className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg hidden md:flex overflow-visible">
+      <aside 
+        className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg hidden md:flex overflow-visible"
+        onClick={(e) => {
+          // Prevent clicks inside sidebar from closing it
+          e.stopPropagation();
+        }}
+      >
         <nav className="flex-1 overflow-y-auto overflow-x-visible py-4">
           <div className="px-3 relative">
             {menuItems.map((item) => {
@@ -213,7 +219,13 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   }
 
   return (
-    <aside className="bg-[#1e293b] text-white w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg">
+    <aside 
+      className="bg-[#1e293b] text-white w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg"
+      onClick={(e) => {
+        // Prevent clicks inside sidebar from closing it
+        e.stopPropagation();
+      }}
+    >
       {/* Search Bar */}
       <div className="px-4 py-4 border-b border-[#374151]">
         <div className="relative">

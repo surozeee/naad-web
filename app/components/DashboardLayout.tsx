@@ -47,7 +47,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!sidebarCollapsed && (
           <div 
             className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setSidebarCollapsed(true)}
+            onClick={(e) => {
+              // Only close if clicking directly on the overlay, not on sidebar content
+              if (e.target === e.currentTarget) {
+                setSidebarCollapsed(true);
+              }
+            }}
           />
         )}
         
