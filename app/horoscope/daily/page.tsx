@@ -14,123 +14,152 @@ export default function DailyHoroscopePage() {
           </p>
         </div>
 
-        {/* Zodiac Signs Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-          {[
-            { sign: 'Aries', icon: '♈', date: 'Mar 21 - Apr 19', color: 'purple' },
-            { sign: 'Taurus', icon: '♉', date: 'Apr 20 - May 20', color: 'green' },
-            { sign: 'Gemini', icon: '♊', date: 'May 21 - Jun 20', color: 'yellow' },
-            { sign: 'Cancer', icon: '♋', date: 'Jun 21 - Jul 22', color: 'silver' },
-            { sign: 'Leo', icon: '♌', date: 'Jul 23 - Aug 22', color: 'orange' },
-            { sign: 'Virgo', icon: '♍', date: 'Aug 23 - Sep 22', color: 'brown' },
-            { sign: 'Libra', icon: '♎', date: 'Sep 23 - Oct 22', color: 'pink' },
-            { sign: 'Scorpio', icon: '♏', date: 'Oct 23 - Nov 21', color: 'red' },
-            { sign: 'Sagittarius', icon: '♐', date: 'Nov 22 - Dec 21', color: 'purple' },
-            { sign: 'Capricorn', icon: '♑', date: 'Dec 22 - Jan 19', color: 'gray' },
-            { sign: 'Aquarius', icon: '♒', date: 'Jan 20 - Feb 18', color: 'blue' },
-            { sign: 'Pisces', icon: '♓', date: 'Feb 19 - Mar 20', color: 'teal' },
-          ].map((zodiac) => (
-            <div
-              key={zodiac.sign}
-              className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all cursor-pointer"
-            >
-              <div className="text-center">
-                <div className="text-5xl mb-3">{zodiac.icon}</div>
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-1">
-                  {zodiac.sign}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  {zodiac.date}
-                </p>
-                <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold">
-                  View Reading
-                </button>
-              </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-purple-100 dark:border-purple-900">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-3xl">♈</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Daily</div>
             </div>
-          ))}
+            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">12K+</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Readings Today</div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-pink-100 dark:border-pink-900">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-3xl">⭐</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
+            </div>
+            <div className="text-3xl font-bold text-pink-600 dark:text-pink-400 mb-1">200K+</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">All Time</div>
+          </div>
         </div>
 
-        {/* Today's Featured Reading */}
-        <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-8 text-white shadow-xl mb-8">
-          <h2 className="text-3xl font-bold mb-4">Today's Featured Reading</h2>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-6xl">♈</span>
-              <div>
-                <h3 className="text-2xl font-bold">Aries</h3>
-                <p className="text-purple-100">March 21 - April 19</p>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - 2/3 width */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Zodiac Signs */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+                Select Your Zodiac Sign
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[
+                  { sign: 'Aries', icon: '♈', date: 'Mar 21 - Apr 19' },
+                  { sign: 'Taurus', icon: '♉', date: 'Apr 20 - May 20' },
+                  { sign: 'Gemini', icon: '♊', date: 'May 21 - Jun 20' },
+                  { sign: 'Cancer', icon: '♋', date: 'Jun 21 - Jul 22' },
+                  { sign: 'Leo', icon: '♌', date: 'Jul 23 - Aug 22' },
+                  { sign: 'Virgo', icon: '♍', date: 'Aug 23 - Sep 22' },
+                  { sign: 'Libra', icon: '♎', date: 'Sep 23 - Oct 22' },
+                  { sign: 'Scorpio', icon: '♏', date: 'Oct 23 - Nov 21' },
+                  { sign: 'Sagittarius', icon: '♐', date: 'Nov 22 - Dec 21' },
+                  { sign: 'Capricorn', icon: '♑', date: 'Dec 22 - Jan 19' },
+                  { sign: 'Aquarius', icon: '♒', date: 'Jan 20 - Feb 18' },
+                  { sign: 'Pisces', icon: '♓', date: 'Feb 19 - Mar 20' },
+                ].map((zodiac) => (
+                  <button
+                    key={zodiac.sign}
+                    className="bg-white dark:bg-slate-700 rounded-xl p-4 shadow-md border border-gray-200 dark:border-slate-600 hover:shadow-lg transition-all cursor-pointer text-center"
+                  >
+                    <div className="text-4xl mb-2">{zodiac.icon}</div>
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-1">
+                      {zodiac.sign}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {zodiac.date}
+                    </p>
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">Overall</h4>
-                <p className="text-purple-100 leading-relaxed">
-                  Today brings new opportunities and fresh energy. Trust your instincts and take bold steps forward. 
-                  Your natural leadership qualities will shine, and others will look to you for guidance.
-                </p>
+
+            {/* Featured Reading */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+                Today's Featured Reading
+              </h2>
+              <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg p-6 text-white">
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="text-5xl">♈</span>
+                  <div>
+                    <h3 className="text-2xl font-bold">Aries</h3>
+                    <p className="text-purple-100 text-sm">March 21 - April 19</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold mb-2">Overall</h4>
+                    <p className="text-purple-100 leading-relaxed text-sm">
+                      Today brings new opportunities and fresh energy. Trust your instincts and take bold steps forward. 
+                      Your natural leadership qualities will shine, and others will look to you for guidance.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="text-xs text-purple-100 mb-1">Lucky Number</div>
+                      <div className="text-xl font-bold">7</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="text-xs text-purple-100 mb-1">Lucky Color</div>
+                      <div className="text-xl font-bold">Red</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="text-xs text-purple-100 mb-1">Mood</div>
+                      <div className="text-xl font-bold">✨ Energetic</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="text-xs text-purple-100 mb-1">Compatibility</div>
+                      <div className="text-xl font-bold">Leo, Sagittarius</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-6">
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-sm text-purple-100 mb-1">Lucky Number</div>
+            </div>
+          </div>
+
+          {/* Right Column - 1/3 width */}
+          <div className="space-y-6">
+            {/* Today's Insights */}
+            <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl p-6 shadow-lg text-white">
+              <h2 className="text-2xl font-bold mb-4">Today's Insights</h2>
+              <div className="space-y-3">
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm opacity-90 mb-1">Lucky Number</div>
                   <div className="text-2xl font-bold">7</div>
                 </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-sm text-purple-100 mb-1">Lucky Color</div>
-                  <div className="text-2xl font-bold">Red</div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm opacity-90 mb-1">Lucky Color</div>
+                  <div className="text-2xl font-bold">Purple</div>
                 </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-sm text-purple-100 mb-1">Mood</div>
-                  <div className="text-2xl font-bold">✨ Energetic</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-sm text-purple-100 mb-1">Compatibility</div>
-                  <div className="text-2xl font-bold">Leo, Sagittarius</div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm opacity-90 mb-1">Mood</div>
+                  <div className="text-2xl font-bold">✨ Positive</div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Daily Insights Section */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-              Love & Relationships
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Your relationships are highlighted today. Open communication will strengthen bonds with loved ones. 
-              Single Aries may find unexpected connections in social settings.
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-              Career & Finance
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Professional opportunities are on the horizon. Your assertiveness will be rewarded. 
-              Financial decisions made today will prove beneficial in the long run.
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-              Health & Wellness
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Your energy levels are high today. Engage in physical activities to channel your natural vitality. 
-              Pay attention to your body's signals and maintain balance.
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-              Personal Growth
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Today is perfect for self-reflection and setting new goals. Trust your inner wisdom and 
-              embrace opportunities for personal development and spiritual growth.
-            </p>
+            {/* Upcoming Events */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+                Upcoming Events
+              </h2>
+              <div className="space-y-3">
+                {[
+                  { date: 'Dec 25', event: 'Festival Puja', icon: '🕉️' },
+                  { date: 'Jan 1', event: 'New Year Special', icon: '⭐' },
+                ].map((event, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-700">
+                    <div className="text-2xl">{event.icon}</div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-gray-800 dark:text-white text-sm">{event.event}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{event.date}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 export default function Navigation() {
   const pathname = usePathname();
   
-  // Hide navigation on dashboard routes
-  if (pathname?.startsWith('/dashboard')) {
+  // Only show navigation on homepage - hide on all other pages including dashboard routes
+  if (!pathname || pathname !== '/') {
     return null;
   }
 

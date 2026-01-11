@@ -196,26 +196,26 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         e.stopPropagation();
       }}
     >
-      {/* Search Bar */}
-      <div className="px-4 py-4 border-b border-[#374151]">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-[#9ca3af]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="Search menu..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#374151] text-white placeholder-[#9ca3af] rounded-lg border border-[#4b5563] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent transition-all text-sm"
-          />
-        </div>
-      </div>
-
       {/* Menu Items */}
       <nav className="flex-1 overflow-y-auto overflow-x-visible">
+        {/* Search Bar */}
+        <div className="px-4 py-4 border-b border-[#374151]">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-[#9ca3af]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search menu..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-[#374151] text-white placeholder-[#9ca3af] rounded-lg border border-[#4b5563] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent transition-all text-sm"
+            />
+          </div>
+        </div>
+
         <div className="relative">
           
           {filteredMenuItems.length === 0 && searchQuery.trim() !== '' ? (

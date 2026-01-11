@@ -23,110 +23,124 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
 
   return (
     <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex sticky top-0">
-      {/* First Section - Sidebar width with Logo */}
-      <div 
-        className={`bg-[#1e293b] text-white flex items-center transition-all duration-300 ${
-          sidebarCollapsed ? 'w-20 justify-center' : 'w-[280px] px-[25px]'
-        }`}
-      >
-        {sidebarCollapsed ? (
-          <span className="text-3xl">✨</span>
-        ) : (
-          <Link href="/" className="flex items-center gap-3 w-full">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
-              <span className="text-xl text-white">💼</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[22px] font-bold text-white leading-tight">
-                Naad Official
+      {/* Search and Menu Row */}
+      <div className="flex w-full">
+        {/* First Section - Sidebar width with Naad1 Official1 */}
+        <div 
+          className={`bg-[#1e293b] text-white flex items-center transition-all duration-300 ${
+            sidebarCollapsed ? 'w-20 justify-center' : 'w-[280px] px-[25px]'
+          }`}
+        >
+          {sidebarCollapsed ? (
+            <span className="text-3xl">✨</span>
+          ) : (
+            <Link href="/" className="flex items-center gap-3 w-full">
+              <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                <span className="text-xl text-white">💼</span>
+              </div>
+              <span className="text-[22px] font-bold text-white">
+                Naad1 Official1
               </span>
-            </div>
-          </Link>
-        )}
-      </div>
-
-      {/* Second Section - Body area with collapse button */}
-      <div className="flex-1 flex items-center justify-between px-6 py-3 min-h-[64px]">
-        {/* Left side - Collapse button */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onSidebarToggle}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-            aria-label="Toggle sidebar"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+            </Link>
+          )}
         </div>
 
-        {/* Center - Header Menu */}
-        <nav className="flex-1 flex justify-center items-center gap-2">
-          {menuCollapsed ? (
-            // Icons only
-            <div className="flex items-center gap-3">
-              {headerMenuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`p-2 rounded-lg transition-all relative group ${
-                    isActive(item.href)
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                      : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400'
-                  }`}
-                  title={item.label}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                    {item.label}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            // Full menu with labels
-            <div className="flex items-center gap-1">
-              {headerMenuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                    isActive(item.href)
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-medium'
-                      : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  <span className="text-lg">{item.icon}</span>
-                  <span className="text-sm font-medium">{item.label}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </nav>
-
-        {/* Right side - Menu toggle and user actions */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onMenuToggle}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-            aria-label={menuCollapsed ? 'Expand menu' : 'Collapse menu'}
-            title={menuCollapsed ? 'Show menu labels' : 'Show icons only'}
-          >
-            {menuCollapsed ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Second Section - Search and Menu */}
+        <div className="flex-1 flex items-center justify-between px-6 py-3 gap-4">
+          {/* Left side - Collapse button */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onSidebarToggle}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </button>
+          </div>
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            )}
-          </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
 
-          {/* User profile placeholder */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
-            U
+          {/* Header Menu */}
+          <nav className="flex items-center gap-2">
+            {menuCollapsed ? (
+              // Icons only
+              <div className="flex items-center gap-3">
+                {headerMenuItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`p-2 rounded-lg transition-all relative group ${
+                      isActive(item.href)
+                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                        : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400'
+                    }`}
+                    title={item.label}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                      {item.label}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              // Full menu with labels
+              <div className="flex items-center gap-1">
+                {headerMenuItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                      isActive(item.href)
+                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-medium'
+                        : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </nav>
+
+          {/* Right side - Menu toggle and user actions */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onMenuToggle}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              aria-label={menuCollapsed ? 'Expand menu' : 'Collapse menu'}
+              title={menuCollapsed ? 'Show menu labels' : 'Show icons only'}
+            >
+              {menuCollapsed ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              )}
+            </button>
+
+            {/* User profile placeholder */}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+              U
+            </div>
           </div>
         </div>
       </div>
