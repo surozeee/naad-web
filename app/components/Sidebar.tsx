@@ -172,11 +172,12 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   if (collapsed) {
     return (
-      <aside className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg hidden md:flex">
-        <nav className="flex-1 overflow-y-auto py-4">
-          <div className="px-3">
+      <aside className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg hidden md:flex overflow-visible">
+        <nav className="flex-1 overflow-y-auto overflow-x-visible py-4">
+          <div className="px-3 relative">
             {menuItems.map((item) => {
               const itemActive = isActive(item.href);
+              const hasSubmenu = item.submenu && item.submenu.length > 0;
               return (
                 <div key={item.id} className="relative group">
                   <Link
@@ -189,8 +190,18 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                   >
                     <span className="text-xl">{item.icon}</span>
                   </Link>
-                  <div className="absolute left-full ml-2 top-0 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
-                    {item.label}
+                  {/* Tooltip */}
+                  <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[9999] whitespace-nowrap">
+                    <div className="font-semibold text-sm">{item.label}</div>
+                    {hasSubmenu && item.submenu && (
+                      <div className="mt-2 pt-2 border-t border-slate-700">
+                        {item.submenu.map((subItem, idx) => (
+                          <div key={idx} className="text-xs text-slate-400 py-1">
+                            {subItem.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
