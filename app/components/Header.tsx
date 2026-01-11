@@ -14,9 +14,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
   const pathname = usePathname();
 
   const headerMenuItems = [
-    { icon: '♈', label: 'Horoscope', href: '/horoscope' },
     { icon: '⭐', label: 'Astrology', href: '/astrology' },
-    { icon: '🖐️', label: 'Palmistry', href: '/palmistry' },
     { icon: '🕉️', label: 'Puja', href: '/puja' },
     { icon: '🎵', label: 'Music', href: '/music' },
   ];
@@ -36,11 +34,6 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
         ) : (
           <Link href="/" className="flex items-center gap-3 w-full">
             <span className="text-2xl">✨</span>
-            <div className="flex flex-col">
-              <span className="text-[22px] font-semibold text-[#60a5fa] leading-tight">
-                Naad Official
-              </span>
-            </div>
           </Link>
         )}
       </div>

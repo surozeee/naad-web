@@ -127,7 +127,6 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {[
                   { date: 'Dec 25', event: 'Festival Puja', icon: '🕉️' },
-                  { date: 'Dec 28', event: 'Weekly Horoscope', icon: '♈' },
                   { date: 'Jan 1', event: 'New Year Special', icon: '⭐' },
                 ].map((event, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-700">

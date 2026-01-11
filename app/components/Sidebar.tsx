@@ -15,24 +15,6 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   const menuItems = [
     {
-      id: 'home',
-      icon: '🏠',
-      label: 'Home',
-      href: '/',
-    },
-    {
-      id: 'horoscope',
-      icon: '♈',
-      label: 'Horoscope',
-      href: '/horoscope',
-      submenu: [
-        { label: 'Daily Horoscope', href: '/horoscope/daily' },
-        { label: 'Weekly Horoscope', href: '/horoscope/weekly' },
-        { label: 'Monthly Horoscope', href: '/horoscope/monthly' },
-        { label: 'Yearly Horoscope', href: '/horoscope/yearly' },
-      ]
-    },
-    {
       id: 'astrology',
       icon: '⭐',
       label: 'Astrology',
@@ -42,18 +24,6 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         { label: 'Planetary Positions', href: '/astrology/planets' },
         { label: 'Transits', href: '/astrology/transits' },
         { label: 'Compatibility', href: '/astrology/compatibility' },
-      ]
-    },
-    {
-      id: 'palmistry',
-      icon: '🖐️',
-      label: 'Palmistry',
-      href: '/palmistry',
-      submenu: [
-        { label: 'Palm Reading', href: '/palmistry/reading' },
-        { label: 'Life Lines', href: '/palmistry/life-lines' },
-        { label: 'Heart Lines', href: '/palmistry/heart-lines' },
-        { label: 'Head Lines', href: '/palmistry/head-lines' },
       ]
     },
     {

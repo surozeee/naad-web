@@ -19,9 +19,6 @@ export default function Navigation() {
             Naad Official
           </Link>
           <div className="flex gap-6">
-            <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Home
-            </Link>
             <Link href="/horoscope" className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Horoscope
             </Link>
