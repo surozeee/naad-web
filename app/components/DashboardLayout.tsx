@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       <div 
         className={`flex flex-col min-h-screen transition-all duration-300 ${
-          sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
+          sidebarCollapsed ? 'md:ml-[90px]' : 'md:ml-[290px]'
         }`}
       >
         <Header 

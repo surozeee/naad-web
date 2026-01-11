@@ -332,11 +332,10 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             background: #374151;
             min-width: 220px;
             border-radius: 8px;
-            box-shadow: 5px 5px 20px rgba(0,0,0,0.2);
+            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.2);
             display: none;
             z-index: 99999 !important;
             border: 1px solid #4b5563;
-            padding: 8px 0;
             pointer-events: auto;
             margin: 0;
           }
