@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -118,10 +118,12 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
-  // Filter menu items based on search query (including nested submenus)
-  const filteredMenuItems = searchQuery.trim() === '' 
-    ? menuItems 
-    : menuItems.map(item => {
+  // Filter menu items based on search query (including nested submenus) - memoized for performance
+  const filteredMenuItems = useMemo(() => {
+    if (searchQuery.trim() === '') {
+      return menuItems;
+    }
+    return menuItems.map(item => {
         const matchesLabel = item.label.toLowerCase().includes(searchQuery.toLowerCase());
         const filteredSubmenu = item.submenu?.map(subItem => {
           const subMatchesLabel = subItem.label.toLowerCase().includes(searchQuery.toLowerCase());
@@ -151,6 +153,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         }
         return null;
       }).filter(item => item !== null) as typeof menuItems;
+  }, [searchQuery]);
 
   if (collapsed) {
     return (
@@ -170,6 +173,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                 <div key={item.id} className="relative group">
                   <Link
                     href={item.href}
+                    prefetch={true}
                     className={`w-full flex items-center justify-center p-3 rounded-lg mb-1 transition-all ${
                       itemActive
                         ? 'bg-[#3b82f6] text-white'
@@ -292,6 +296,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                                       <Link
                                         key={nestedIdx}
                                         href={nestedItem.href}
+                                        prefetch={true}
                                         className={`nested-submenu-item ${isActive(nestedItem.href) ? 'active' : ''}`}
                                       >
                                         {nestedItem.label}
@@ -302,6 +307,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                               ) : (
                                 <Link
                                   href={subItem.href}
+                                  prefetch={true}
                                   className={`sidebar-submenu-item ${subItemActive ? 'active' : ''}`}
                                 >
                                   {subItem.label}
@@ -315,6 +321,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                   ) : (
                     <Link
                       href={item.href}
+                      prefetch={true}
                       className={`sidebar-menu-item ${itemActive ? 'active' : ''}`}
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
