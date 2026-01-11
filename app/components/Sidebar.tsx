@@ -15,6 +15,18 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   const menuItems = [
     {
+      id: 'horoscope',
+      icon: '♈',
+      label: 'Horoscope',
+      href: '/horoscope',
+      submenu: [
+        { label: 'Daily Horoscope', href: '/horoscope/daily' },
+        { label: 'Weekly Horoscope', href: '/horoscope/weekly' },
+        { label: 'Monthly Horoscope', href: '/horoscope/monthly' },
+        { label: 'Yearly Horoscope', href: '/horoscope/yearly' },
+      ]
+    },
+    {
       id: 'astrology',
       icon: '⭐',
       label: 'Astrology',

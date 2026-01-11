@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -11,15 +11,25 @@ interface HeaderProps {
 }
 
 export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, sidebarCollapsed }: HeaderProps) {
-  const pathname = usePathname();
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const headerMenuItems = [
-    { icon: '⭐', label: 'Astrology', href: '/astrology' },
-    { icon: '🕉️', label: 'Puja', href: '/puja' },
-    { icon: '🎵', label: 'Music', href: '/music' },
-  ];
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    }
 
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
+    if (profileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [profileDropdownOpen]);
 
   return (
     <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex sticky top-0">
@@ -39,7 +49,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
                 <span className="text-xl text-white">💼</span>
               </div>
               <span className="text-[22px] font-bold text-white">
-                Naad1 Official1
+                Naad Official
               </span>
             </Link>
           )}
@@ -73,73 +83,58 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
             />
           </div>
 
-          {/* Header Menu */}
-          <nav className="flex items-center gap-2">
-            {menuCollapsed ? (
-              // Icons only
-              <div className="flex items-center gap-3">
-                {headerMenuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`p-2 rounded-lg transition-all relative group ${
-                      isActive(item.href)
-                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                        : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400'
-                    }`}
-                    title={item.label}
-                  >
-                    <span className="text-xl">{item.icon}</span>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                      {item.label}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              // Full menu with labels
-              <div className="flex items-center gap-1">
-                {headerMenuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                      isActive(item.href)
-                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-medium'
-                        : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </nav>
-
-          {/* Right side - Menu toggle and user actions */}
+          {/* Right side - User actions */}
           <div className="flex items-center gap-3">
+            {/* Notification Icon */}
             <button
-              onClick={onMenuToggle}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-              aria-label={menuCollapsed ? 'Expand menu' : 'Collapse menu'}
-              title={menuCollapsed ? 'Show menu labels' : 'Show icons only'}
+              className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              aria-label="Notifications"
             >
-              {menuCollapsed ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                </svg>
-              )}
+              <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {/* Notification badge */}
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
 
-            {/* User profile placeholder */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
-              U
+            {/* User profile dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-purple-300 transition-all cursor-pointer"
+                aria-label="User menu"
+              >
+                U
+              </button>
+
+              {/* Dropdown Menu */}
+              {profileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 z-50">
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>Profile</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      // Add logout logic here
+                      console.log('Logout clicked');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
