@@ -1,9 +1,11 @@
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+  
   return (
     <footer className="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-4 px-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <p>© 2024 Mystical Insights. All rights reserved.</p>
+          <p>© {currentYear} Mystical Insights. All rights reserved.</p>
         </div>
         
         <div className="flex items-center gap-6 text-sm">

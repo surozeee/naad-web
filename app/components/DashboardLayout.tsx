@@ -1,13 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [headerMenuCollapsed, setHeaderMenuCollapsed] = useState(false);
+
+  // Set initial sidebar state based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        // On desktop, start with sidebar expanded
+        setSidebarCollapsed(false);
+      } else {
+        // On mobile, start with sidebar collapsed
+        setSidebarCollapsed(true);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Optional: Update on resize (uncomment if you want responsive behavior)
+    // window.addEventListener('resize', handleResize);
+    // return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
