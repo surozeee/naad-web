@@ -97,6 +97,41 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         },
       ]
     },
+    {
+      id: 'user-management',
+      icon: '👥',
+      label: 'User Management',
+      href: '/user-management',
+      submenu: [
+        { label: 'User', href: '/user-management/user' },
+        { label: 'Role', href: '/user-management/role' },
+        { label: 'Permission', href: '/user-management/permission' },
+      ]
+    },
+    {
+      id: 'event-management',
+      icon: '📅',
+      label: 'Event Management',
+      href: '/event-management',
+      submenu: [
+        { label: 'Ticketing', href: '/event-management/ticketing' },
+        { label: 'Chat', href: '/event-management/chat' },
+        { label: 'Puja', href: '/event-management/puja' },
+        { label: 'Concert', href: '/event-management/concert' },
+      ]
+    },
+    {
+      id: 'customer',
+      icon: '👤',
+      label: 'Customer',
+      href: '/customer',
+      submenu: [
+        { label: 'Support', href: '/customer/support' },
+        { label: 'Contact', href: '/customer/contact' },
+        { label: 'Notification', href: '/customer/notification' },
+        { label: 'Email Template', href: '/customer/email-template' },
+      ]
+    },
   ];
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
