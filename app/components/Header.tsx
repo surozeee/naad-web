@@ -24,7 +24,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
   return (
-    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex">
+    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex sticky top-0">
       {/* First Section - Sidebar width with Logo */}
       <div 
         className={`bg-[#1e293b] text-white flex items-center transition-all duration-300 ${

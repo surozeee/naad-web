@@ -9,25 +9,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [headerMenuCollapsed, setHeaderMenuCollapsed] = useState(false);
 
-  // Set initial sidebar state based on screen size
+  // Load sidebar state from localStorage on mount
   useEffect(() => {
-    const handleResize = () => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(JSON.parse(savedState));
+    } else {
+      // Set initial sidebar state based on screen size if no saved state
       if (window.innerWidth >= 768) {
-        // On desktop, start with sidebar expanded
         setSidebarCollapsed(false);
       } else {
-        // On mobile, start with sidebar collapsed
         setSidebarCollapsed(true);
       }
-    };
-
-    // Set initial state
-    handleResize();
-
-    // Optional: Update on resize (uncomment if you want responsive behavior)
-    // window.addEventListener('resize', handleResize);
-    // return () => window.removeEventListener('resize', handleResize);
+    }
   }, []);
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
