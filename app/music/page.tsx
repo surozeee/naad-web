@@ -1,30 +1,52 @@
+import DashboardLayout from '../components/DashboardLayout';
+
 export default function MusicPage() {
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Spiritual Music
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300 text-lg mb-6">
-          Immerse yourself in devotional music, mantras, and chants for spiritual upliftment.
-        </p>
-        
-        <div className="grid md:grid-cols-2 gap-6 mt-8">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-6">
-            <h2 className="text-2xl font-bold mb-3 text-gray-800 dark:text-white">Devotional Music</h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Listen to soulful devotional songs that bring peace and tranquility.
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+            Spiritual Music
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Immerse yourself in devotional music, mantras, and chants for spiritual upliftment
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <a href="/music/devotional" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🎵</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Devotional Music</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Soulful devotional songs
             </p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-6">
-            <h2 className="text-2xl font-bold mb-3 text-gray-800 dark:text-white">Mantras</h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Chant powerful mantras for meditation and spiritual growth.
+          </a>
+
+          <a href="/music/mantras" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🕉️</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Mantras</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Powerful mantras
             </p>
-          </div>
+          </a>
+
+          <a href="/music/bhajans" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🎤</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Bhajans</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Devotional hymns
+            </p>
+          </a>
+
+          <a href="/music/chants" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🧘</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Chants</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Meditative chants
+            </p>
+          </a>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

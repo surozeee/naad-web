@@ -1,30 +1,52 @@
+import DashboardLayout from '../components/DashboardLayout';
+
 export default function AstrologyPage() {
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Astrology
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300 text-lg mb-6">
-          Explore the cosmic influences and planetary positions that shape your destiny.
-        </p>
-        
-        <div className="grid md:grid-cols-2 gap-6 mt-8">
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-6">
-            <h2 className="text-2xl font-bold mb-3 text-gray-800 dark:text-white">Birth Chart</h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Discover your personalized birth chart based on your exact time, date, and place of birth.
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+            Astrology
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Explore the cosmic influences and planetary positions that shape your destiny
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <a href="/astrology/birth-chart" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">⭐</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Birth Chart</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Personalized birth chart
             </p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl p-6">
-            <h2 className="text-2xl font-bold mb-3 text-gray-800 dark:text-white">Planetary Positions</h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Understand how planets influence different aspects of your life.
+          </a>
+
+          <a href="/astrology/planets" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🪐</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Planetary Positions</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Current positions
             </p>
-          </div>
+          </a>
+
+          <a href="/astrology/transits" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🌌</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Transits</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Planetary transits
+            </p>
+          </a>
+
+          <a href="/astrology/compatibility" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">💕</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Compatibility</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Sign compatibility
+            </p>
+          </a>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

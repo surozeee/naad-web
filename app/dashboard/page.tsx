@@ -10,21 +10,12 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Welcome to your Naad Official dashboard
+            Welcome to your dashboard
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-purple-100 dark:border-purple-900">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-3xl">♈</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Horoscope</div>
-            </div>
-            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">12</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Readings Today</div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-pink-100 dark:border-pink-900">
             <div className="flex items-center justify-between mb-4">
               <div className="text-3xl">⭐</div>
@@ -32,15 +23,6 @@ export default function DashboardPage() {
             </div>
             <div className="text-3xl font-bold text-pink-600 dark:text-pink-400 mb-1">8</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Charts Generated</div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-indigo-100 dark:border-indigo-900">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-3xl">🖐️</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Palmistry</div>
-            </div>
-            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">15</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Readings Done</div>
           </div>
 
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-yellow-100 dark:border-yellow-900">
@@ -64,9 +46,7 @@ export default function DashboardPage() {
               </h2>
               <div className="space-y-4">
                 {[
-                  { icon: '♈', title: 'Daily Horoscope Reading', time: '2 hours ago', type: 'Horoscope' },
                   { icon: '⭐', title: 'Birth Chart Generated', time: '5 hours ago', type: 'Astrology' },
-                  { icon: '🖐️', title: 'Palm Reading Completed', time: '1 day ago', type: 'Palmistry' },
                   { icon: '🕉️', title: 'Puja Service Scheduled', time: '2 days ago', type: 'Puja' },
                   { icon: '🎵', title: 'Devotional Music Playlist', time: '3 days ago', type: 'Music' },
                 ].map((activity, idx) => (
@@ -88,30 +68,12 @@ export default function DashboardPage() {
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <a
-                  href="/horoscope"
-                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 hover:shadow-lg transition-all transform hover:scale-105"
-                >
-                  <div className="text-4xl mb-2">♈</div>
-                  <div className="text-sm font-semibold text-gray-800 dark:text-white text-center">
-                    Get Horoscope
-                  </div>
-                </a>
-                <a
                   href="/astrology"
                   className="flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 border border-pink-200 dark:border-pink-800 hover:shadow-lg transition-all transform hover:scale-105"
                 >
                   <div className="text-4xl mb-2">⭐</div>
                   <div className="text-sm font-semibold text-gray-800 dark:text-white text-center">
                     Birth Chart
-                  </div>
-                </a>
-                <a
-                  href="/palmistry"
-                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border border-indigo-200 dark:border-indigo-800 hover:shadow-lg transition-all transform hover:scale-105"
-                >
-                  <div className="text-4xl mb-2">🖐️</div>
-                  <div className="text-sm font-semibold text-gray-800 dark:text-white text-center">
-                    Palm Reading
                   </div>
                 </a>
                 <a
