@@ -33,7 +33,14 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
           <span className="text-3xl">✨</span>
         ) : (
           <Link href="/" className="flex items-center gap-3 w-full">
-            <span className="text-2xl">✨</span>
+            <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+              <span className="text-xl text-white">💼</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[22px] font-bold text-white leading-tight">
+                Naad Official
+              </span>
+            </div>
           </Link>
         )}
       </div>
