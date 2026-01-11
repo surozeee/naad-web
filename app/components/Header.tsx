@@ -7,9 +7,10 @@ interface HeaderProps {
   onSidebarToggle: () => void;
   menuCollapsed: boolean;
   onMenuToggle: () => void;
+  sidebarCollapsed: boolean;
 }
 
-export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle }: HeaderProps) {
+export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, sidebarCollapsed }: HeaderProps) {
   const pathname = usePathname();
 
   const headerMenuItems = [
@@ -23,9 +24,30 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle }:
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
   return (
-    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm sticky top-0 z-40">
-      <div className="flex items-center justify-between px-6 h-16">
-        {/* Left side - Sidebar toggle */}
+    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex">
+      {/* First Section - Sidebar width with Logo */}
+      <div 
+        className={`bg-[#1e293b] text-white flex items-center transition-all duration-300 ${
+          sidebarCollapsed ? 'w-20 justify-center' : 'w-[280px] px-[25px]'
+        }`}
+      >
+        {sidebarCollapsed ? (
+          <span className="text-3xl">✨</span>
+        ) : (
+          <Link href="/" className="flex items-center gap-3 w-full">
+            <span className="text-2xl">✨</span>
+            <div className="flex flex-col">
+              <span className="text-[22px] font-semibold text-[#60a5fa] leading-tight">
+                Naad Official
+              </span>
+            </div>
+          </Link>
+        )}
+      </div>
+
+      {/* Second Section - Body area with collapse button */}
+      <div className="flex-1 flex items-center justify-between px-6 py-3 min-h-[64px]">
+        {/* Left side - Collapse button */}
         <div className="flex items-center gap-4">
           <button
             onClick={onSidebarToggle}
@@ -36,14 +58,6 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle }:
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-
-          {/* Logo/Brand */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:block">
-              Mystical Insights
-            </span>
-          </Link>
         </div>
 
         {/* Center - Header Menu */}

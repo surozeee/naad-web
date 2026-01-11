@@ -135,12 +135,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   if (collapsed) {
     return (
-      <aside className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-0 bottom-0 z-50 shadow-lg hidden md:flex">
-        <div className="p-6 border-b border-[#374151]">
-          <div className="text-center">
-            <span className="text-3xl">✨</span>
-          </div>
-        </div>
+      <aside className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg hidden md:flex">
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-3">
             {menuItems.map((item) => {
@@ -170,17 +165,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   }
 
   return (
-    <aside className="bg-[#1e293b] text-white w-[280px] flex flex-col fixed left-0 top-0 bottom-0 z-[100] shadow-lg">
-      {/* Logo */}
-      <div className="px-[25px] pb-[25px] pt-[25px] border-b border-[#374151] mb-[25px]">
-        <h1 className="text-[22px] text-[#60a5fa] mb-1 font-semibold">
-          Mystical Insights
-        </h1>
-        <p className="text-[#9ca3af] text-[13px]">
-          Divine Guidance System
-        </p>
-      </div>
-
+    <aside className="bg-[#1e293b] text-white w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg">
       {/* Search Bar */}
       <div className="px-4 py-4 border-b border-[#374151]">
         <div className="relative">
@@ -200,11 +185,8 @@ export default function Sidebar({ collapsed }: SidebarProps) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 overflow-y-auto overflow-x-visible py-4">
-        <div className="px-[15px] relative">
-          <h3 className="text-[#9ca3af] text-[11px] uppercase tracking-wider my-5 ml-[10px]">
-            MAIN NAVIGATION
-          </h3>
+      <nav className="flex-1 overflow-y-auto overflow-x-visible">
+        <div className="relative">
           
           {filteredMenuItems.length === 0 && searchQuery.trim() !== '' ? (
             <div className="text-center py-8 text-[#9ca3af] text-sm">
@@ -397,7 +379,6 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             display: none;
             z-index: 999999 !important;
             border: 1px solid #6b7280;
-            padding: 8px 0;
             pointer-events: auto;
             margin: 0;
           }

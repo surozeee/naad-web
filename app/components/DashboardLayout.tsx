@@ -30,35 +30,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar collapsed={sidebarCollapsed} />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      {/* Full width header at top */}
+      <Header 
+        onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        menuCollapsed={headerMenuCollapsed}
+        onMenuToggle={() => setHeaderMenuCollapsed(!headerMenuCollapsed)}
+        sidebarCollapsed={sidebarCollapsed}
+      />
       
-      {/* Mobile sidebar overlay */}
-      {!sidebarCollapsed && (
+      {/* Sidebar and body below header */}
+      <div className="flex flex-1 relative">
+        <Sidebar collapsed={sidebarCollapsed} />
+        
+        {/* Mobile sidebar overlay */}
+        {!sidebarCollapsed && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarCollapsed(true)}
+          />
+        )}
+        
+        {/* Main content area */}
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setSidebarCollapsed(true)}
-        />
-      )}
-      
-      <div 
-        className={`flex flex-col min-h-screen transition-all duration-300 ${
-          sidebarCollapsed ? 'md:ml-[90px]' : 'md:ml-[290px]'
-        }`}
-      >
-        <Header 
-          onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-          menuCollapsed={headerMenuCollapsed}
-          onMenuToggle={() => setHeaderMenuCollapsed(!headerMenuCollapsed)}
-        />
-        
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
-        
-        <Footer />
+          className={`flex-1 flex flex-col transition-all duration-300 ${
+            sidebarCollapsed ? 'md:ml-[90px]' : 'md:ml-[290px]'
+          }`}
+        >
+          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            <div className="p-6">
+              {children}
+            </div>
+          </main>
+          
+          <Footer />
+        </div>
       </div>
     </div>
   );
