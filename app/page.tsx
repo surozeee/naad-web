@@ -10,7 +10,7 @@ export default function Home() {
             <span className="text-8xl animate-pulse">✨</span>
           </div>
           <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-            Welcome to Mystical Insights
+            Welcome to Naad Official
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8 leading-relaxed">
             Discover your destiny through the ancient wisdom of horoscopes, astrology, palmistry, puja, and spiritual music. 
@@ -292,7 +292,7 @@ export default function Home() {
               The stars align, and your palm tells a story. Discover what destiny has in store for you.
             </p>
             <div className="text-gray-500 dark:text-gray-400 font-semibold">
-              — Mystical Insights
+              — Naad Official
             </div>
           </div>
         </div>

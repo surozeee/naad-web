@@ -10,7 +10,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Welcome to your mystical insights dashboard
+            Welcome to your Naad Official dashboard
           </p>
         </div>
 

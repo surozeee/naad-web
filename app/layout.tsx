@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mystical Insights - Horoscope & Palmistry",
+  title: "Naad Official - Horoscope & Palmistry",
   description: "Discover your destiny through horoscope readings and palmistry",
 };
 
