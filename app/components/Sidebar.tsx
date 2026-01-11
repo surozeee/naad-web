@@ -108,15 +108,17 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         const matchesLabel = item.label.toLowerCase().includes(searchQuery.toLowerCase());
         const filteredSubmenu = item.submenu?.map(subItem => {
           const subMatchesLabel = subItem.label.toLowerCase().includes(searchQuery.toLowerCase());
-          const filteredNestedSubmenu = subItem.submenu?.filter(nestedItem => 
-            nestedItem.label.toLowerCase().includes(searchQuery.toLowerCase())
-          );
+          const filteredNestedSubmenu = 'submenu' in subItem && subItem.submenu 
+            ? subItem.submenu.filter((nestedItem: { label: string; href: string }) => 
+                nestedItem.label.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+            : undefined;
           const hasMatchingNested = filteredNestedSubmenu && filteredNestedSubmenu.length > 0;
           
           if (subMatchesLabel || hasMatchingNested) {
             return {
               ...subItem,
-              submenu: subMatchesLabel ? subItem.submenu : filteredNestedSubmenu
+              submenu: subMatchesLabel && 'submenu' in subItem ? subItem.submenu : filteredNestedSubmenu
             };
           }
           return null;
@@ -207,7 +209,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                         if (submenu) {
                           const rect = e.currentTarget.getBoundingClientRect();
                           submenu.style.left = `${rect.right + 4}px`;
-                          submenu.style.top = `${rect.top - 10}px`;
+                          submenu.style.top = `${rect.top}px`;
                         }
                       }}
                     >
@@ -224,7 +226,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                         }}
                       >
                         {item.submenu.map((subItem, idx) => {
-                          const hasNestedSubmenu = subItem.submenu && subItem.submenu.length > 0;
+                          const hasNestedSubmenu = 'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
                           const subItemActive = isActive(subItem.href);
                           
                           return (
@@ -237,7 +239,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                                     if (nestedSubmenu) {
                                       const rect = e.currentTarget.getBoundingClientRect();
                                       nestedSubmenu.style.left = `${rect.right + 4}px`;
-                                      nestedSubmenu.style.top = `${rect.top - 8}px`;
+                                      nestedSubmenu.style.top = `${rect.top}px`;
                                     }
                                   }}
                                 >
@@ -246,7 +248,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                                   
                                   {/* Nested Submenu */}
                                   <div className="nested-submenu">
-                                    {subItem.submenu.map((nestedItem, nestedIdx) => (
+                                    {'submenu' in subItem && subItem.submenu && subItem.submenu.map((nestedItem: { label: string; href: string }, nestedIdx: number) => (
                                       <Link
                                         key={nestedIdx}
                                         href={nestedItem.href}
@@ -326,7 +328,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             content: '';
             position: absolute;
             left: -8px;
-            top: 20px;
+            top: 12px;
             width: 0;
             height: 0;
             border-style: solid;
@@ -387,7 +389,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             content: '';
             position: absolute;
             left: -8px;
-            top: 20px;
+            top: 12px;
             width: 0;
             height: 0;
             border-style: solid;
