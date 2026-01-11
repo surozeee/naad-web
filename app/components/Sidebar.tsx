@@ -80,18 +80,48 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         { label: 'Chants', href: '/music/chants' },
       ]
     },
+    {
+      id: 'master-setting',
+      icon: '⚙️',
+      label: 'Master Setting',
+      href: '/master-setting',
+      submenu: [
+        {
+          label: 'General',
+          href: '/master-setting/general',
+          submenu: [
+            { label: 'Country', href: '/master-setting/general/country' },
+            { label: 'State', href: '/master-setting/general/state' },
+            { label: 'District', href: '/master-setting/general/district' },
+          ]
+        },
+      ]
+    },
   ];
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
-  // Filter menu items based on search query
+  // Filter menu items based on search query (including nested submenus)
   const filteredMenuItems = searchQuery.trim() === '' 
     ? menuItems 
     : menuItems.map(item => {
         const matchesLabel = item.label.toLowerCase().includes(searchQuery.toLowerCase());
-        const filteredSubmenu = item.submenu?.filter(subItem => 
-          subItem.label.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const filteredSubmenu = item.submenu?.map(subItem => {
+          const subMatchesLabel = subItem.label.toLowerCase().includes(searchQuery.toLowerCase());
+          const filteredNestedSubmenu = subItem.submenu?.filter(nestedItem => 
+            nestedItem.label.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          const hasMatchingNested = filteredNestedSubmenu && filteredNestedSubmenu.length > 0;
+          
+          if (subMatchesLabel || hasMatchingNested) {
+            return {
+              ...subItem,
+              submenu: subMatchesLabel ? subItem.submenu : filteredNestedSubmenu
+            };
+          }
+          return null;
+        }).filter(subItem => subItem !== null);
+        
         const hasMatchingSubmenu = filteredSubmenu && filteredSubmenu.length > 0;
         
         if (matchesLabel || hasMatchingSubmenu) {
@@ -211,15 +241,51 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                           // Keep submenu visible when hovering over it
                         }}
                       >
-                        {item.submenu.map((subItem, idx) => (
-                          <Link
-                            key={idx}
-                            href={subItem.href}
-                            className={`sidebar-submenu-item ${isActive(subItem.href) ? 'active' : ''}`}
-                          >
-                            {subItem.label}
-                          </Link>
-                        ))}
+                        {item.submenu.map((subItem, idx) => {
+                          const hasNestedSubmenu = subItem.submenu && subItem.submenu.length > 0;
+                          const subItemActive = isActive(subItem.href);
+                          
+                          return (
+                            <div key={idx} className="relative sidebar-submenu-item-wrapper">
+                              {hasNestedSubmenu ? (
+                                <div 
+                                  className={`sidebar-submenu-item has-children ${subItemActive ? 'active' : ''}`}
+                                  onMouseEnter={(e) => {
+                                    const nestedSubmenu = e.currentTarget.querySelector('.nested-submenu') as HTMLElement;
+                                    if (nestedSubmenu) {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      nestedSubmenu.style.left = `${rect.right + 4}px`;
+                                      nestedSubmenu.style.top = `${rect.top - 8}px`;
+                                    }
+                                  }}
+                                >
+                                  {subItem.label}
+                                  <span className="text-[#9ca3af] absolute right-3">›</span>
+                                  
+                                  {/* Nested Submenu */}
+                                  <div className="nested-submenu">
+                                    {subItem.submenu.map((nestedItem, nestedIdx) => (
+                                      <Link
+                                        key={nestedIdx}
+                                        href={nestedItem.href}
+                                        className={`nested-submenu-item ${isActive(nestedItem.href) ? 'active' : ''}`}
+                                      >
+                                        {nestedItem.label}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <Link
+                                  href={subItem.href}
+                                  className={`sidebar-submenu-item ${subItemActive ? 'active' : ''}`}
+                                >
+                                  {subItem.label}
+                                </Link>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
@@ -312,6 +378,68 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
           .sidebar-submenu-item.active {
             background: #4b5563;
+            border-left: 3px solid #3b82f6;
+          }
+
+          .sidebar-submenu-item-wrapper {
+            position: relative;
+          }
+
+          .sidebar-submenu-item.has-children {
+            padding-right: 30px;
+          }
+
+          .nested-submenu {
+            position: fixed;
+            background: #4b5563;
+            min-width: 220px;
+            border-radius: 8px;
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 999999 !important;
+            border: 1px solid #6b7280;
+            padding: 8px 0;
+            pointer-events: auto;
+            margin: 0;
+          }
+
+          .nested-submenu::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 20px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 8px 8px 0;
+            border-color: transparent #4b5563 transparent transparent;
+          }
+
+          .sidebar-submenu-item.has-children:hover .nested-submenu,
+          .nested-submenu:hover {
+            display: block !important;
+          }
+
+          .nested-submenu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            color: #e5e7eb;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            display: block;
+            text-decoration: none;
+          }
+
+          .nested-submenu-item:hover {
+            background: #6b7280;
+            color: white;
+            border-left: 3px solid #3b82f6;
+          }
+
+          .nested-submenu-item.active {
+            background: #6b7280;
             border-left: 3px solid #3b82f6;
           }
 
