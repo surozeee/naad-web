@@ -17,7 +17,7 @@ const projectRoot = process.cwd();
 // Prepare environment
 const env = {
   ...process.env,
-  PORT: process.env.PORT || '4200',
+  PORT: process.env.PORT || '4000',
   NODE_ENV: process.env.NODE_ENV || 'production',
 };
 
