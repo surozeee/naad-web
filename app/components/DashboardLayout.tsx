@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import SimpleFooter from './SimpleFooter';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Initialize state from localStorage or default based on screen size
@@ -100,6 +101,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {children}
             </div>
           </main>
+          
+          <SimpleFooter />
         </div>
       </div>
     </div>

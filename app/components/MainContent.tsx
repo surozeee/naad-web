@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import SimpleFooter from './SimpleFooter';
 
 export default function MainContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -18,9 +19,12 @@ export default function MainContent({ children }: { children: React.ReactNode })
                           pathname?.startsWith('/user-management');
   
   return (
-    <main className={isDashboardRoute ? '' : 'pt-16'}>
-      {children}
-    </main>
+    <>
+      <main className={isDashboardRoute ? '' : 'pt-16'}>
+        {children}
+      </main>
+      {!isDashboardRoute && <SimpleFooter />}
+    </>
   );
 }
 
