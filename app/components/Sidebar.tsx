@@ -6,9 +6,10 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 
 interface SidebarProps {
   collapsed: boolean;
+  onCollapseToggle?: () => void;
 }
 
-export default function Sidebar({ collapsed }: SidebarProps) {
+export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const submenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -164,7 +165,9 @@ export default function Sidebar({ collapsed }: SidebarProps) {
           e.stopPropagation();
         }}
       >
-        <nav className="flex-1 overflow-y-auto overflow-x-visible py-4">
+        
+        
+        <nav className="flex-1 overflow-x-visible py-4">
           <div className="px-3 relative">
             {menuItems.map((item) => {
               const itemActive = isActive(item.href);
@@ -212,6 +215,8 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         e.stopPropagation();
       }}
     >
+    
+      
       {/* Menu Items */}
       <nav className="flex-1 overflow-y-auto overflow-x-visible">
         {/* Search Bar */}

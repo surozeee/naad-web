@@ -6,28 +6,59 @@ import Header from './Header';
 import Footer from './Footer';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [headerMenuCollapsed, setHeaderMenuCollapsed] = useState(false);
-
-  // Load sidebar state from localStorage on mount
-  useEffect(() => {
+  // Initialize state from localStorage or default based on screen size
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Only access localStorage on client side
+    if (typeof window === 'undefined') {
+      return true; // Default for SSR
+    }
     const savedState = localStorage.getItem('sidebarCollapsed');
     if (savedState !== null) {
-      setSidebarCollapsed(JSON.parse(savedState));
-    } else {
-      // Set initial sidebar state based on screen size if no saved state
-      if (window.innerWidth >= 768) {
-        setSidebarCollapsed(false);
-      } else {
-        setSidebarCollapsed(true);
+      try {
+        return JSON.parse(savedState);
+      } catch {
+        // If parsing fails, use default based on screen size
+        return window.innerWidth < 768;
       }
     }
+    // Default based on screen size if no saved state
+    return window.innerWidth < 768;
+  });
+  
+  const [headerMenuCollapsed, setHeaderMenuCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Mark as mounted after first render
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
-  // Save sidebar state to localStorage whenever it changes
+  // Handle window resize - auto-collapse on mobile
   useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
-  }, [sidebarCollapsed]);
+    if (!mounted || typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      // On mobile, always collapse sidebar
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Check on mount as well
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [mounted]);
+
+  // Save sidebar state to localStorage whenever it changes (only after mount)
+  useEffect(() => {
+    if (mounted && typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
+    }
+  }, [sidebarCollapsed, mounted]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -41,7 +72,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       {/* Sidebar and body below header */}
       <div className="flex flex-1 relative">
-        <Sidebar collapsed={sidebarCollapsed} />
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          onCollapseToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
         
         {/* Mobile sidebar overlay */}
         {!sidebarCollapsed && (
