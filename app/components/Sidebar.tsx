@@ -159,7 +159,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   if (collapsed) {
     return (
       <aside 
-        className="bg-[#1e293b] text-white w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg hidden md:flex overflow-visible"
+        className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg border-r border-slate-200 dark:border-slate-700 hidden md:flex overflow-visible"
         onClick={(e) => {
           // Prevent clicks inside sidebar from closing it
           e.stopPropagation();
@@ -179,19 +179,19 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                     prefetch={true}
                     className={`w-full flex items-center justify-center p-3 rounded-lg mb-1 transition-all ${
                       itemActive
-                        ? 'bg-[#3b82f6] text-white'
-                        : 'text-slate-300 hover:bg-[#374151] hover:text-white'
+                        ? 'bg-blue-500 dark:bg-blue-600 text-white'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
                   </Link>
                   {/* Tooltip */}
-                  <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[9999] whitespace-nowrap">
-                    <div className="font-semibold text-sm">{item.label}</div>
+                  <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-600 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[9999] whitespace-nowrap">
+                    <div className="font-bold text-sm">{item.label}</div>
                     {hasSubmenu && item.submenu && (
-                      <div className="mt-2 pt-2 border-t border-slate-700">
+                      <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
                         {item.submenu.map((subItem, idx) => (
-                          <div key={idx} className="text-xs text-slate-400 py-1">
+                          <div key={idx} className="text-xs text-slate-500 dark:text-slate-400 py-1">
                             {subItem.label}
                           </div>
                         ))}
@@ -209,7 +209,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
   return (
     <aside 
-      className="bg-[#1e293b] text-white w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg"
+      className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg border-r border-slate-200 dark:border-slate-700"
       onClick={(e) => {
         // Prevent clicks inside sidebar from closing it
         e.stopPropagation();
@@ -220,10 +220,10 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
       {/* Menu Items */}
       <nav className="flex-1 overflow-y-auto overflow-x-visible">
         {/* Search Bar */}
-        <div className="px-4 py-4 border-b border-[#374151]">
+        <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-700">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-[#9ca3af]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -232,7 +232,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
               placeholder="Search menu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#374151] text-white placeholder-[#9ca3af] rounded-lg border border-[#4b5563] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent transition-all text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 rounded-lg border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
             />
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
         <div className="relative">
           
           {filteredMenuItems.length === 0 && searchQuery.trim() !== '' ? (
-            <div className="text-center py-8 text-[#9ca3af] text-sm">
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
               No results found
             </div>
           ) : (
@@ -264,7 +264,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
                       <span className="flex-1 text-sm">{item.label}</span>
-                      <span className="text-[10px] text-[#9ca3af]">▶</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">▶</span>
                       
                       {/* Submenu */}
                       <div 
@@ -293,7 +293,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                   }}
                                 >
                                   {subItem.label}
-                                  <span className="text-[#9ca3af] absolute right-3">›</span>
+                                  <span className="text-slate-400 dark:text-slate-500 absolute right-3">›</span>
                                   
                                   {/* Nested Submenu */}
                                   <div className="nested-submenu">
@@ -351,27 +351,29 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             align-items: center;
             transition: all 0.2s ease;
             position: relative;
-            color: #e5e7eb;
+            color: #334155;
             font-size: 14px;
+            font-weight: bold;
           }
 
           .sidebar-menu-item:hover {
-            background: #374151;
+            background: #f1f5f9;
           }
 
           .sidebar-menu-item.active {
             background: #3b82f6;
+            color: white;
           }
 
           .sidebar-submenu {
             position: fixed;
-            background: #374151;
+            background: #ffffff;
             min-width: 220px;
             border-radius: 8px;
-            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.1);
             display: none;
             z-index: 99999 !important;
-            border: 1px solid #4b5563;
+            border: 1px solid #e2e8f0;
             pointer-events: auto;
             margin: 0;
           }
@@ -385,7 +387,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             height: 0;
             border-style: solid;
             border-width: 8px 8px 8px 0;
-            border-color: transparent #374151 transparent transparent;
+            border-color: transparent #ffffff transparent transparent;
           }
 
           .sidebar-menu-item:hover .sidebar-submenu,
@@ -398,22 +400,24 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            color: #e5e7eb;
+            color: #334155;
             font-size: 14px;
+            font-weight: bold;
             border-left: 3px solid transparent;
             display: block;
             text-decoration: none;
           }
 
           .sidebar-submenu-item:hover {
-            background: #4b5563;
-            color: white;
+            background: #f1f5f9;
+            color: #0f172a;
             border-left: 3px solid #3b82f6;
           }
 
           .sidebar-submenu-item.active {
-            background: #4b5563;
+            background: #eff6ff;
             border-left: 3px solid #3b82f6;
+            color: #1d4ed8;
           }
 
           .sidebar-submenu-item-wrapper {
@@ -426,13 +430,13 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
           .nested-submenu {
             position: fixed;
-            background: #4b5563;
+            background: #ffffff;
             min-width: 220px;
             border-radius: 8px;
-            box-shadow: 5px 5px 20px rgba(0,0,0,0.2);
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.1);
             display: none;
             z-index: 999999 !important;
-            border: 1px solid #6b7280;
+            border: 1px solid #e2e8f0;
             pointer-events: auto;
             margin: 0;
           }
@@ -446,7 +450,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             height: 0;
             border-style: solid;
             border-width: 8px 8px 8px 0;
-            border-color: transparent #4b5563 transparent transparent;
+            border-color: transparent #ffffff transparent transparent;
           }
 
           .sidebar-submenu-item.has-children:hover .nested-submenu,
@@ -459,22 +463,78 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            color: #e5e7eb;
+            color: #334155;
             font-size: 14px;
+            font-weight: bold;
             border-left: 3px solid transparent;
             display: block;
             text-decoration: none;
           }
 
           .nested-submenu-item:hover {
-            background: #6b7280;
-            color: white;
+            background: #f1f5f9;
+            color: #0f172a;
             border-left: 3px solid #3b82f6;
           }
 
           .nested-submenu-item.active {
-            background: #6b7280;
+            background: #eff6ff;
             border-left: 3px solid #3b82f6;
+            color: #1d4ed8;
+          }
+
+          /* Dark mode – sidebar menu & submenus */
+          .dark .sidebar-menu-item {
+            color: #e2e8f0;
+          }
+          .dark .sidebar-menu-item:hover {
+            background: #334155;
+          }
+          .dark .sidebar-menu-item.active {
+            background: #2563eb;
+            color: white;
+          }
+          .dark .sidebar-submenu {
+            background: #334155;
+            border-color: #475569;
+            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
+          }
+          .dark .sidebar-submenu::before {
+            border-color: transparent #334155 transparent transparent;
+          }
+          .dark .sidebar-submenu-item {
+            color: #e2e8f0;
+          }
+          .dark .sidebar-submenu-item:hover {
+            background: #475569;
+            color: white;
+            border-left-color: #3b82f6;
+          }
+          .dark .sidebar-submenu-item.active {
+            background: #475569;
+            border-left-color: #3b82f6;
+            color: #93c5fd;
+          }
+          .dark .nested-submenu {
+            background: #475569;
+            border-color: #64748b;
+            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
+          }
+          .dark .nested-submenu::before {
+            border-color: transparent #475569 transparent transparent;
+          }
+          .dark .nested-submenu-item {
+            color: #e2e8f0;
+          }
+          .dark .nested-submenu-item:hover {
+            background: #64748b;
+            color: white;
+            border-left-color: #3b82f6;
+          }
+          .dark .nested-submenu-item.active {
+            background: #64748b;
+            border-left-color: #3b82f6;
+            color: #93c5fd;
           }
 
           /* Ensure parent containers don't clip submenu horizontally */

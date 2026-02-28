@@ -37,9 +37,9 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
     <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex sticky top-0">
       {/* Search and Menu Row */}
       <div className="flex w-full">
-        {/* First Section - Sidebar width with Naad1 Official1 */}
+        {/* First Section - Sidebar width with Naad Official */}
         <div 
-          className={`bg-[#1e293b] text-white flex items-center transition-all duration-300 ${
+          className={`bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center transition-all duration-300 border-r border-slate-200 dark:border-slate-700 ${
             sidebarCollapsed ? 'w-20 justify-center' : 'w-[280px] px-[25px]'
           }`}
         >
@@ -50,7 +50,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
               <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
                 <span className="text-xl text-white">💼</span>
               </div>
-              <span className="text-[22px] font-bold text-white">
+              <span className="text-[22px] font-bold text-inherit">
                 Naad Official
               </span>
             </Link>
