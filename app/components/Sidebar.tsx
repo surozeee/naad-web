@@ -9,10 +9,32 @@ interface SidebarProps {
   onCollapseToggle?: () => void;
 }
 
+const HOVER_CLOSE_DELAY_MS = 200;
+
 export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const submenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [collapsedOpenId, setCollapsedOpenId] = useState<string | null>(null);
+  const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const scheduleClose = (close: () => void) => {
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      close();
+      closeTimerRef.current = null;
+    }, HOVER_CLOSE_DELAY_MS);
+  };
+
+  useEffect(() => () => clearCloseTimer(), []);
 
   const menuItems = [
     {
@@ -173,7 +195,17 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
               const itemActive = isActive(item.href);
               const hasSubmenu = item.submenu && item.submenu.length > 0;
               return (
-                <div key={item.id} className="relative group">
+                <div
+                  key={item.id}
+                  className="relative group"
+                  onMouseEnter={() => {
+                    if (hasSubmenu) {
+                      clearCloseTimer();
+                      setCollapsedOpenId(item.id);
+                    }
+                  }}
+                  onMouseLeave={() => hasSubmenu && scheduleClose(() => setCollapsedOpenId(null))}
+                >
                   <Link
                     href={item.href}
                     prefetch={true}
@@ -185,19 +217,58 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                   >
                     <span className="text-xl">{item.icon}</span>
                   </Link>
-                  {/* Tooltip */}
-                  <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-600 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[9999] whitespace-nowrap">
-                    <div className="font-bold text-sm">{item.label}</div>
-                    {hasSubmenu && item.submenu && (
-                      <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
-                        {item.submenu.map((subItem, idx) => (
-                          <div key={idx} className="text-xs text-slate-500 dark:text-slate-400 py-1">
-                            {subItem.label}
-                          </div>
-                        ))}
+                  {/* Expand submenu with all links – same alignment as menu, delay before close */}
+                  {hasSubmenu && item.submenu && (
+                    <div
+                      className={`absolute left-full ml-0 top-0 min-w-[220px] py-2 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-600 transition-opacity duration-200 z-[9999] ${
+                        collapsedOpenId === item.id ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'
+                      }`}
+                      onMouseEnter={() => { clearCloseTimer(); setCollapsedOpenId(item.id); }}
+                      onMouseLeave={() => scheduleClose(() => setCollapsedOpenId(null))}
+                    >
+                      <Link
+                        href={item.href}
+                        prefetch={true}
+                        className={`block px-4 py-2.5 text-sm font-bold border-b border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                          itemActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50' : 'text-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                      <div className="pt-1 pb-0">
+                        {item.submenu.map((subItem, idx) => {
+                          const hasNested = 'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
+                          const subHref = 'href' in subItem ? subItem.href : '#';
+                          const subActive = isActive(subHref);
+                          return (
+                            <div key={idx}>
+                              <Link
+                                href={subHref}
+                                prefetch={true}
+                                className={`block px-4 py-2 text-sm font-bold rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 border-l-2 border-transparent hover:border-blue-500 ${
+                                  subActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                {subItem.label}
+                              </Link>
+                              {hasNested && 'submenu' in subItem && subItem.submenu?.map((nested: { label: string; href: string }, nestedIdx: number) => (
+                                <Link
+                                  key={nestedIdx}
+                                  href={nested.href}
+                                  prefetch={true}
+                                  className={`block px-4 pl-6 py-1.5 text-sm font-bold rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 border-l-2 border-transparent hover:border-blue-500 ${
+                                    isActive(nested.href) ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-slate-600 dark:text-slate-400'
+                                  }`}
+                                >
+                                  {nested.label}
+                                </Link>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -254,25 +325,27 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                     <div 
                       className={`sidebar-menu-item ${itemActive ? 'active' : ''}`}
                       onMouseEnter={(e) => {
+                        clearCloseTimer();
+                        setOpenSubmenuId(item.id);
                         const submenu = submenuRefs.current[item.id];
                         if (submenu) {
                           const rect = e.currentTarget.getBoundingClientRect();
-                          submenu.style.left = `${rect.right + 4}px`;
+                          submenu.style.left = `${rect.right}px`;
                           submenu.style.top = `${rect.top}px`;
                         }
                       }}
+                      onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
                       <span className="flex-1 text-sm">{item.label}</span>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">▶</span>
                       
-                      {/* Submenu */}
+                      {/* Submenu – same alignment (padding) as menu, delay before close */}
                       <div 
                         ref={(el) => { submenuRefs.current[item.id] = el; }}
-                        className="sidebar-submenu"
-                        onMouseLeave={(e) => {
-                          // Keep submenu visible when hovering over it
-                        }}
+                        className={`sidebar-submenu ${openSubmenuId === item.id ? 'is-open' : ''}`}
+                        onMouseEnter={() => { clearCloseTimer(); setOpenSubmenuId(item.id); }}
+                        onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
                       >
                         {item.submenu.map((subItem, idx) => {
                           const hasNestedSubmenu = 'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
@@ -390,13 +463,12 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border-color: transparent #ffffff transparent transparent;
           }
 
-          .sidebar-menu-item:hover .sidebar-submenu,
-          .sidebar-submenu:hover {
+          .sidebar-submenu.is-open {
             display: block !important;
           }
 
           .sidebar-submenu-item {
-            padding: 12px 20px;
+            padding: 12px 15px;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
@@ -459,7 +531,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
           }
 
           .nested-submenu-item {
-            padding: 12px 20px;
+            padding: 12px 15px;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
