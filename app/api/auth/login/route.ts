@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 
-// Login API: https://api-naad.jojolapatech.com/api/v2/public/user/login
-const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
-const rawApiUrl = (process.env.NEXT_PUBLIC_AUTH_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? DEFAULT_API_BASE).trim();
-const API_BASE = rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') || DEFAULT_API_BASE;
-const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
+// API base from .env (NEXT_PUBLIC_BACKEND_URL or NEXT_PUBLIC_API_URL)
+const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
+const API_BASE = rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '');
+const LOGIN_URL = API_BASE ? `${API_BASE}/api/v2/public/user/login` : '';
 
 const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';
@@ -29,6 +28,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: 'Invalid username and password' },
         { status: 400 }
+      );
+    }
+
+    if (!LOGIN_URL) {
+      return NextResponse.json(
+        { message: 'Auth API not configured. Set NEXT_PUBLIC_BACKEND_URL in .env' },
+        { status: 503 }
       );
     }
 
