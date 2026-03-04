@@ -1,11 +1,11 @@
-/** Normalize XSRF token: trim and remove trailing typo chars. Backend expects exact value. (From erp-web auth-fetch.) */
+/** Normalize XSRF token: trim only. Gateway expects AES-encrypted Base64 exactly (decodeURIComponent for cookie is ok). */
 function normalizeXsrfToken(value: string | null | undefined): string | null {
   if (value == null || typeof value !== 'string') return null;
-  const trimmed = value.trim().replace(/[~\s]+$/, '').trim();
+  const trimmed = value.trim();
   return trimmed || null;
 }
 
-/** Get XSRF token from env (NEXT_PUBLIC_XSRF_TOKEN / NEXTAUTH_XSRF_TOKEN) or cookie. Sent as X-XSRF-TOKEN on API calls. (From erp-web auth-fetch.) */
+/** Get XSRF token from env or cookie. Must be the gateway's AES-encrypted (Base64) value to avoid 403. */
 export function getXsrfToken(): string | null {
   const fromEnv =
     (typeof window !== 'undefined'

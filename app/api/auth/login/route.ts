@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// API base from .env (NEXT_PUBLIC_BACKEND_URL or NEXT_PUBLIC_API_URL)
+// API base from .env (NEXT_PUBLIC_BACKEND_URL, etc.); fallback so app works without .env
+const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
 const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-const API_BASE = rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '');
-const LOGIN_URL = API_BASE ? `${API_BASE}/api/v2/public/user/login` : '';
+const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
+const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
 
 const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';
@@ -28,13 +29,6 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: 'Invalid username and password' },
         { status: 400 }
-      );
-    }
-
-    if (!LOGIN_URL) {
-      return NextResponse.json(
-        { message: 'Auth API not configured. Set NEXT_PUBLIC_BACKEND_URL in .env' },
-        { status: 503 }
       );
     }
 
@@ -98,7 +92,8 @@ export async function POST(request: Request) {
       response.cookies.set(REFRESH_COOKIE, refresh_token, COOKIE_OPTIONS);
     }
 
-    // Forward backend XSRF cookie so client can send it on forgot-password etc.
+    // Set XSRF cookie on our domain so client sends it to our API (avoids 403 on backend).
+    let xsrfValue: string | null = null;
     const setCookies =
       typeof (res.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
         ? (res.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
@@ -107,10 +102,15 @@ export async function POST(request: Request) {
           : [];
     for (const raw of setCookies) {
       const c = raw.trim();
-      if (/^XSRF-TOKEN=/i.test(c) || /^X-XSRF-TOKEN=/i.test(c)) {
-        response.headers.append('Set-Cookie', c);
+      const xsrfMatch = /^XSRF-TOKEN=(.+?)(?:;\s|$)/i.exec(c) || /^X-XSRF-TOKEN=(.+?)(?:;\s|$)/i.exec(c);
+      if (xsrfMatch) {
+        xsrfValue = xsrfMatch[1].replace(/^"(.*)"$/, '$1').trim();
         break;
       }
+    }
+    const xsrfToSet = xsrfValue || process.env.NEXTAUTH_XSRF_TOKEN?.trim() || process.env.NEXT_PUBLIC_XSRF_TOKEN?.trim();
+    if (xsrfToSet) {
+      response.cookies.set('XSRF-TOKEN', xsrfToSet, COOKIE_OPTIONS);
     }
 
     return response;

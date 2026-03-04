@@ -111,6 +111,8 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
         { label: 'User', href: '/user-management/user' },
         { label: 'Role', href: '/user-management/role' },
         { label: 'Permission', href: '/user-management/permission' },
+        { label: 'Permission Group', href: '/user-management/permission-group' },
+        { label: 'Menu', href: '/user-management/menu' },
       ]
     },
     {

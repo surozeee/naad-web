@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// API base from .env (NEXT_PUBLIC_BACKEND_URL or NEXT_PUBLIC_API_URL)
+// API base from .env; fallback so app works without .env
+const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
 const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-const API_BASE = rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '');
-const REFRESH_URL = API_BASE ? `${API_BASE}/api/v2/public/user/refresh/token` : '';
+const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
+const REFRESH_URL = `${API_BASE}/api/v2/public/user/refresh/token`;
 
 const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';
@@ -36,15 +37,6 @@ export async function POST(request: Request) {
     }
     if (!refreshToken) {
       const res = NextResponse.json({ message: 'Refresh token required' }, { status: 401 });
-      clearAuthCookies(res);
-      return res;
-    }
-
-    if (!REFRESH_URL) {
-      const res = NextResponse.json(
-        { message: 'Auth API not configured. Set NEXT_PUBLIC_BACKEND_URL in .env' },
-        { status: 503 }
-      );
       clearAuthCookies(res);
       return res;
     }

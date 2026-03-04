@@ -1,25 +1,32 @@
 /**
  * Authenticated fetch: on 401, try refresh token once, then retry.
  * If refresh fails, clear tokens and redirect to homepage.
+ * Bootstraps XSRF token from /api/csrf-token when missing (needed for gateway 403).
  */
 
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { logout } from '@/app/lib/logout';
 
 const REFRESH_API = '/api/auth/refresh';
+const CSRF_TOKEN_API = '/api/csrf-token';
 
 /**
  * Fetch with automatic token refresh on 401.
+ * - Ensures XSRF token is available (fetches from /api/csrf-token if missing).
  * - First request uses cookies (access_token in naad_auth).
- * - If response is 401, calls refresh API (sends naad_refresh cookie).
- * - If refresh succeeds, retries the original request once.
- * - If refresh fails, clears access_token and refresh_token and redirects to /.
+ * - If response is 401, calls refresh API, then retries once.
+ * - If refresh fails, clears tokens and redirects to /.
  */
 export async function fetchWithAuth(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const xsrf = getXsrfToken();
+  let xsrf = getXsrfToken();
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  if (!xsrf && url.startsWith('/api/') && !url.startsWith(CSRF_TOKEN_API)) {
+    await fetch(CSRF_TOKEN_API, { credentials: 'same-origin' });
+    xsrf = getXsrfToken();
+  }
   const headers = new Headers(init?.headers);
   if (xsrf) headers.set('X-XSRF-TOKEN', xsrf);
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');

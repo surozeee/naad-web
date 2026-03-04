@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// API base from .env (same as login/refresh)
+// API base from .env; fallback so app works without .env
+const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
 const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-const API_BASE = rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '');
-const LOGOUT_URL = API_BASE ? `${API_BASE}/api/v2/public/user/logout` : '';
+const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
+const LOGOUT_URL = `${API_BASE}/api/v2/public/user/logout`;
 
 const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';

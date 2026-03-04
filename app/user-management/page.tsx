@@ -5,7 +5,7 @@ export default function UserManagementPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
             User Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -30,6 +30,18 @@ export default function UserManagementPage() {
             <div className="text-5xl mb-4">🔐</div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Permissions</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Manage permissions</p>
+          </a>
+
+          <a href="/user-management/permission-group" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">📋</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Permission Groups</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Manage permission groups</p>
+          </a>
+
+          <a href="/user-management/menu" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">📑</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Menu</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Manage menus (tree)</p>
           </a>
         </div>
       </div>

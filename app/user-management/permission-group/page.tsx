@@ -16,7 +16,7 @@ function normalizeList(res: unknown): unknown[] {
   return [];
 }
 
-export default function PermissionPage() {
+export default function PermissionGroupPage() {
   const [list, setList] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export default function PermissionPage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchWithAuth('/api/permissions', {
+    fetchWithAuth('/api/permission-groups', {
         method: 'POST',
         body: JSON.stringify({ pageNo: 0, pageSize: 100 }),
       })
@@ -42,7 +42,7 @@ export default function PermissionPage() {
         setList(normalizeList(data));
       })
       .catch((e) => {
-        if (!cancelled) setError(e?.message ?? 'Failed to load permissions');
+        if (!cancelled) setError(e?.message ?? 'Failed to load permission groups');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -55,21 +55,18 @@ export default function PermissionPage() {
       <div className="space-y-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-            Permission Management
+            Permission Group Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage system permissions and access controls (same API as erp-web)
+            Manage permission groups (same API as erp-web)
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg border border-gray-200 dark:border-slate-700">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-              Permissions
+              Permission Groups
             </h2>
-            <button className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold">
-              Add Permission
-            </button>
           </div>
 
           {loading && (
@@ -79,24 +76,23 @@ export default function PermissionPage() {
             <p className="text-red-600 dark:text-red-400">{error}</p>
           )}
           {!loading && !error && list.length === 0 && (
-            <p className="text-gray-600 dark:text-gray-400">No permissions found.</p>
+            <p className="text-gray-600 dark:text-gray-400">No permission groups found.</p>
           )}
           {!loading && !error && list.length > 0 && (
             <div className="grid md:grid-cols-2 gap-6">
-              {list.map((permission: Record<string, unknown>, idx: number) => (
-                <div key={String(permission?.id ?? idx)} className="bg-gray-50 dark:bg-slate-700 rounded-lg p-6">
+              {list.map((item: Record<string, unknown>, idx: number) => (
+                <div key={String(item?.id ?? idx)} className="bg-gray-50 dark:bg-slate-700 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                        {String(permission?.name ?? permission?.code ?? permission?.label ?? '—')}
+                        {String(item?.name ?? item?.label ?? item?.code ?? '—')}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {String(permission?.module ?? permission?.group?.name ?? permission?.permissionGroup?.name ?? '—')}
-                      </p>
+                      {(item?.description != null || item?.descriptionEn != null) && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {String(item?.description ?? item?.descriptionEn ?? '')}
+                        </p>
+                      )}
                     </div>
-                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded text-xs">
-                      {String(permission?.status ?? 'Active')}
-                    </span>
                   </div>
                   <div className="flex gap-2">
                     <button className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold">
