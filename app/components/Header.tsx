@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from './ThemeProvider';
+import { logout } from '@/app/lib/logout';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -143,8 +144,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
-                      // Add logout logic here
-                      console.log('Logout clicked');
+                      logout('/');
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left"
                   >

@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
+import { useAuthModal } from './AuthModalContext';
 
 export default function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const authModal = useAuthModal();
   
   // Only show navigation on homepage - hide on all other pages including dashboard routes
   if (!pathname || pathname !== '/') {
@@ -27,6 +29,24 @@ export default function Navigation() {
             <Link href="/palmistry" className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Palmistry
             </Link>
+            {authModal && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => authModal.openLogin()}
+                  className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => authModal.openRegister()}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  Register
+                </button>
+              </>
+            )}
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}

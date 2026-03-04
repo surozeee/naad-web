@@ -1,11 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { requireAuth, hasAuthToken } from '@/app/lib/auth-guard';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import SimpleFooter from './SimpleFooter';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
+  const guardDone = useRef(false);
+
+  // Auth guard (erp-web style): prevent access without login; run once per mount so login API can run and redirect works
+  useEffect(() => {
+    if (guardDone.current || typeof window === 'undefined') return;
+    guardDone.current = true;
+    if (hasAuthToken()) {
+      setAuthChecked(true);
+      return;
+    }
+    const allowed = requireAuth(pathname, router);
+    if (allowed) setAuthChecked(true);
+  }, [pathname, router]);
+
   // Initialize state from localStorage or default based on screen size
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     // Only access localStorage on client side
@@ -59,6 +78,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
     }
   }, [sidebarCollapsed, mounted]);
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-500 dark:text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
