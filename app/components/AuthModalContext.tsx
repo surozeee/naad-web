@@ -38,12 +38,14 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (showLoginModal || showRegisterModal || showForgotPasswordModal) {
-      document.body.style.overflow = 'hidden';
+    const isOpen = showLoginModal || showRegisterModal || showForgotPasswordModal;
+    const html = document.documentElement;
+    if (isOpen) {
+      html.classList.add('modal-open');
     } else {
-      document.body.style.overflow = '';
+      html.classList.remove('modal-open');
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => html.classList.remove('modal-open');
   }, [showLoginModal, showRegisterModal, showForgotPasswordModal]);
 
   return (

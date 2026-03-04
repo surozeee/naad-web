@@ -12,6 +12,19 @@
   --foreground: #ededed;
 }
 
+/* Reserve scrollbar space so hiding it on modal open doesn't shift layout or show a gap. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* When auth modal is open: lock scroll only. No padding so no visible right margin. */
+html.modal-open {
+  overflow: hidden !important;
+}
+html.modal-open body {
+  overflow: hidden !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
