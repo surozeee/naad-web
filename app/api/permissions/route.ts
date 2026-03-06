@@ -14,15 +14,6 @@ function paginatePayload(body: unknown) {
   };
 }
 
-function toQueryString(payload: Record<string, unknown>): string {
-  const params = new URLSearchParams();
-  Object.entries(payload).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
-  });
-  const q = params.toString();
-  return q ? `?${q}` : '';
-}
-
 /** GET list permissions (query params) - legacy. Prefer POST. */
 export async function GET(request: NextRequest) {
   try {
@@ -37,15 +28,16 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST list permissions (paginated). Body: { pageNo, pageSize, sortBy?, sortDirection?, search? }. Forwards to backend GET list with query params. */
+/** POST list permissions (paginated). Body: { pageNo, pageSize, sortBy?, sortDirection?, search? }. Forwards to backend POST list with body. */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const payload = paginatePayload(body);
-    const url = backendUrl(LIST_PATH) + toQueryString(payload);
+    const url = backendUrl(LIST_PATH);
     const res = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: backendHeaders(request),
+      body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });

@@ -1,423 +1,491 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  X,
+  Check,
+  Save,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
+} from 'lucide-react';
+import Swal from 'sweetalert2';
 import DashboardLayout from '../../components/DashboardLayout';
-import { fetchWithAuth } from '@/app/lib/auth-fetch';
+import Breadcrumb from '../../components/common/Breadcrumb';
+import { ActionTooltip } from '../../components/common/ActionTooltip';
+import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
+import { userApi, roleApi } from '@/app/lib/user-api.service';
+import type { UserResponse, RoleResponse } from '@/app/lib/user-api.types';
 
-const SUBTITLE_INFO = 'Add, edit, and manage user accounts (same API as erp-web)';
-const PAGE_SIZES = [10, 25, 50, 100];
-
-/** Backend GlobalResponse: data.result (user list) or data.content (paginated) or data array. */
-function normalizeList(res: unknown): unknown[] {
-  if (res == null) return [];
-  const d = (res as Record<string, unknown>)?.data;
-  if (d != null && typeof d === 'object') {
-    const obj = d as Record<string, unknown>;
-    if (Array.isArray(obj.result)) return obj.result;
-    if (Array.isArray(obj.content)) return obj.content;
-  }
-  if (Array.isArray(d)) return d;
-  if (Array.isArray(res)) return res;
-  if (typeof res === 'object' && 'items' in (res as Record<string, unknown>)) return (res as { items: unknown[] }).items ?? [];
-  return [];
-}
-
-function getTotalElements(res: unknown): number {
-  const d = (res as Record<string, unknown>)?.data;
-  if (d != null && typeof d === 'object' && 'totalElements' in (d as object))
-    return Number((d as { totalElements?: number }).totalElements) || 0;
-  return 0;
-}
-
-function getUserDisplay(user: Record<string, unknown>) {
-  const detail = user?.userDetail as Record<string, unknown> | undefined;
+function mapItem(raw: UserResponse) {
+  const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
+  const status = statusVal === 'ACTIVE' ? 'active' : 'inactive';
   return {
-    name: String(detail?.name ?? user?.name ?? user?.fullName ?? user?.username ?? '—'),
-    email: String(user?.emailAddress ?? user?.email ?? '—'),
-    role: String(user?.roleName ?? user?.role?.name ?? user?.role ?? '—'),
-    status: String(user?.status ?? (user?.enabled === true ? 'ACTIVE' : user?.enabled === false ? 'INACTIVE' : user?.accountNonLocked === false ? 'Locked' : '—')),
+    id: String(raw.id ?? ''),
+    emailAddress: raw.emailAddress ?? '',
+    mobileNumber: raw.mobileNumber ?? '',
+    roleId: raw.roleId ? String(raw.roleId) : undefined,
+    roleName: raw.roleName ?? '',
+    name: raw.userDetail?.name ?? raw.emailAddress ?? '',
+    status: status as 'active' | 'inactive',
+    enabled: raw.enabled ?? true,
   };
 }
 
-export default function UserPage() {
-  const [list, setList] = useState<unknown[]>([]);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
+export default function UsersManagement() {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [users, setUsers] = useState<ReturnType<typeof mapItem>[]>([]);
+  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [searchDebounced, setSearchDebounced] = useState('');
-  const [pageNo, setPageNo] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [detailUser, setDetailUser] = useState<Record<string, unknown> | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    emailAddress: '',
+    mobileNumber: '',
+    password: '',
+    roleId: '',
+    name: '',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<'name' | 'emailAddress' | 'mobileNumber' | 'roleName' | 'status'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const load = useCallback(async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      await fetch('/api/csrf-token', { credentials: 'same-origin' });
-      const res = await fetchWithAuth('/api/users', {
-        method: 'POST',
-        body: JSON.stringify({
-          pageNo,
-          pageSize,
-          ...(searchDebounced && { search: searchDebounced }),
-        }),
-      });
-      if (res.status === 403) {
-        const errData = await res.json().catch(() => ({}));
-        const msg = (errData as { message?: string })?.message;
-        setError(msg?.includes('XSRF') ? `${msg} Set NEXTAUTH_XSRF_TOKEN in .env (encrypted value).` : `Forbidden (403). ${msg || ''}`);
-        setList([]);
-        setTotalElements(0);
-        return;
-      }
-      if (!res.ok) {
-        setError(res.status === 401 ? 'Unauthorized' : `Failed to load (${res.status})`);
-        setList([]);
-        setTotalElements(0);
-        return;
-      }
-      const data = await res.json();
-      setList(normalizeList(data));
-      setTotalElements(getTotalElements(data));
-    } catch (e) {
-      setError((e as Error)?.message ?? 'Failed to load users');
-      setList([]);
-      setTotalElements(0);
+      const list = await userApi.list({ pageNo: 0, pageSize: 1000 });
+      setUsers((list ?? []).map(mapItem));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+      setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [pageNo, pageSize, searchDebounced]);
+  }, []);
+
+  const fetchRoles = useCallback(async () => {
+    try {
+      const list = await roleApi.list({ pageNo: 0, pageSize: 500 });
+      setRoles(list ?? []);
+    } catch {
+      setRoles([]);
+    }
+  }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setSearchDebounced(search.trim()), 300);
-    return () => clearTimeout(t);
-  }, [search]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (showAddModal) fetchRoles();
+  }, [showAddModal, fetchRoles]);
 
-  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
-  const canPrev = pageNo > 0;
-  const canNext = pageNo < totalPages - 1;
-
-  const handleRowClick = (user: Record<string, unknown>, e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
-    setDetailUser(user);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  const closeDetail = () => {
-    setDetailUser(null);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.emailAddress.trim()) newErrors.emailAddress = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) newErrors.emailAddress = 'Invalid email format';
+    if (!formData.password.trim()) newErrors.password = editingId ? 'Enter new password to update (required by backend)' : 'Password is required';
+    if (formData.password && formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    if (!formData.roleId) newErrors.roleId = 'Role is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const closeCreate = () => {
-    setCreateOpen(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const body = editingId
+        ? {
+            emailAddress: formData.emailAddress.trim(),
+            mobileNumber: formData.mobileNumber.trim() || undefined,
+            password: formData.password.trim(),
+            roleId: formData.roleId,
+            userDetail: formData.name.trim() ? { name: formData.name.trim() } : undefined,
+          }
+        : {
+            emailAddress: formData.emailAddress.trim(),
+            mobileNumber: formData.mobileNumber.trim() || undefined,
+            password: formData.password.trim(),
+            roleId: formData.roleId,
+            status: 'ACTIVE' as const,
+            userDetail: formData.name.trim() ? { name: formData.name.trim() } : undefined,
+          };
+      if (editingId) {
+        await userApi.update(editingId, body as Parameters<typeof userApi.update>[1]);
+        await Swal.fire({ title: 'Updated', text: 'User updated successfully.', icon: 'success', timer: 1500, showConfirmButton: false });
+      } else {
+        await userApi.create(body as Parameters<typeof userApi.create>[0]);
+        await Swal.fire({ title: 'Created', text: 'User created successfully.', icon: 'success', timer: 1500, showConfirmButton: false });
+      }
+      await fetchUsers();
+      setShowAddModal(false);
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Operation failed');
+      setErrors((prev) => ({ ...prev, submit: err instanceof Error ? err.message : 'Operation failed' }));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleCreated = () => {
-    closeCreate();
-    load();
+  const resetForm = () => {
+    setFormData({
+      emailAddress: '',
+      mobileNumber: '',
+      password: '',
+      roleId: '',
+      name: '',
+    });
+    setErrors({});
+    setEditingId(null);
   };
 
-  const handleUpdated = () => {
-    closeDetail();
-    load();
+  const handleEdit = (row: ReturnType<typeof mapItem>) => {
+    setFormData({
+      emailAddress: row.emailAddress,
+      mobileNumber: row.mobileNumber ?? '',
+      password: '',
+      roleId: row.roleId ?? '',
+      name: row.name ?? '',
+    });
+    setEditingId(row.id);
+    setShowAddModal(true);
   };
+
+  const handleChangeStatus = async (row: ReturnType<typeof mapItem>) => {
+    const newStatus = row.status === 'active' ? 'INACTIVE' : 'ACTIVE';
+    const result = await Swal.fire({
+      title: 'Update status?',
+      html: `Set <strong>"${row.emailAddress}"</strong> to <strong>${newStatus === 'ACTIVE' ? 'Active' : 'Inactive'}</strong>?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'No',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await userApi.changeStatus(row.id, newStatus);
+      await fetchUsers();
+      await Swal.fire({ title: 'Updated', text: 'Status updated.', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Failed', icon: 'error' });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await Swal.fire({
+      title: 'Delete user?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#b91c1c',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await userApi.delete(id);
+      await fetchUsers();
+      await Swal.fire({ title: 'Deleted', text: 'User deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Delete failed', icon: 'error' });
+    }
+  };
+
+  const filtered = users.filter(
+    (u) =>
+      u.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.mobileNumber && u.mobileNumber.includes(searchTerm)) ||
+      (u.roleName && u.roleName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const sorted = [...filtered].sort((a, b) => {
+    let aVal: string | undefined;
+    let bVal: string | undefined;
+    switch (sortKey) {
+      case 'name':
+        aVal = (a.name || a.emailAddress).toLowerCase();
+        bVal = (b.name || b.emailAddress).toLowerCase();
+        break;
+      case 'emailAddress':
+        aVal = a.emailAddress.toLowerCase();
+        bVal = b.emailAddress.toLowerCase();
+        break;
+      case 'mobileNumber':
+        aVal = a.mobileNumber ?? '';
+        bVal = b.mobileNumber ?? '';
+        break;
+      case 'roleName':
+        aVal = (a.roleName ?? '').toLowerCase();
+        bVal = (b.roleName ?? '').toLowerCase();
+        break;
+      case 'status':
+        aVal = a.status;
+        bVal = b.status;
+        break;
+      default:
+        return 0;
+    }
+    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    return sortDirection === 'asc' ? cmp : -cmp;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginated = sorted.slice(startIndex, endIndex);
+  const hasNoData = filtered.length === 0;
+  const singlePage = totalPages === 1;
+
+  const handleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const SortableTh = ({ columnKey, children, style = {} }: { columnKey: typeof sortKey; children: React.ReactNode; style?: React.CSSProperties }) => (
+    <th
+      role="button"
+      tabIndex={0}
+      onClick={() => handleSort(columnKey)}
+      onKeyDown={(e) => e.key === 'Enter' && handleSort(columnKey)}
+      className="sortable-th"
+      style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', ...style }}
+    >
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        {children}
+        <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 14 }}>
+          {sortKey === columnKey ? (
+            sortDirection === 'asc' ? (
+              <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            ) : (
+              <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            )
+          ) : (
+            <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          )}
+        </span>
+      </span>
+    </th>
+  );
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Page title + info icon (subtitle in tooltip) */}
-        <div className="mb-8 flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            User Management
-          </h1>
-          <span
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-slate-300 cursor-help text-sm font-medium"
-            title={SUBTITLE_INFO}
-          >
-            i
-          </span>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg border border-gray-200 dark:border-slate-700">
-          {/* Toolbar: search left (wider), Add right; no extra space; line below */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-gray-200 dark:border-slate-700">
-            <div className="flex-1 min-w-[200px] max-w-xl">
-              <input
-                type="search"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shrink-0"
-            >
-              Add User
-            </button>
+      <div className="organization-page">
+        <Breadcrumb items={[{ label: 'User Management' }, { label: 'Users' }]} />
+        <PageHeaderWithInfo
+          title="Users"
+          infoText="Manage system users and their roles. Assign roles and control access from here."
+        >
+          <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
+            <Plus size={16} />
+            <span>Add User</span>
+          </button>
+        </PageHeaderWithInfo>
+        {error && (
+          <div className="error-message" style={{ marginBottom: 16, padding: 12, background: '#fef2f2', color: '#b91c1c', borderRadius: 8 }}>
+            {error}
           </div>
-
-          {error && <p className="text-red-600 dark:text-red-400 mt-3">{error}</p>}
-
-          {/* Table: header a bit smaller, body loads after API */}
-          <div className="overflow-x-auto mt-0">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700">
-                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-800 dark:text-white">Name</th>
-                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-800 dark:text-white">Email</th>
-                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-800 dark:text-white">Role</th>
-                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-800 dark:text-white">Status</th>
-                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-800 dark:text-white">Actions</th>
+        )}
+        <div className="search-section">
+          <div className="search-wrapper">
+            <Search size={20} />
+            <input
+              type="text"
+              placeholder="Search by email, name, phone, or role..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              className="search-input"
+            />
+          </div>
+        </div>
+        <div className="table-container" style={{ padding: '1rem' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <SortableTh columnKey="name">Name</SortableTh>
+                <SortableTh columnKey="emailAddress">Email</SortableTh>
+                <SortableTh columnKey="mobileNumber">Phone</SortableTh>
+                <SortableTh columnKey="roleName">Role</SortableTh>
+                <SortableTh columnKey="status">Status</SortableTh>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                    Loading...
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                      Loading...
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="empty-state">
+                    <p>{users.length === 0 ? 'No users found' : 'No users match your search'}</p>
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <div className="org-name-cell">
+                        <span className="org-name">{row.name || row.emailAddress}</span>
+                      </div>
+                    </td>
+                    <td>{row.emailAddress}</td>
+                    <td>{row.mobileNumber || '—'}</td>
+                    <td>{row.roleName || '—'}</td>
+                    <td>
+                      <span className={`status-badge ${row.status}`}>
+                        {row.status === 'active' ? <Check size={14} /> : <X size={14} />}
+                        <span>{row.status === 'active' ? 'Active' : 'Inactive'}</span>
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <ActionTooltip text="Edit">
+                          <button type="button" className="btn-icon-edit" onClick={() => handleEdit(row)}>
+                            <Edit size={18} />
+                          </button>
+                        </ActionTooltip>
+                        <ActionTooltip text="Delete">
+                          <button type="button" className="btn-icon-delete" onClick={() => handleDelete(row.id)}>
+                            <Trash2 size={18} />
+                          </button>
+                        </ActionTooltip>
+                        <ActionTooltip text={row.status === 'active' ? 'Deactivate' : 'Activate'}>
+                          <button type="button" className="btn-icon-edit" onClick={() => handleChangeStatus(row)}>
+                            {row.status === 'active' ? <X size={18} /> : <Check size={18} />}
+                          </button>
+                        </ActionTooltip>
+                      </div>
                     </td>
                   </tr>
-                )}
-                {!loading && list.length === 0 && !error && (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                      No users found.
-                    </td>
-                  </tr>
-                )}
-                {!loading &&
-                  list.map((user: Record<string, unknown>, idx: number) => {
-                    const { name, email, role, status } = getUserDisplay(user);
-                    return (
-                      <tr
-                        key={String(user?.id ?? idx)}
-                        onClick={(e) => handleRowClick(user, e)}
-                        className="border-b border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
-                      >
-                        <td className="py-3 px-4 text-gray-800 dark:text-white font-medium">{name}</td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{email}</td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{role}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-1 rounded text-sm ${
-                              status.toLowerCase() === 'active'
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                            }`}
-                          >
-                            {status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setDetailUser(user)}
-                              className="text-purple-600 dark:text-purple-400 hover:underline"
-                            >
-                              View
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDetailUser(user)}
-                              className="text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {!loading && (list.length > 0 || totalElements > 0) && (
-            <div className="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Rows per page</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setPageNo(0);
-                  }}
-                  className="rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white px-2 py-1 text-sm"
-                >
-                  {PAGE_SIZES.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {totalElements} total
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={!canPrev}
-                  onClick={() => setPageNo((p) => Math.max(0, p - 1))}
-                  className="px-3 py-1 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-600"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Page {pageNo + 1} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={!canNext}
-                  onClick={() => setPageNo((p) => Math.min(totalPages - 1, p + 1))}
-                  className="px-3 py-1 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-600"
-                >
-                  Next
+                ))
+              )}
+            </tbody>
+            {!loading && (
+              <tfoot>
+                <tr>
+                  <td colSpan={6}>
+                    <div className="pagination-container">
+                      <div className="pagination-left">
+                        <label htmlFor="items-per-page" className="pagination-label">Show:</label>
+                        <select id="items-per-page" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                        <span className="pagination-label">per page</span>
+                      </div>
+                      <div className="pagination-info">
+                        Showing {hasNoData ? 0 : startIndex + 1} to {Math.min(endIndex, filtered.length)} of {filtered.length}
+                      </div>
+                      <div className="pagination-controls">
+                        <button type="button" className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+                          <ChevronLeft size={18} /><span>Previous</span>
+                        </button>
+                        <div className="pagination-numbers">
+                          {singlePage ? (
+                            <button type="button" className="pagination-number active" disabled aria-current="page">1</button>
+                          ) : (
+                            Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                              if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                return (
+                                  <button key={page} type="button" className={`pagination-number ${currentPage === page ? 'active' : ''}`} onClick={() => setCurrentPage(page)} aria-current={currentPage === page ? 'page' : undefined}>{page}</button>
+                                );
+                              }
+                              if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="pagination-ellipsis" aria-hidden>...</span>;
+                              return null;
+                            })
+                          )}
+                        </div>
+                        <button type="button" className="pagination-btn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
+                          <span>Next</span><ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+        {showAddModal && (
+          <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
+            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{editingId ? 'Edit User' : 'Add User'}</h2>
+                <button className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
+                  <X size={24} />
                 </button>
               </div>
+              <form onSubmit={handleSubmit} className="organization-form">
+                {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
+                <div className="form-group">
+                  <label htmlFor="name" className="form-label">Display Name</label>
+                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className="form-input" placeholder="Full name" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="emailAddress" className="form-label">Email <span className="required">*</span></label>
+                  <input type="email" id="emailAddress" name="emailAddress" value={formData.emailAddress} onChange={handleInputChange} className={`form-input ${errors.emailAddress ? 'error' : ''}`} placeholder="user@example.com" />
+                  {errors.emailAddress && <span className="form-error">{errors.emailAddress}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="mobileNumber" className="form-label">Mobile</label>
+                  <input type="text" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className="form-input" placeholder="+1234567890" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password" className="form-label">Password <span className="required">*</span></label>
+                  <input type="password" id="password" name="password" value={formData.password} onChange={handleInputChange} className={`form-input ${errors.password ? 'error' : ''}`} placeholder="Min 8 characters" autoComplete="new-password" />
+                  {errors.password && <span className="form-error">{errors.password}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="roleId" className="form-label">Role <span className="required">*</span></label>
+                  <select id="roleId" name="roleId" value={formData.roleId} onChange={handleInputChange} className={`form-input ${errors.roleId ? 'error' : ''}`}>
+                    <option value="">— Select role —</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  {errors.roleId && <span className="form-error">{errors.roleId}</span>}
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
+                  <button type="submit" className="btn-primary btn-small" disabled={submitting}>
+                    <Save size={16} /><span>{editingId ? 'Update' : 'Create'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* View / Edit detail modal */}
-      {detailUser && (
-        <UserDetailModal
-          user={detailUser}
-          onClose={closeDetail}
-          onSaved={handleUpdated}
-        />
-      )}
-
-      {/* Create user modal */}
-      {createOpen && (
-        <UserCreateModal
-          onClose={closeCreate}
-          onCreated={handleCreated}
-        />
-      )}
     </DashboardLayout>
-  );
-}
-
-function UserDetailModal({
-  user,
-  onClose,
-  onSaved,
-}: {
-  user: Record<string, unknown>;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const detail = user?.userDetail as Record<string, unknown> | undefined;
-  const { name, email, role, status } = getUserDisplay(user);
-  const mobile = user?.mobileNumber ?? detail?.phoneNumber ?? '—';
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div
-        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">User details</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Name</span>
-            <p className="font-medium text-gray-800 dark:text-white">{name}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>
-            <p className="font-medium text-gray-800 dark:text-white">{email}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Mobile</span>
-            <p className="font-medium text-gray-800 dark:text-white">{String(mobile)}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Role</span>
-            <p className="font-medium text-gray-800 dark:text-white">{role}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
-            <p className="font-medium text-gray-800 dark:text-white">{status}</p>
-          </div>
-        </div>
-        <div className="p-6 border-t border-gray-200 dark:border-slate-700 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            onClick={() => { onSaved(); }}
-            className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
-          >
-            Edit (placeholder)
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function UserCreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div
-        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Add User</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-        <div className="p-6 text-gray-600 dark:text-gray-400 text-sm">
-          Create user form (placeholder). Wire to backend create API when ready.
-        </div>
-        <div className="p-6 border-t border-gray-200 dark:border-slate-700 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onCreated}
-            className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
-          >
-            Create (placeholder)
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

@@ -37,16 +37,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST list users (paginated). Body: { pageNo, pageSize, sortBy?, sortDirection?, search? }. Forwards to backend GET list with query params. */
+/** POST list users (paginated). Body: { pageNo, pageSize, sortBy?, sortDirection?, search? }. Forwards to backend POST list with body. */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const payload = paginatePayload(body);
-    const url = backendUrl(LIST_PATH) + toQueryString(payload);
+    const url = backendUrl(LIST_PATH);
     const headers = backendHeaders(request);
     const res = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers,
+      body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
     if (res.status === 403) {

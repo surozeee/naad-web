@@ -98,6 +98,8 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             { label: 'Country', href: '/master-setting/general/country' },
             { label: 'State', href: '/master-setting/general/state' },
             { label: 'District', href: '/master-setting/general/district' },
+            { label: 'Local Unit Type', href: '/master-setting/general/local-unit-type' },
+            { label: 'Local Unit', href: '/master-setting/general/local-unit' },
           ]
         },
       ]

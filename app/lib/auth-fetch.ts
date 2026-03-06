@@ -63,5 +63,8 @@ export async function fetchWithAuth(
     credentials: init?.credentials ?? 'same-origin',
     headers: retryHeaders,
   });
+  if (res.status === 401) {
+    logout('/');
+  }
   return res;
 }
