@@ -149,6 +149,15 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
       ]
     },
     {
+      id: 'settings',
+      icon: '🔧',
+      label: 'Settings',
+      href: '/settings',
+      submenu: [
+        { label: 'Configuration', href: '/settings/system-settings' },
+      ]
+    },
+    {
       id: 'user-management',
       icon: '👥',
       label: 'User Management',
@@ -171,6 +180,20 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
         { label: 'Chat', href: '/event-management/chat' },
         { label: 'Puja', href: '/event-management/puja' },
         { label: 'Concert', href: '/event-management/concert' },
+      ]
+    },
+    {
+      id: 'message-management',
+      icon: '💬',
+      label: 'Message Management',
+      href: '/support',
+      submenu: [
+        { label: 'Support Message', href: '/support/support-message' },
+        { label: 'Ticket', href: '/support/ticket' },
+        { label: 'FAQ', href: '/support/faq' },
+        { label: 'FAQ Category', href: '/support/faq-category' },
+        { label: 'Message Template', href: '/support/messaging-template' },
+        { label: 'Bulk Message', href: '/support/bulk-message' },
       ]
     },
     {
