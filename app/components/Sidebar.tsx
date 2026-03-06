@@ -36,6 +36,50 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
   useEffect(() => () => clearCloseTimer(), []);
 
+  const VIEWPORT_PADDING = 12;
+
+  const adjustSubmenuUpIfNeeded = (el: HTMLElement | null, padding = VIEWPORT_PADDING) => {
+    if (!el) return;
+    const run = () => {
+      const r = el.getBoundingClientRect();
+      if (r.bottom > window.innerHeight - padding) {
+        const newTop = window.innerHeight - el.offsetHeight - padding;
+        el.style.top = `${Math.max(padding, newTop)}px`;
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  };
+
+  useEffect(() => {
+    if (!openSubmenuId || collapsed) return;
+    const submenu = submenuRefs.current[openSubmenuId];
+    if (!submenu) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const r = submenu.getBoundingClientRect();
+        if (r.bottom > window.innerHeight - VIEWPORT_PADDING) {
+          const newTop = window.innerHeight - submenu.offsetHeight - VIEWPORT_PADDING;
+          submenu.style.top = `${Math.max(VIEWPORT_PADDING, newTop)}px`;
+        }
+      });
+    });
+  }, [openSubmenuId, collapsed]);
+
+  useEffect(() => {
+    if (!collapsedOpenId || !collapsed) return;
+    const submenu = submenuRefs.current[`collapsed-${collapsedOpenId}`];
+    if (!submenu) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const r = submenu.getBoundingClientRect();
+        if (r.bottom > window.innerHeight - VIEWPORT_PADDING) {
+          const newTop = window.innerHeight - submenu.offsetHeight - VIEWPORT_PADDING;
+          submenu.style.top = `${Math.max(VIEWPORT_PADDING, newTop)}px`;
+        }
+      });
+    });
+  }, [collapsedOpenId, collapsed]);
+
   const menuItems = [
     {
       id: 'horoscope',
@@ -202,10 +246,18 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                 <div
                   key={item.id}
                   className="relative group"
-                  onMouseEnter={() => {
+                  onMouseEnter={(e) => {
                     if (hasSubmenu) {
                       clearCloseTimer();
                       setCollapsedOpenId(item.id);
+                      const submenu = submenuRefs.current[`collapsed-${item.id}`];
+                      if (submenu) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        submenu.style.position = 'fixed';
+                        submenu.style.left = `${rect.right}px`;
+                        submenu.style.top = `${rect.top}px`;
+                        adjustSubmenuUpIfNeeded(submenu);
+                      }
                     }
                   }}
                   onMouseLeave={() => hasSubmenu && scheduleClose(() => setCollapsedOpenId(null))}
@@ -224,6 +276,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                   {/* Expand submenu with all links – same alignment as menu, delay before close */}
                   {hasSubmenu && item.submenu && (
                     <div
+                      ref={(el) => { submenuRefs.current[`collapsed-${item.id}`] = el; }}
                       className={`absolute left-full ml-0 top-0 min-w-[220px] py-2 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-600 transition-opacity duration-200 z-[9999] ${
                         collapsedOpenId === item.id ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'
                       }`}
@@ -336,6 +389,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                           const rect = e.currentTarget.getBoundingClientRect();
                           submenu.style.left = `${rect.right}px`;
                           submenu.style.top = `${rect.top}px`;
+                          adjustSubmenuUpIfNeeded(submenu);
                         }
                       }}
                       onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
@@ -366,6 +420,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                       const rect = e.currentTarget.getBoundingClientRect();
                                       nestedSubmenu.style.left = `${rect.right + 4}px`;
                                       nestedSubmenu.style.top = `${rect.top}px`;
+                                      adjustSubmenuUpIfNeeded(nestedSubmenu);
                                     }
                                   }}
                                 >
