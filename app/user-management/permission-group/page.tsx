@@ -153,7 +153,7 @@ export default function PermissionGroupManagement() {
     name: '',
     code: '',
     description: '',
-    status: 'active' as 'active' | 'inactive',
+    status: 'active' as 'active' | 'inactive' | 'deleted',
     lastChild: false,
     parentId: '',
     permissionIds: [] as string[],
