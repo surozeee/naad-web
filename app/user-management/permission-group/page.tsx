@@ -296,11 +296,12 @@ export default function PermissionGroupManagement() {
 
   const handleEdit = (row: ReturnType<typeof mapItem>) => {
     const groupPermissionIds = (permissions.filter((p) => p.permissionGroupId === row.id).map((p) => p.id)) ?? [];
+    const status = row.status === 'active' || row.status === 'inactive' || row.status === 'deleted' ? row.status : 'inactive';
     setFormData({
       name: row.name,
       code: row.code,
       description: row.description,
-      status: row.status,
+      status,
       lastChild: row.hasSubChild === 'FALSE',
       parentId: row.parentId ?? '',
       permissionIds: groupPermissionIds,

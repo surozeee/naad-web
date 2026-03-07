@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   User,
@@ -70,7 +70,7 @@ function mapApiProfileToUserProfile(api: ProfileApiResponse | null): UserProfile
   };
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'details' | 'password'>(
@@ -542,5 +542,21 @@ export default function ProfilePage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardLayout>
+          <div className="flex items-center justify-center min-h-[200px] text-slate-500 dark:text-slate-400">
+            Loading...
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <ProfilePageContent />
+    </Suspense>
   );
 }

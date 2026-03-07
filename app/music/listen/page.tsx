@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '../../components/DashboardLayout';
 import { musicApi, musicTypeApi } from '@/app/lib/crm.service';
@@ -46,7 +46,7 @@ function formatDuration(seconds: number): string {
 
 const PAGE_SIZE = 12;
 
-export default function ListenPage() {
+function ListenPageContent() {
   const searchParams = useSearchParams();
   const [typeOptions, setTypeOptions] = useState<ActiveMusicTypeOption[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -458,5 +458,21 @@ export default function ListenPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function ListenPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardLayout>
+          <div className="flex items-center justify-center min-h-[200px] text-slate-500 dark:text-slate-400">
+            Loading...
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <ListenPageContent />
+    </Suspense>
   );
 }

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Footer from "./components/Footer";
 import { useAuthModal } from "./components/AuthModalContext";
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const authModal = useAuthModal();
 
@@ -353,5 +353,17 @@ export default function Home() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <span className="text-slate-500 dark:text-slate-400">Loading...</span>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -6,6 +6,7 @@ import {
   Plus,
   Search,
   Edit,
+  Trash2,
   X,
   Check,
   Save,
