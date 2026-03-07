@@ -17,7 +17,7 @@ process.env.NEXT_PUBLIC_FRONTEND_URL = 'https://naad.jojolapatech.com';
 process.env.NEXT_PUBLIC_OAUTH_BASE_URL = 'https://auth-naad.jojolaptech.com';
 process.env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'true';
 process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE = 'false';
-process.env.PORT = '4200';
+process.env.PORT = '4000';
 
 console.log('📋 Environment variables set:');
 console.log(`  NODE_ENV: ${process.env.NODE_ENV}`);

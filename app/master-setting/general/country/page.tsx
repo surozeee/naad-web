@@ -146,7 +146,7 @@ export default function CountrySetup() {
     currencyIds: [] as string[],
     regionId: '',
     flag: '',
-    status: 'active' as 'active' | 'inactive',
+    status: 'active' as 'active' | 'inactive' | 'deleted',
     isDefault: false,
   });
 
