@@ -12,9 +12,9 @@ console.log('🚀 Starting production build...');
 // Set production environment variables
 process.env.NODE_ENV = 'production';
 process.env.NEXT_PUBLIC_ENVIRONMENT = 'production';
-process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api-hrmsuite.jojolapatech.com/api/v2';
-process.env.NEXT_PUBLIC_FRONTEND_URL = 'https://hrmsuite.jojolapatech.com';
-process.env.NEXT_PUBLIC_OAUTH_BASE_URL = 'https://iam-hrmsuite.jojolaptech.com';
+process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api-naad.jojolapatech.com/api/v2';
+process.env.NEXT_PUBLIC_FRONTEND_URL = 'https://naad.jojolapatech.com';
+process.env.NEXT_PUBLIC_OAUTH_BASE_URL = 'https://auth-naad.jojolaptech.com';
 process.env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'true';
 process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE = 'false';
 process.env.PORT = '4200';

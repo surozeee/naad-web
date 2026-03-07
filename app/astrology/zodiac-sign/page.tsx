@@ -367,9 +367,10 @@ export default function ZodiacSignPage() {
                         <span className="org-name">{row.name}</span>
                       </div>
                     </td>
+                    <td>{ZODIAC_SIGN_OPTIONS.find((o) => o.value === row.zodiacSign)?.label ?? row.zodiacSign ?? '—'}</td>
                     <td style={{ maxWidth: 180 }}>{row.description ? (row.description.length > 50 ? row.description.slice(0, 50) + '…' : row.description) : '—'}</td>
                     <td>{row.startingName || '—'}</td>
-                    <td>{row.scopeName || '—'}</td>
+                    <td>{row.daysRange || '—'}</td>
                     <td>
                       {row.logoUrl ? (
                         <a href={row.logoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>Link</a>
