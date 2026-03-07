@@ -29,7 +29,7 @@ export async function fetchWithAuth(
   }
   const headers = new Headers(init?.headers);
   if (xsrf) headers.set('X-XSRF-TOKEN', xsrf);
-  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  if (!headers.has('Content-Type') && !(init?.body instanceof FormData)) headers.set('Content-Type', 'application/json');
 
   let res = await fetch(input, {
     ...init,
@@ -65,7 +65,7 @@ export async function fetchWithAuth(
     // ignore; retry will use cookie
   }
   if (xsrf) retryHeaders.set('X-XSRF-TOKEN', xsrf);
-  if (!retryHeaders.has('Content-Type')) retryHeaders.set('Content-Type', 'application/json');
+  if (!retryHeaders.has('Content-Type') && !(init?.body instanceof FormData)) retryHeaders.set('Content-Type', 'application/json');
 
   res = await fetch(input, {
     ...init,

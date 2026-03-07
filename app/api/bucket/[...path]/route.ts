@@ -27,7 +27,8 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
       return NextResponse.json({ message: 'Bucket path required' }, { status: 400 });
     }
     const backendPath = `/bucket/${pathSegments.join('/')}`;
-    const url = backendUrl(backendPath);
+    const search = request.nextUrl.searchParams.toString();
+    const url = backendUrl(backendPath) + (search ? `?${search}` : '');
     const forwardHeaders = backendHeaders(request);
     BUCKET_HEADERS.forEach((h) => {
       const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());

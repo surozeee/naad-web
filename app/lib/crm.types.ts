@@ -49,20 +49,23 @@ export interface MusicTypeRequest {
   description?: string;
 }
 
-export interface MusicTypeListRequest extends CrmListRequest {}
+export interface MusicTypeListRequest extends CrmListRequest {
+  /** ACTIVE | INACTIVE | DELETED; when not set, list returns all statuses */
+  status?: StatusEnum;
+}
 
 // ---- Music ----
 export interface MusicRequest {
   name: string;
   description?: string;
   mp3Url?: string;
-  /** Duration in seconds */
-  durationSeconds?: number;
   musicTypeId?: string;
 }
 
 export interface MusicListRequest extends CrmListRequest {
   musicTypeId?: string;
+  /** ACTIVE | INACTIVE | DELETED; when not set, list returns all statuses */
+  status?: StatusEnum;
 }
 
 // ---- Puja ----

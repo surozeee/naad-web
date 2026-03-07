@@ -138,10 +138,26 @@ async function musicUploadRequest(formData: FormData): Promise<GlobalResponse<un
   return json;
 }
 
+async function musicUpdateWithFileRequest(id: string, formData: FormData): Promise<GlobalResponse<unknown>> {
+  const name = (formData.get('name') as string) || 'Music';
+  const url = `/api/bucket/music/update?name=${encodeURIComponent(name)}`;
+  const res = await fetchWithAuth(url, {
+    method: 'PUT',
+    headers: { id },
+    body: formData,
+    credentials: 'same-origin',
+  });
+  const json = (await res.json().catch(() => ({}))) as GlobalResponse<unknown>;
+  if (!res.ok) throw new Error(json.message ?? json.code ?? `HTTP ${res.status}`);
+  return json;
+}
+
 export const musicApi = {
   ...crud<unknown, MusicRequest, MusicRequest, MusicListRequest>('music', BUCKET_BASE),
-  /** Multipart file upload: formData must include 'file' (File) and 'name' (string); optional: description, musicTypeId, durationSeconds */
+  /** Multipart file upload: formData must include 'file' (File) and 'name' (string); optional: description, musicTypeId */
   upload: musicUploadRequest,
+  /** Multipart update: formData can include optional 'file' (File), and optional name, description, musicTypeId */
+  updateWithFile: musicUpdateWithFileRequest,
 };
 export const pujaApi = crud<unknown, PujaRequest, PujaRequest, PujaListRequest>('puja');
 export const eventCategoryApi = crud<unknown, EventCategoryRequest, EventCategoryRequest, EventCategoryListRequest>('event-category', EVENT_BASE);

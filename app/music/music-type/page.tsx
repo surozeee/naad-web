@@ -49,8 +49,9 @@ function mapApiToItem(raw: Record<string, unknown>): MusicTypeItem {
 export default function MusicTypePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const PAGE_SIZE = 12;
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
   const [items, setItems] = useState<MusicTypeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,27 +60,31 @@ export default function MusicTypePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<'name' | 'type' | 'description' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [filterStatus, setFilterStatus] = useState<string>('');
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await musicTypeApi.list({
-        pageNo: 0,
-        pageSize: 500,
+        pageNo: currentPage - 1,
+        pageSize: PAGE_SIZE,
         searchKey: searchTerm || undefined,
-        sortBy: 'type',
-        sortDirection: 'asc',
+        sortBy: sortKey,
+        sortDirection,
+        status: filterStatus || undefined,
       });
       const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
       setItems(list.map(mapApiToItem));
+      setTotalElements(res.totalElements ?? list.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load music types');
       setItems([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
+  }, [currentPage, searchTerm, sortKey, sortDirection, filterStatus]);
 
   useEffect(() => {
     fetchItems();
@@ -171,22 +176,9 @@ export default function MusicTypePage() {
     }
   };
 
-  const filtered = items.filter(
-    (i) =>
-      (i.name && i.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      i.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  const sorted = [...filtered].sort((a, b) => {
-    const aVal = String(a[sortKey] ?? '').toLowerCase();
-    const bVal = String(b[sortKey] ?? '').toLowerCase();
-    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-    return sortDirection === 'asc' ? cmp : -cmp;
-  });
-  const totalPages = Math.max(1, Math.ceil(sorted.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginated = sorted.slice(startIndex, startIndex + itemsPerPage);
-  const hasNoData = filtered.length === 0;
+  const totalPages = Math.max(1, Math.ceil(totalElements / PAGE_SIZE));
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const hasNoData = items.length === 0 && !loading;
 
   const handleSort = (key: typeof sortKey) => {
     if (sortKey === key) setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -239,17 +231,28 @@ export default function MusicTypePage() {
             {error}
           </div>
         )}
-        <div className="search-section">
-          <div className="search-wrapper">
+        <div className="search-section" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="search-wrapper" style={{ flex: 1, minWidth: 200 }}>
             <Search size={20} />
             <input
               type="text"
-              placeholder="Search by type or description..."
+              placeholder="Search by name, type or description..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="search-input"
             />
           </div>
+          <select
+            className="form-input"
+            style={{ width: 160 }}
+            value={filterStatus}
+            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="">All status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="DELETED">Deleted</option>
+          </select>
         </div>
         <div className="table-container" style={{ padding: '1rem' }}>
           <table className="data-table">
@@ -274,7 +277,7 @@ export default function MusicTypePage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row) => (
+                items.map((row) => (
                   <tr key={row.id}>
                     <td>
                       <div className="org-name-cell">
@@ -322,17 +325,10 @@ export default function MusicTypePage() {
                   <td colSpan={5}>
                     <div className="pagination-container">
                       <div className="pagination-left">
-                        <label htmlFor="items-per-page-mt" className="pagination-label">Show:</label>
-                        <select id="items-per-page-mt" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                          <option value={5}>5</option>
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                          <option value={50}>50</option>
-                        </select>
-                        <span className="pagination-label">per page</span>
+                        <span className="pagination-label">{PAGE_SIZE} per page</span>
                       </div>
                       <div className="pagination-info">
-                        Showing {hasNoData ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filtered.length)} of {filtered.length}
+                        Showing {hasNoData ? 0 : startIndex + 1} to {Math.min(startIndex + PAGE_SIZE, totalElements)} of {totalElements}
                       </div>
                       <div className="pagination-controls">
                         <button type="button" className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>

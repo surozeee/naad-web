@@ -33,7 +33,6 @@ interface MusicItem {
   name: string;
   description: string;
   mp3Url: string;
-  durationSeconds?: number;
   musicTypeId: string;
   musicTypeName?: string;
   status: 'active' | 'inactive' | 'deleted';
@@ -47,7 +46,6 @@ function mapApiToItem(raw: Record<string, unknown>): MusicItem {
     name: String(raw.name ?? ''),
     description: String(raw.description ?? ''),
     mp3Url: String(raw.mp3Url ?? ''),
-    durationSeconds: raw.durationSeconds != null ? Number(raw.durationSeconds) : undefined,
     musicTypeId: raw.musicTypeId ? String(raw.musicTypeId) : (musicType?.id ? String(musicType.id) : ''),
     musicTypeName: musicType?.type ? String(musicType.type) : undefined,
     status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
@@ -57,19 +55,22 @@ function mapApiToItem(raw: Record<string, unknown>): MusicItem {
 export default function MusicPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const PAGE_SIZE = 12;
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
   const [items, setItems] = useState<MusicItem[]>([]);
   const [musicTypes, setMusicTypes] = useState<MusicTypeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<MusicRequest & { durationSeconds?: number }>({ name: '', description: '', mp3Url: '', musicTypeId: '', durationSeconds: undefined });
+  const [formData, setFormData] = useState<MusicRequest>({ name: '', description: '', mp3Url: '', musicTypeId: '' });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [updateFile, setUpdateFile] = useState<File | null>(null);
   const [createMode, setCreateMode] = useState<'url' | 'upload'>('url');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterMusicTypeId, setFilterMusicTypeId] = useState<string>('');
-  const [sortKey, setSortKey] = useState<'name' | 'description' | 'musicTypeName' | 'durationSeconds' | 'status'>('name');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [sortKey, setSortKey] = useState<'name' | 'description' | 'musicTypeName' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const fetchMusicTypes = useCallback(async () => {
@@ -87,22 +88,25 @@ export default function MusicPage() {
     setError(null);
     try {
       const res = await musicApi.list({
-        pageNo: 0,
-        pageSize: 500,
+        pageNo: currentPage - 1,
+        pageSize: PAGE_SIZE,
         searchKey: searchTerm || undefined,
         musicTypeId: filterMusicTypeId || undefined,
-        sortBy: 'name',
-        sortDirection: 'asc',
+        status: filterStatus || undefined,
+        sortBy: sortKey === 'musicTypeName' ? 'musicType.name' : sortKey,
+        sortDirection,
       });
       const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
       setItems(list.map(mapApiToItem));
+      setTotalElements(res.totalElements ?? list.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load music');
       setItems([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, filterMusicTypeId]);
+  }, [currentPage, searchTerm, filterMusicTypeId, filterStatus, sortKey, sortDirection]);
 
   useEffect(() => {
     fetchMusicTypes();
@@ -130,15 +134,23 @@ export default function MusicPage() {
     if (editingId) {
       if (!validateForm()) return;
       setError(null);
-      const body: MusicRequest = {
-        name: formData.name.trim(),
-        description: formData.description?.trim() || undefined,
-        mp3Url: formData.mp3Url?.trim() || undefined,
-        durationSeconds: formData.durationSeconds,
-        musicTypeId: formData.musicTypeId || undefined,
-      };
       try {
-        await musicApi.update(editingId, body);
+        if (updateFile) {
+          const fd = new FormData();
+          fd.append('file', updateFile);
+          fd.append('name', (formData.name?.trim() || 'Music'));
+          if (formData.description?.trim()) fd.append('description', formData.description.trim());
+          if (formData.musicTypeId) fd.append('musicTypeId', formData.musicTypeId);
+          await musicApi.updateWithFile(editingId, fd);
+        } else {
+          const body: MusicRequest = {
+            name: formData.name.trim(),
+            description: formData.description?.trim() || undefined,
+            mp3Url: formData.mp3Url?.trim() || undefined,
+            musicTypeId: formData.musicTypeId || undefined,
+          };
+          await musicApi.update(editingId, body);
+        }
         await Swal.fire({ title: 'Updated', text: 'Music updated.', icon: 'success', timer: 1500, showConfirmButton: false });
         await fetchItems();
         setShowAddModal(false);
@@ -157,10 +169,9 @@ export default function MusicPage() {
       try {
         const fd = new FormData();
         fd.append('file', uploadFile);
-        fd.append('name', formData.name.trim());
+        fd.append('name', (formData.name?.trim() || uploadFile.name || 'Music'));
         if (formData.description?.trim()) fd.append('description', formData.description.trim());
         if (formData.musicTypeId) fd.append('musicTypeId', formData.musicTypeId);
-        if (formData.durationSeconds != null) fd.append('durationSeconds', String(formData.durationSeconds));
         await musicApi.upload(fd);
         await Swal.fire({ title: 'Created', text: 'Music uploaded.', icon: 'success', timer: 1500, showConfirmButton: false });
         await fetchItems();
@@ -177,7 +188,6 @@ export default function MusicPage() {
       name: formData.name.trim(),
       description: formData.description?.trim() || undefined,
       mp3Url: formData.mp3Url?.trim() || undefined,
-      durationSeconds: formData.durationSeconds,
       musicTypeId: formData.musicTypeId || undefined,
     };
     try {
@@ -192,8 +202,9 @@ export default function MusicPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', mp3Url: '', musicTypeId: '', durationSeconds: undefined });
+    setFormData({ name: '', description: '', mp3Url: '', musicTypeId: '' });
     setUploadFile(null);
+    setUpdateFile(null);
     setCreateMode('url');
     setErrors({});
     setEditingId(null);
@@ -205,11 +216,11 @@ export default function MusicPage() {
       description: row.description || '',
       mp3Url: row.mp3Url || '',
       musicTypeId: row.musicTypeId || '',
-      durationSeconds: row.durationSeconds,
     });
     setEditingId(row.id);
     setCreateMode('url');
     setUploadFile(null);
+    setUpdateFile(null);
     setShowAddModal(true);
   };
 
@@ -253,28 +264,9 @@ export default function MusicPage() {
     }
   };
 
-  const filtered = items.filter(
-    (i) =>
-      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (i.musicTypeName && i.musicTypeName.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortKey === 'durationSeconds') {
-      const aVal = a.durationSeconds ?? -1;
-      const bVal = b.durationSeconds ?? -1;
-      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      return sortDirection === 'asc' ? cmp : -cmp;
-    }
-    const aVal = String(sortKey === 'musicTypeName' ? a.musicTypeName : a[sortKey] ?? '').toLowerCase();
-    const bVal = String(sortKey === 'musicTypeName' ? b.musicTypeName : b[sortKey] ?? '').toLowerCase();
-    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-    return sortDirection === 'asc' ? cmp : -cmp;
-  });
-  const totalPages = Math.max(1, Math.ceil(sorted.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginated = sorted.slice(startIndex, startIndex + itemsPerPage);
-  const hasNoData = filtered.length === 0;
+  const totalPages = Math.max(1, Math.ceil(totalElements / PAGE_SIZE));
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const hasNoData = items.length === 0 && !loading;
 
   const handleSort = (key: typeof sortKey) => {
     if (sortKey === key) setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -349,6 +341,17 @@ export default function MusicPage() {
               <option key={mt.id} value={mt.id}>{mt.type}</option>
             ))}
           </select>
+          <select
+            className="form-input"
+            style={{ width: 160 }}
+            value={filterStatus}
+            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="">All status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="DELETED">Deleted</option>
+          </select>
         </div>
         <div className="table-container" style={{ padding: '1rem' }}>
           <table className="data-table">
@@ -358,7 +361,6 @@ export default function MusicPage() {
                 <SortableTh columnKey="description">Description</SortableTh>
                 <SortableTh columnKey="musicTypeName">Music Type</SortableTh>
                 <th>MP3 URL</th>
-                <SortableTh columnKey="durationSeconds">Duration</SortableTh>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
               </tr>
@@ -366,16 +368,16 @@ export default function MusicPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={7} className="empty-state">
+                  <td colSpan={6} className="empty-state">
                     <p>{items.length === 0 ? 'No music found' : 'No music match your search'}</p>
                   </td>
                 </tr>
               ) : (
-                paginated.map((row) => (
+                items.map((row) => (
                   <tr key={row.id}>
                     <td>
                       <div className="org-name-cell">
@@ -393,7 +395,6 @@ export default function MusicPage() {
                         '—'
                       )}
                     </td>
-                    <td>{row.durationSeconds != null ? `${Math.floor(row.durationSeconds / 60)}:${String(row.durationSeconds % 60).padStart(2, '0')}` : '—'}</td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
                         {row.status === 'active' && <Check size={14} />}
@@ -428,20 +429,13 @@ export default function MusicPage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={6}>
                     <div className="pagination-container">
                       <div className="pagination-left">
-                        <label htmlFor="items-per-page-music" className="pagination-label">Show:</label>
-                        <select id="items-per-page-music" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                          <option value={5}>5</option>
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                          <option value={50}>50</option>
-                        </select>
-                        <span className="pagination-label">per page</span>
+                        <span className="pagination-label">{PAGE_SIZE} per page</span>
                       </div>
                       <div className="pagination-info">
-                        Showing {hasNoData ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filtered.length)} of {filtered.length}
+                        Showing {hasNoData ? 0 : startIndex + 1} to {Math.min(startIndex + PAGE_SIZE, totalElements)} of {totalElements}
                       </div>
                       <div className="pagination-controls">
                         <button type="button" className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
@@ -520,6 +514,19 @@ export default function MusicPage() {
                   <label htmlFor="description" className="form-label">Description</label>
                   <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
                 </div>
+                {editingId && (
+                  <div className="form-group">
+                    <label htmlFor="updateMusicFile" className="form-label">Replace audio file</label>
+                    <input
+                      type="file"
+                      id="updateMusicFile"
+                      accept="audio/mpeg,audio/mp3,audio/*,.mp3,.wav,.ogg"
+                      onChange={(e) => setUpdateFile(e.target.files?.[0] ?? null)}
+                      className="form-input"
+                    />
+                    {updateFile && <span style={{ fontSize: 12, color: '#64748b' }}>{updateFile.name}</span>}
+                  </div>
+                )}
                 {(!editingId && createMode === 'url' || editingId) && (
                   <div className="form-group">
                     <label htmlFor="mp3Url" className="form-label">MP3 URL</label>
@@ -534,19 +541,6 @@ export default function MusicPage() {
                       <option key={mt.id} value={mt.id}>{mt.type}</option>
                     ))}
                   </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="durationSeconds" className="form-label">Duration (seconds)</label>
-                  <input
-                    type="number"
-                    id="durationSeconds"
-                    name="durationSeconds"
-                    min={0}
-                    value={formData.durationSeconds ?? ''}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, durationSeconds: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                    className="form-input"
-                    placeholder="e.g. 180"
-                  />
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
