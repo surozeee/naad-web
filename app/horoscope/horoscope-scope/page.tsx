@@ -80,7 +80,7 @@ export default function HoroscopeScopePage() {
   const [formData, setFormData] = useState<HoroscopeScopeRequest>({ zodiacSign: 'ARIES', scope: 'DAILY', description: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<'scope' | 'description' | 'status'>('scope');
+  const [sortKey, setSortKey] = useState<'zodiacSign' | 'scope' | 'description' | 'status'>('scope');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [submitting, setSubmitting] = useState(false);
 
