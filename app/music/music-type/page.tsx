@@ -20,10 +20,8 @@ import DashboardLayout from '../../components/DashboardLayout';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
-import { musicTypeApi } from '@/app/lib/crm.service';
+import { musicTypeApi, type MusicTypeEnumItem } from '@/app/lib/crm.service';
 import type { MusicTypeRequest } from '@/app/lib/crm.types';
-
-const MUSIC_TYPE_OPTIONS = ['Devotional Music', 'Mantras', 'Bhajans', 'Chants'];
 
 interface MusicTypeItem {
   id: string;
@@ -61,6 +59,16 @@ export default function MusicTypePage() {
   const [sortKey, setSortKey] = useState<'name' | 'type' | 'description' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [typeOptions, setTypeOptions] = useState<MusicTypeEnumItem[]>([]);
+
+  const fetchEnumList = useCallback(async () => {
+    try {
+      const list = await musicTypeApi.listEnum();
+      setTypeOptions(list);
+    } catch {
+      setTypeOptions([]);
+    }
+  }, []);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -85,6 +93,10 @@ export default function MusicTypePage() {
       setLoading(false);
     }
   }, [currentPage, searchTerm, sortKey, sortDirection, filterStatus]);
+
+  useEffect(() => {
+    fetchEnumList();
+  }, [fetchEnumList]);
 
   useEffect(() => {
     fetchItems();
@@ -385,8 +397,8 @@ export default function MusicTypePage() {
                     className={`form-input ${errors.type ? 'error' : ''}`}
                   >
                     <option value="">— Select type —</option>
-                    {MUSIC_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
+                    {typeOptions.map((opt) => (
+                      <option key={opt.name} value={opt.value}>{opt.value}</option>
                     ))}
                   </select>
                   {errors.type && <span className="form-error">{errors.type}</span>}

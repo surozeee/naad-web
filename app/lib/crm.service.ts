@@ -124,8 +124,22 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
 /** Event-Service: /api/v2/event/horoscope-scope/* and /api/v2/event/zodiac-sign/* */
 export const horoscopeScopeApi = crud<unknown, HoroscopeScopeRequest, HoroscopeScopeRequest, HoroscopeScopeListRequest>('horoscope-scope', EVENT_BASE);
 export const zodiacSignApi = crud<unknown, ZodiacSignRequest, ZodiacSignRequest, ZodiacSignListRequest>('zodiac-sign', EVENT_BASE);
+/** Music type enum item from GET /music-type/enum */
+export interface MusicTypeEnumItem {
+  name: string;
+  value: string;
+}
+
 /** Bucket-Service: /api/v2/bucket/music-type/* and /api/v2/bucket/music/* */
-export const musicTypeApi = crud<unknown, MusicTypeRequest, MusicTypeRequest, MusicTypeListRequest>('music-type', BUCKET_BASE);
+export const musicTypeApi = {
+  ...crud<unknown, MusicTypeRequest, MusicTypeRequest, MusicTypeListRequest>('music-type', BUCKET_BASE),
+  /** List music type enum values (name + value) from backend */
+  listEnum: async (): Promise<MusicTypeEnumItem[]> => {
+    const r = await request<MusicTypeEnumItem[]>('GET', 'music-type/enum', { base: BUCKET_BASE });
+    const list = (r as { data?: MusicTypeEnumItem[] }).data ?? (r as { result?: MusicTypeEnumItem[] }).result;
+    return Array.isArray(list) ? list : [];
+  },
+};
 
 async function musicUploadRequest(formData: FormData): Promise<GlobalResponse<unknown>> {
   const res = await fetchWithAuth('/api/bucket/music/upload', {

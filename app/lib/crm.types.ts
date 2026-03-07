@@ -62,8 +62,13 @@ export interface MusicRequest {
   musicTypeId?: string;
 }
 
+/** Backend MusicTypeEnum: DEVOTIONAL, BHAJAN, MANTRA, KIRTAN, CLASSICAL, FOLK, INSTRUMENTAL, OTHER */
+export type MusicTypeEnum = string;
+
 export interface MusicListRequest extends CrmListRequest {
   musicTypeId?: string;
+  /** Filter by type: e.g. DEVOTIONAL, BHAJAN, MANTRA */
+  musicType?: MusicTypeEnum;
   /** ACTIVE | INACTIVE | DELETED; when not set, list returns all statuses */
   status?: StatusEnum;
 }
