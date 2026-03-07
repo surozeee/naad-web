@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Search,
@@ -23,6 +24,7 @@ import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
 import { eventApi, eventCategoryApi, eventImageApi } from '@/app/lib/crm.service';
 import type { EventRequest, EventImageItemRequest } from '@/app/lib/crm.types';
+import { NepaliDatepicker } from '@/app/components/ui/nepali-datepicker';
 
 interface CategoryOption {
   id: string;
@@ -76,8 +78,58 @@ function mapApiToItem(raw: Record<string, unknown>): EventItem {
   };
 }
 
+// Preload Nepali datepicker scripts so they are ready when modal opens (avoids init race)
+function useNepaliDatepickerScripts() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (document.querySelector('link[href="/nepali-datepicker/nepali-datepicker.css"]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/nepali-datepicker/nepali-datepicker.css';
+    document.head.appendChild(link);
+    const loadJQuery = (): Promise<void> => {
+      if (window.$ || window.jQuery) return Promise.resolve();
+      if (document.querySelector('script[src*="jquery"][src*="nepali-datepicker"]')) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/nepali-datepicker/jquery-3.6.0.min.js';
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject();
+        document.body.appendChild(s);
+      });
+    };
+    const loadDatepicker = (): Promise<void> => {
+      if (typeof (window.$ || window.jQuery)?.fn?.nepaliDatepicker !== 'undefined') return Promise.resolve();
+      if (document.querySelector('script[src="/nepali-datepicker/jquery-nepali-datepicker.js"]')) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/nepali-datepicker/jquery-nepali-datepicker.js';
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject();
+        document.body.appendChild(s);
+      });
+    };
+    loadJQuery().then(() => loadDatepicker()).catch(() => {});
+  }, []);
+}
+
 export default function EventPage() {
+  useNepaliDatepickerScripts();
+  const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const el = document.createElement('div');
+    el.id = 'event-modal-root';
+    document.body.appendChild(el);
+    setPortalEl(el);
+    return () => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+      setPortalEl(null);
+    };
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -85,7 +137,7 @@ export default function EventPage() {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<EventRequest & { startDateLocal?: string; endDateLocal?: string }>({
+  const [formData, setFormData] = useState<EventRequest & { startDateLocal?: string; endDateLocal?: string; startTime?: string; endTime?: string }>({
     name: '',
     description: '',
     startDate: '',
@@ -140,24 +192,51 @@ export default function EventPage() {
     fetchItems();
   }, [fetchItems]);
 
+  const buildIsoFromDateAndTime = (datePart: string, timePart: string) => {
+    if (!datePart || !timePart) return '';
+    const dateStr = datePart.includes('T') ? datePart : `${datePart}T${timePart}`;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? '' : d.toISOString();
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'startDateLocal') {
+    if (name === 'startTime') {
       setFormData((prev) => ({
         ...prev,
-        startDateLocal: value,
-        startDate: value ? new Date(value).toISOString() : '',
+        startTime: value,
+        startDate: buildIsoFromDateAndTime(prev.startDateLocal ?? '', value),
       }));
-    } else if (name === 'endDateLocal') {
+    } else if (name === 'endTime') {
       setFormData((prev) => ({
         ...prev,
-        endDateLocal: value,
-        endDate: value ? new Date(value).toISOString() : '',
+        endTime: value,
+        endDate: buildIsoFromDateAndTime(prev.endDateLocal ?? '', value),
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handleStartDateSelect = (dateStr: string) => {
+    const datePart = (dateStr || '').trim().slice(0, 10);
+    setFormData((prev) => ({
+      ...prev,
+      startDateLocal: datePart,
+      startDate: buildIsoFromDateAndTime(datePart, prev.startTime ?? '00:00'),
+    }));
+    if (errors.startDate) setErrors((prev) => ({ ...prev, startDate: '' }));
+  };
+
+  const handleEndDateSelect = (dateStr: string) => {
+    const datePart = (dateStr || '').trim().slice(0, 10);
+    setFormData((prev) => ({
+      ...prev,
+      endDateLocal: datePart,
+      endDate: buildIsoFromDateAndTime(datePart, prev.endTime ?? '00:00'),
+    }));
+    if (errors.endDate) setErrors((prev) => ({ ...prev, endDate: '' }));
   };
 
   const validateForm = () => {
@@ -230,6 +309,10 @@ export default function EventPage() {
       endDate: '',
       address: '',
       categoryId: '',
+      startDateLocal: '',
+      startTime: '',
+      endDateLocal: '',
+      endTime: '',
     });
     setImages([]);
     setErrors({});
@@ -237,6 +320,8 @@ export default function EventPage() {
   };
 
   const handleEdit = async (row: EventItem) => {
+    const startDt = formatDateTimeLocal(row.startDate);
+    const endDt = formatDateTimeLocal(row.endDate);
     setFormData({
       name: row.name,
       description: row.description || '',
@@ -244,8 +329,10 @@ export default function EventPage() {
       endDate: row.endDate,
       address: row.address || '',
       categoryId: row.categoryId || '',
-      startDateLocal: formatDateTimeLocal(row.startDate),
-      endDateLocal: formatDateTimeLocal(row.endDate),
+      startDateLocal: startDt.slice(0, 10),
+      startTime: startDt.slice(11, 16) || '00:00',
+      endDateLocal: endDt.slice(0, 10),
+      endTime: endDt.slice(11, 16) || '00:00',
     });
     setEditingId(row.id);
     setShowAddModal(true);
@@ -378,7 +465,7 @@ export default function EventPage() {
           title="Event"
           infoText="Manage events. Set name, description, start/end date, address, and category."
         >
-          <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
+          <button type="button" className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} />
             <span>Add Event</span>
           </button>
@@ -527,9 +614,9 @@ export default function EventPage() {
           </table>
         </div>
 
-        {showAddModal && (
-          <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
-            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        {portalEl && showAddModal && createPortal(
+          <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => { setShowAddModal(false); resetForm(); }}>
+            <div className="modal-content organization-modal modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
               <div className="modal-header">
                 <h2>{editingId ? 'Edit Event' : 'Add Event'}</h2>
                 <button className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
@@ -544,31 +631,51 @@ export default function EventPage() {
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
                 <div className="form-group">
-                  <label htmlFor="description" className="form-label">Description</label>
-                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="startDateLocal" className="form-label">Start date & time <span className="required">*</span></label>
-                  <input
-                    type="datetime-local"
-                    id="startDateLocal"
-                    name="startDateLocal"
-                    value={formData.startDateLocal ?? ''}
-                    onChange={handleInputChange}
-                    className={`form-input ${errors.startDate ? 'error' : ''}`}
-                  />
+                  <label className="form-label">Start date & time <span className="required">*</span></label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                      <NepaliDatepicker
+                        key="start-date"
+                        value={formData.startDateLocal ?? ''}
+                        onChange={handleStartDateSelect}
+                        placeholder="Start date"
+                        options={{ dateFormat: 'YYYY-MM-DD', useEnglishNumbers: true, dateType: 'AD', modal: true }}
+                        className={`form-input ${errors.startDate ? 'error' : ''}`}
+                      />
+                    </div>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime ?? '00:00'}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      style={{ width: 120 }}
+                    />
+                  </div>
                   {errors.startDate && <span className="form-error">{errors.startDate}</span>}
                 </div>
                 <div className="form-group">
-                  <label htmlFor="endDateLocal" className="form-label">End date & time <span className="required">*</span></label>
-                  <input
-                    type="datetime-local"
-                    id="endDateLocal"
-                    name="endDateLocal"
-                    value={formData.endDateLocal ?? ''}
-                    onChange={handleInputChange}
-                    className={`form-input ${errors.endDate ? 'error' : ''}`}
-                  />
+                  <label className="form-label">End date & time <span className="required">*</span></label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                      <NepaliDatepicker
+                        key="end-date"
+                        value={formData.endDateLocal ?? ''}
+                        onChange={handleEndDateSelect}
+                        placeholder="End date"
+                        options={{ dateFormat: 'YYYY-MM-DD', useEnglishNumbers: true, dateType: 'AD', modal: true }}
+                        className={`form-input ${errors.endDate ? 'error' : ''}`}
+                      />
+                    </div>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={formData.endTime ?? '00:00'}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      style={{ width: 120 }}
+                    />
+                  </div>
                   {errors.endDate && <span className="form-error">{errors.endDate}</span>}
                 </div>
                 <div className="form-group">
@@ -633,6 +740,10 @@ export default function EventPage() {
                     </div>
                   )}
                 </div>
+                <div className="form-group">
+                  <label htmlFor="description" className="form-label">Description</label>
+                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
+                </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
                   <button type="submit" className="btn-primary btn-small">
@@ -641,7 +752,8 @@ export default function EventPage() {
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          portalEl
         )}
       </div>
     </DashboardLayout>

@@ -54,6 +54,7 @@ function mapApiToItem(raw: Record<string, unknown>): MusicItem {
 
 export default function MusicPage() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [detailRow, setDetailRow] = useState<MusicItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const PAGE_SIZE = 12;
   const [currentPage, setCurrentPage] = useState(1);
@@ -138,27 +139,17 @@ export default function MusicPage() {
       setError(null);
       setSubmitting(true);
       try {
-        if (updateFile) {
-          const fd = new FormData();
-          fd.append('file', updateFile);
-          fd.append('name', (formData.name?.trim() || 'Music'));
-          if (formData.description?.trim()) fd.append('description', formData.description.trim());
-          fd.append('musicTypeId', formData.musicTypeId!.trim());
-          await musicApi.updateWithFile(editingId, fd);
-        } else {
-          const body: MusicRequest = {
-            name: formData.name.trim(),
-            description: formData.description?.trim() || undefined,
-            mp3Url: formData.mp3Url?.trim() || undefined,
-            musicTypeId: formData.musicTypeId!.trim(),
-          };
-          await musicApi.update(editingId, body);
-        }
+        const fd = new FormData();
+        if (updateFile) fd.append('file', updateFile);
+        fd.append('name', formData.name?.trim() || 'Music');
+        if (formData.description?.trim()) fd.append('description', formData.description.trim());
+        fd.append('musicTypeId', formData.musicTypeId!.trim());
+        await musicApi.updateWithFile(editingId, fd);
         setSubmitting(false);
-        await Swal.fire({ title: 'Updated', text: 'Music updated successfully.', icon: 'success', timer: 5000, showConfirmButton: false });
-        await fetchItems();
         setShowAddModal(false);
         resetForm();
+        await fetchItems();
+        await Swal.fire({ title: 'Updated', text: 'Music updated successfully.', icon: 'success', timer: 5000, showConfirmButton: false });
       } catch (err) {
         setSubmitting(false);
         const msg = err instanceof Error ? err.message : 'Operation failed';
@@ -178,10 +169,10 @@ export default function MusicPage() {
       fd.append('musicTypeId', formData.musicTypeId!.trim());
       await musicApi.upload(fd);
       setSubmitting(false);
-      await Swal.fire({ title: 'Saved', text: 'Music created successfully.', icon: 'success', timer: 5000, showConfirmButton: false });
-      await fetchItems();
       setShowAddModal(false);
       resetForm();
+      await fetchItems();
+      await Swal.fire({ title: 'Saved', text: 'Music created successfully.', icon: 'success', timer: 5000, showConfirmButton: false });
     } catch (err) {
       setSubmitting(false);
       const msg = err instanceof Error ? err.message : 'Upload failed';
@@ -365,7 +356,11 @@ export default function MusicPage() {
                 </tr>
               ) : (
                 items.map((row) => (
-                  <tr key={row.id}>
+                  <tr
+                    key={row.id}
+                    className="data-table-row-clickable"
+                    onClick={() => setDetailRow(row)}
+                  >
                     <td>
                       <div className="org-name-cell">
                         <span className="org-name">{row.name}</span>
@@ -390,7 +385,7 @@ export default function MusicPage() {
                         <span>{row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
-                    <td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <div className="action-buttons">
                         <ActionTooltip text="Edit">
                           <button type="button" className="btn-icon-edit" onClick={() => handleEdit(row)}>
@@ -537,6 +532,58 @@ export default function MusicPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {detailRow && (
+          <div className="modal-overlay" onClick={() => setDetailRow(null)}>
+            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+              <div className="modal-header">
+                <h2>Music detail</h2>
+                <button className="modal-close-btn" onClick={() => setDetailRow(null)} aria-label="Close">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="organization-form" style={{ padding: '20px 24px 24px' }}>
+                <div className="form-group">
+                  <label className="form-label">Name</label>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: '#1e293b' }}>{detailRow.name}</p>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>{detailRow.description || '—'}</p>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Music type</label>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: '#1e293b' }}>{detailRow.musicTypeName || '—'}</p>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">MP3 URL</label>
+                  {detailRow.mp3Url ? (
+                    <a href={detailRow.mp3Url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" style={{ fontSize: '0.9375rem', wordBreak: 'break-all' }}>
+                      {detailRow.mp3Url}
+                    </a>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '0.9375rem', color: '#64748b' }}>—</p>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <span className={`status-badge ${detailRow.status}`}>
+                    {detailRow.status === 'active' && <Check size={14} />}
+                    {detailRow.status === 'inactive' && <X size={14} />}
+                    {detailRow.status === 'deleted' && <Trash2 size={14} />}
+                    <span>{detailRow.status === 'active' ? 'Active' : detailRow.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
+                  </span>
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setDetailRow(null)}>Close</button>
+                  <button type="button" className="btn-primary btn-small" onClick={() => { setDetailRow(null); handleEdit(detailRow); }}>
+                    <Edit size={16} /><span>Edit</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

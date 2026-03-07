@@ -419,15 +419,26 @@ body {
   user-select: none;
 }
 
+#event-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  pointer-events: none;
+}
+#event-modal-root > * {
+  pointer-events: auto;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
-  z-index: 999999;
+  z-index: 1000000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  pointer-events: auto;
 }
 
 .modal-content {
@@ -439,7 +450,26 @@ body {
   overflow-y: auto;
   position: relative;
   box-shadow: 0 25px 80px rgba(0,0,0,0.15);
-  z-index: 999999;
+  z-index: 1000000;
+}
+
+/* SweetAlert2 above modals (modal z-index is 999999) */
+.swal2-container {
+  z-index: 1000000 !important;
+}
+
+/* Nepali datepicker above Add Event modal so calendar shows when opened inside modal */
+.nepali-datepicker,
+.nepali-datepicker-modal-overlay,
+.nepali-datepicker-modal-content {
+  z-index: 1000001 !important;
+}
+.nepali-datepicker-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0, 0, 0, 0.5) !important;
 }
 
 .modal-header {

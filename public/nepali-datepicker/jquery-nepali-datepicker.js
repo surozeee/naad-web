@@ -641,10 +641,7 @@ function open(){
 
   if (settings.modal && state.$overlay){
     state.$overlay.css('display', 'flex');
-
-    // If this input lives inside a Bootstrap/other modal, ensure proper stacking
-    var parentModal = $input.closest('.modal');
-    if (parentModal.length) state.$overlay.css('z-index', '10001');
+    state.$overlay.css('z-index', '1000001');
   } else {
     position();
     state.$dp.show();
