@@ -37,8 +37,7 @@ const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
   ]},
   { id: 'music', icon: '🎵', label: 'Music', href: '/music', submenu: [
     { label: 'Music Type', href: '/music/music-type' }, { label: 'Music', href: '/music/music' },
-    { label: 'Devotional Music', href: '/music/devotional' }, { label: 'Mantras', href: '/music/mantras' },
-    { label: 'Bhajans', href: '/music/bhajans' }, { label: 'Chants', href: '/music/chants' },
+    { label: 'Listen', href: '/music/listen' },
   ]},
 ];
 
@@ -103,6 +102,7 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/music': 'Music',
   '/music/music-type': 'Music Type',
   '/music/music': 'Music',
+  '/music/listen': 'Listen',
   '/master-setting/general/country': 'Country',
   '/master-setting/general/state': 'State',
   '/master-setting/general/district': 'District',

@@ -65,8 +65,8 @@ export default function MusicPage() {
   const [formData, setFormData] = useState<MusicRequest>({ name: '', description: '', mp3Url: '', musicTypeId: '' });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [updateFile, setUpdateFile] = useState<File | null>(null);
-  const [createMode, setCreateMode] = useState<'url' | 'upload'>('url');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterMusicTypeId, setFilterMusicTypeId] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -125,6 +125,8 @@ export default function MusicPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.musicTypeId?.trim()) newErrors.musicTypeId = 'Music type is required';
+    if (!editingId && !uploadFile) newErrors.file = 'Please select an audio file (MP3) to create.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -134,70 +136,57 @@ export default function MusicPage() {
     if (editingId) {
       if (!validateForm()) return;
       setError(null);
+      setSubmitting(true);
       try {
         if (updateFile) {
           const fd = new FormData();
           fd.append('file', updateFile);
           fd.append('name', (formData.name?.trim() || 'Music'));
           if (formData.description?.trim()) fd.append('description', formData.description.trim());
-          if (formData.musicTypeId) fd.append('musicTypeId', formData.musicTypeId);
+          fd.append('musicTypeId', formData.musicTypeId!.trim());
           await musicApi.updateWithFile(editingId, fd);
         } else {
           const body: MusicRequest = {
             name: formData.name.trim(),
             description: formData.description?.trim() || undefined,
             mp3Url: formData.mp3Url?.trim() || undefined,
-            musicTypeId: formData.musicTypeId || undefined,
+            musicTypeId: formData.musicTypeId!.trim(),
           };
           await musicApi.update(editingId, body);
         }
-        await Swal.fire({ title: 'Updated', text: 'Music updated.', icon: 'success', timer: 1500, showConfirmButton: false });
+        setSubmitting(false);
+        await Swal.fire({ title: 'Updated', text: 'Music updated successfully.', icon: 'success', timer: 5000, showConfirmButton: false });
         await fetchItems();
         setShowAddModal(false);
         resetForm();
       } catch (err) {
-        setErrors((prev) => ({ ...prev, submit: err instanceof Error ? err.message : 'Operation failed' }));
-      }
-      return;
-    }
-    if (createMode === 'upload') {
-      if (!uploadFile || !formData.name?.trim()) {
-        setErrors((prev) => ({ ...prev, submit: 'Name is required and a file must be selected.' }));
-        return;
-      }
-      setError(null);
-      try {
-        const fd = new FormData();
-        fd.append('file', uploadFile);
-        fd.append('name', (formData.name?.trim() || uploadFile.name || 'Music'));
-        if (formData.description?.trim()) fd.append('description', formData.description.trim());
-        if (formData.musicTypeId) fd.append('musicTypeId', formData.musicTypeId);
-        await musicApi.upload(fd);
-        await Swal.fire({ title: 'Created', text: 'Music uploaded.', icon: 'success', timer: 1500, showConfirmButton: false });
-        await fetchItems();
-        setShowAddModal(false);
-        resetForm();
-      } catch (err) {
-        setErrors((prev) => ({ ...prev, submit: err instanceof Error ? err.message : 'Upload failed' }));
+        setSubmitting(false);
+        const msg = err instanceof Error ? err.message : 'Operation failed';
+        setErrors((prev) => ({ ...prev, submit: msg }));
+        await Swal.fire({ title: 'Error', text: msg, icon: 'error', timer: 5000, showConfirmButton: false });
       }
       return;
     }
     if (!validateForm()) return;
     setError(null);
-    const body: MusicRequest = {
-      name: formData.name.trim(),
-      description: formData.description?.trim() || undefined,
-      mp3Url: formData.mp3Url?.trim() || undefined,
-      musicTypeId: formData.musicTypeId || undefined,
-    };
+    setSubmitting(true);
     try {
-      await musicApi.create(body);
-      await Swal.fire({ title: 'Created', text: 'Music created.', icon: 'success', timer: 1500, showConfirmButton: false });
+      const fd = new FormData();
+      fd.append('file', uploadFile!);
+      fd.append('name', formData.name.trim() || uploadFile!.name || 'Music');
+      if (formData.description?.trim()) fd.append('description', formData.description.trim());
+      fd.append('musicTypeId', formData.musicTypeId!.trim());
+      await musicApi.upload(fd);
+      setSubmitting(false);
+      await Swal.fire({ title: 'Saved', text: 'Music created successfully.', icon: 'success', timer: 5000, showConfirmButton: false });
       await fetchItems();
       setShowAddModal(false);
       resetForm();
     } catch (err) {
-      setErrors((prev) => ({ ...prev, submit: err instanceof Error ? err.message : 'Operation failed' }));
+      setSubmitting(false);
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      setErrors((prev) => ({ ...prev, submit: msg }));
+      await Swal.fire({ title: 'Error', text: msg, icon: 'error', timer: 5000, showConfirmButton: false });
     }
   };
 
@@ -205,7 +194,6 @@ export default function MusicPage() {
     setFormData({ name: '', description: '', mp3Url: '', musicTypeId: '' });
     setUploadFile(null);
     setUpdateFile(null);
-    setCreateMode('url');
     setErrors({});
     setEditingId(null);
   };
@@ -218,7 +206,6 @@ export default function MusicPage() {
       musicTypeId: row.musicTypeId || '',
     });
     setEditingId(row.id);
-    setCreateMode('url');
     setUploadFile(null);
     setUpdateFile(null);
     setShowAddModal(true);
@@ -478,42 +465,29 @@ export default function MusicPage() {
               <form onSubmit={handleSubmit} className="organization-form">
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                 {!editingId && (
-                  <div className="form-group">
-                    <span className="form-label">Create by</span>
-                    <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                      <label className="form-radio">
-                        <input type="radio" name="createMode" checked={createMode === 'url'} onChange={() => setCreateMode('url')} />
-                        <span>By URL</span>
-                      </label>
-                      <label className="form-radio">
-                        <input type="radio" name="createMode" checked={createMode === 'upload'} onChange={() => setCreateMode('upload')} />
-                        <span>Upload file</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                {!editingId && createMode === 'upload' && (
-                  <div className="form-group">
-                    <label htmlFor="musicFile" className="form-label">File <span className="required">*</span></label>
-                    <input
-                      type="file"
-                      id="musicFile"
-                      accept="audio/mpeg,audio/mp3,audio/*,.mp3,.wav,.ogg"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-                      className="form-input"
-                    />
-                    {uploadFile && <span style={{ fontSize: 12, color: '#64748b' }}>{uploadFile.name}</span>}
-                  </div>
+                  <p className="form-label" style={{ marginBottom: 8, fontWeight: 500, color: '#64748b' }}>
+                    Create by selecting an audio file (MP3) only.
+                  </p>
                 )}
                 <div className="form-group">
                   <label htmlFor="name" className="form-label">Name <span className="required">*</span></label>
                   <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="Music name" />
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
-                <div className="form-group">
-                  <label htmlFor="description" className="form-label">Description</label>
-                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
-                </div>
+                {!editingId && (
+                  <div className="form-group">
+                    <label htmlFor="musicFile" className="form-label">Audio file (MP3) <span className="required">*</span></label>
+                    <input
+                      type="file"
+                      id="musicFile"
+                      accept="audio/mpeg,audio/mp3,audio/*,.mp3"
+                      onChange={(e) => { setUploadFile(e.target.files?.[0] ?? null); if (errors.file) setErrors((p) => ({ ...p, file: '' })); }}
+                      className={`form-input ${errors.file ? 'error' : ''}`}
+                    />
+                    {uploadFile && <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginTop: 4 }}>{uploadFile.name}</span>}
+                    {errors.file && <span className="form-error">{errors.file}</span>}
+                  </div>
+                )}
                 {editingId && (
                   <div className="form-group">
                     <label htmlFor="updateMusicFile" className="form-label">Replace audio file</label>
@@ -527,25 +501,39 @@ export default function MusicPage() {
                     {updateFile && <span style={{ fontSize: 12, color: '#64748b' }}>{updateFile.name}</span>}
                   </div>
                 )}
-                {(!editingId && createMode === 'url' || editingId) && (
+                {editingId && (
                   <div className="form-group">
                     <label htmlFor="mp3Url" className="form-label">MP3 URL</label>
-                    <input type="url" id="mp3Url" name="mp3Url" value={formData.mp3Url ?? ''} onChange={handleInputChange} className="form-input" placeholder="https://..." />
+                    <input type="url" id="mp3Url" name="mp3Url" value={formData.mp3Url ?? ''} readOnly className="form-input" style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }} placeholder="https://..." title="URL is set by the uploaded file and cannot be edited" />
                   </div>
                 )}
                 <div className="form-group">
-                  <label htmlFor="musicTypeId" className="form-label">Music Type</label>
-                  <select id="musicTypeId" name="musicTypeId" value={formData.musicTypeId ?? ''} onChange={handleInputChange} className="form-input">
+                  <label htmlFor="musicTypeId" className="form-label">Music Type <span className="required">*</span></label>
+                  <select id="musicTypeId" name="musicTypeId" value={formData.musicTypeId ?? ''} onChange={handleInputChange} className={`form-input ${errors.musicTypeId ? 'error' : ''}`}>
                     <option value="">— Select type —</option>
                     {musicTypes.map((mt) => (
                       <option key={mt.id} value={mt.id}>{mt.type}</option>
                     ))}
                   </select>
+                  {errors.musicTypeId && <span className="form-error">{errors.musicTypeId}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="description" className="form-label">Description</label>
+                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
                 </div>
                 <div className="form-actions">
-                  <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
-                  <button type="submit" className="btn-primary btn-small">
-                    <Save size={16} /><span>{editingId ? 'Update' : 'Create'}</span>
+                  <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }} disabled={submitting}>Cancel</button>
+                  <button type="submit" className="btn-primary btn-small" disabled={submitting}>
+                    {submitting ? (
+                      <>
+                        <span className="form-spinner" style={{ marginRight: 6 }} />
+                        <span>{editingId ? 'Updating...' : 'Creating...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} /><span>{editingId ? 'Update' : 'Create'}</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

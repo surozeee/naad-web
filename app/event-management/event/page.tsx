@@ -14,14 +14,15 @@ import {
   ChevronUp,
   ChevronDown,
   ArrowUpDown,
+  ImagePlus,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import DashboardLayout from '../../components/DashboardLayout';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
-import { eventApi, eventCategoryApi } from '@/app/lib/crm.service';
-import type { EventRequest } from '@/app/lib/crm.types';
+import { eventApi, eventCategoryApi, eventImageApi } from '@/app/lib/crm.service';
+import type { EventRequest, EventImageItemRequest } from '@/app/lib/crm.types';
 
 interface CategoryOption {
   id: string;
@@ -92,6 +93,7 @@ export default function EventPage() {
     address: '',
     categoryId: '',
   });
+  const [images, setImages] = useState<EventImageItemRequest[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategoryId, setFilterCategoryId] = useState<string>('');
@@ -181,13 +183,19 @@ export default function EventPage() {
       endDate: formData.endDate,
       address: formData.address?.trim() || undefined,
       categoryId: formData.categoryId?.trim() || undefined,
+      images: images.length > 0 ? images.map((img, i) => ({ imageUrl: img.imageUrl.trim(), displayOrder: i })) : undefined,
     };
     try {
       if (editingId) {
         await eventApi.update(editingId, body);
+        await syncEventImages(editingId, images);
         await Swal.fire({ title: 'Updated', text: 'Event updated.', icon: 'success', timer: 1500, showConfirmButton: false });
       } else {
-        await eventApi.create(body);
+        const createRes = await eventApi.create(body) as { result?: { id?: string }; data?: { id?: string }; id?: string };
+        const newId = createRes?.result?.id ?? createRes?.data?.id ?? createRes?.id;
+        if (newId && images.length > 0) {
+          await syncEventImages(newId, images);
+        }
         await Swal.fire({ title: 'Created', text: 'Event created.', icon: 'success', timer: 1500, showConfirmButton: false });
       }
       await fetchItems();
@@ -198,6 +206,22 @@ export default function EventPage() {
     }
   };
 
+  async function syncEventImages(eventId: string, imageList: EventImageItemRequest[]) {
+    const normalized = imageList.map((img, i) => ({ imageUrl: img.imageUrl.trim(), displayOrder: i })).filter((img) => img.imageUrl);
+    try {
+      const res = await eventImageApi.list({ eventId, pageNo: 0, pageSize: 100 });
+      const existing = (res.result ?? res.content ?? []) as { id?: string }[];
+      for (const row of existing) {
+        if (row.id) await eventImageApi.delete(row.id);
+      }
+      for (const img of normalized) {
+        await eventImageApi.create({ eventId, imageUrl: img.imageUrl, displayOrder: img.displayOrder });
+      }
+    } catch {
+      // If event-image API is not available, event body.images may have been used by backend
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -207,11 +231,12 @@ export default function EventPage() {
       address: '',
       categoryId: '',
     });
+    setImages([]);
     setErrors({});
     setEditingId(null);
   };
 
-  const handleEdit = (row: EventItem) => {
+  const handleEdit = async (row: EventItem) => {
     setFormData({
       name: row.name,
       description: row.description || '',
@@ -224,6 +249,14 @@ export default function EventPage() {
     });
     setEditingId(row.id);
     setShowAddModal(true);
+    try {
+      const res = await eventImageApi.list({ eventId: row.id, pageNo: 0, pageSize: 100 });
+      const list = (res.result ?? res.content ?? []) as { imageUrl?: string; displayOrder?: number }[];
+      const sorted = [...list].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+      setImages(sorted.map((r) => ({ imageUrl: r.imageUrl ?? '', displayOrder: r.displayOrder ?? 0 })));
+    } catch {
+      setImages([]);
+    }
   };
 
   const handleChangeStatus = async (row: EventItem) => {
@@ -550,6 +583,55 @@ export default function EventPage() {
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
+                </div>
+                <div className="form-group">
+                  <div className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Images</span>
+                    <button
+                      type="button"
+                      className="btn-secondary btn-small"
+                      onClick={() => setImages((prev) => [...prev, { imageUrl: '', displayOrder: prev.length }])}
+                      style={{ padding: '6px 10px' }}
+                    >
+                      <ImagePlus size={14} />
+                      <span>Add image</span>
+                    </button>
+                  </div>
+                  <p className="form-error" style={{ marginBottom: 8, fontWeight: 400, color: '#64748b' }}>
+                    Add image URLs (one per row). Order is used as display order.
+                  </p>
+                  {images.length === 0 ? (
+                    <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>No images added yet.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {images.map((img, index) => (
+                        <div key={index} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span style={{ fontWeight: 600, color: '#64748b', minWidth: 24 }}>{index + 1}.</span>
+                          <input
+                            type="url"
+                            value={img.imageUrl}
+                            onChange={(e) =>
+                              setImages((prev) =>
+                                prev.map((item, i) => (i === index ? { ...item, imageUrl: e.target.value } : item))
+                              )
+                            }
+                            className="form-input"
+                            placeholder="https://..."
+                            style={{ flex: 1 }}
+                          />
+                          <ActionTooltip text="Remove">
+                            <button
+                              type="button"
+                              className="btn-icon-delete"
+                              onClick={() => setImages((prev) => prev.filter((_, i) => i !== index))}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </ActionTooltip>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>

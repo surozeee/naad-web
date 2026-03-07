@@ -153,12 +153,24 @@ async function musicUploadRequest(formData: FormData): Promise<GlobalResponse<un
 }
 
 async function musicUpdateWithFileRequest(id: string, formData: FormData): Promise<GlobalResponse<unknown>> {
-  const name = (formData.get('name') as string) || 'Music';
-  const url = `/api/bucket/music/update?name=${encodeURIComponent(name)}`;
+  const name = (formData.get('name') as string) || undefined;
+  const description = (formData.get('description') as string) || undefined;
+  const musicTypeId = (formData.get('musicTypeId') as string) || undefined;
+  const durationSeconds = formData.get('durationSeconds');
+  const params = new URLSearchParams();
+  if (name != null && name !== '') params.set('name', name);
+  if (description != null && description !== '') params.set('description', description);
+  if (musicTypeId != null && musicTypeId !== '') params.set('musicTypeId', musicTypeId);
+  if (durationSeconds != null && durationSeconds !== '') params.set('durationSeconds', String(durationSeconds));
+  const query = params.toString();
+  const url = `/api/bucket/music/update${query ? `?${query}` : ''}`;
+  const body = new FormData();
+  const file = formData.get('file');
+  if (file instanceof File && file.size > 0) body.append('file', file);
   const res = await fetchWithAuth(url, {
     method: 'PUT',
     headers: { id },
-    body: formData,
+    body,
     credentials: 'same-origin',
   });
   const json = (await res.json().catch(() => ({}))) as GlobalResponse<unknown>;
