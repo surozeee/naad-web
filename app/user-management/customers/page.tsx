@@ -27,7 +27,7 @@ function mapItem(raw: CustomerResponse) {
   return {
     id: String(raw.id ?? ''),
     name: raw.name ?? '',
-    email: (raw.email ?? (raw as Record<string, unknown>).emailAddress as string) ?? '',
+    email: (raw.email ?? (raw as unknown as Record<string, unknown>).emailAddress as string) ?? '',
     mobileNumber: raw.mobileNumber ?? raw.phone ?? '',
     status,
   };
