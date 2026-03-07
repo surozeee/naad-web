@@ -31,7 +31,7 @@ interface State {
   name: string;
   countryId: string;
   countryName: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
 }
 
 interface CountryOption {
@@ -47,7 +47,7 @@ function mapApiToState(raw: Record<string, unknown>): State {
     name: String(raw.name ?? ''),
     countryId: country ? String(country.id ?? '') : '',
     countryName: country ? String(country.name ?? '') : '',
-    status: statusVal === 'ACTIVE' ? 'active' : 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
   };
 }
 
@@ -453,8 +453,10 @@ export default function StateSetup() {
                       title={`Set to ${state.status === 'active' ? 'Inactive' : 'Active'}`}
                     >
                       <span className={`status-badge ${state.status}`}>
-                        {state.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{state.status.charAt(0).toUpperCase() + state.status.slice(1)}</span>
+                        {state.status === 'active' && <Check size={14} />}
+                        {state.status === 'inactive' && <X size={14} />}
+                        {state.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{state.status === 'active' ? 'Active' : state.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
@@ -559,8 +561,10 @@ export default function StateSetup() {
                     <label className="form-label">Status</label>
                     <p style={{ margin: 0, padding: '8px 0' }}>
                       <span className={`status-badge ${detailState.status}`}>
-                        {detailState.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{detailState.status.charAt(0).toUpperCase() + detailState.status.slice(1)}</span>
+                        {detailState.status === 'active' && <Check size={14} />}
+                        {detailState.status === 'inactive' && <X size={14} />}
+                        {detailState.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{detailState.status === 'active' ? 'Active' : detailState.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </p>
                   </div>

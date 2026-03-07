@@ -20,56 +20,61 @@ import DashboardLayout from '../../components/DashboardLayout';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
-import { pujaApi } from '@/app/lib/crm.service';
-import type { PujaRequest } from '@/app/lib/crm.types';
+import { musicTypeApi } from '@/app/lib/crm.service';
+import type { MusicTypeRequest } from '@/app/lib/crm.types';
 
-interface PujaItem {
+const MUSIC_TYPE_OPTIONS = ['Devotional Music', 'Mantras', 'Bhajans', 'Chants'];
+
+interface MusicTypeItem {
   id: string;
   name: string;
+  type: string;
   description: string;
   status: 'active' | 'inactive' | 'deleted';
 }
 
-function mapApiToItem(raw: Record<string, unknown>): PujaItem {
+function mapApiToItem(raw: Record<string, unknown>): MusicTypeItem {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
-  const status: PujaItem['status'] = statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive';
+  const status: MusicTypeItem['status'] =
+    statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive';
   return {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
+    type: String(raw.type ?? ''),
     description: String(raw.description ?? ''),
     status,
   };
 }
 
-export default function PujaPage() {
+export default function MusicTypePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [items, setItems] = useState<PujaItem[]>([]);
+  const [items, setItems] = useState<MusicTypeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<PujaRequest>({ name: '', description: '' });
+  const [formData, setFormData] = useState<MusicTypeRequest>({ name: '', type: '', description: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<'name' | 'description' | 'status'>('name');
+  const [sortKey, setSortKey] = useState<'name' | 'type' | 'description' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await pujaApi.list({
+      const res = await musicTypeApi.list({
         pageNo: 0,
         pageSize: 500,
         searchKey: searchTerm || undefined,
-        sortBy: 'name',
+        sortBy: 'type',
         sortDirection: 'asc',
       });
       const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
       setItems(list.map(mapApiToItem));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load puja');
+      setError(err instanceof Error ? err.message : 'Failed to load music types');
       setItems([]);
     } finally {
       setLoading(false);
@@ -80,7 +85,7 @@ export default function PujaPage() {
     fetchItems();
   }, [fetchItems]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -88,7 +93,8 @@ export default function PujaPage() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.name?.trim()) newErrors.name = 'Name is required';
+    if (!formData.type.trim()) newErrors.type = 'Type is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -97,17 +103,13 @@ export default function PujaPage() {
     e.preventDefault();
     if (!validateForm()) return;
     setError(null);
-    const body: PujaRequest = {
-      name: formData.name.trim(),
-      description: formData.description?.trim() || undefined,
-    };
     try {
       if (editingId) {
-        await pujaApi.update(editingId, body);
-        await Swal.fire({ title: 'Updated', text: 'Puja updated.', icon: 'success', timer: 1500, showConfirmButton: false });
+        await musicTypeApi.update(editingId, formData);
+        await Swal.fire({ title: 'Updated', text: 'Music type updated.', icon: 'success', timer: 1500, showConfirmButton: false });
       } else {
-        await pujaApi.create(body);
-        await Swal.fire({ title: 'Created', text: 'Puja created.', icon: 'success', timer: 1500, showConfirmButton: false });
+        await musicTypeApi.create(formData);
+        await Swal.fire({ title: 'Created', text: 'Music type created.', icon: 'success', timer: 1500, showConfirmButton: false });
       }
       await fetchItems();
       setShowAddModal(false);
@@ -118,22 +120,22 @@ export default function PujaPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', type: '', description: '' });
     setErrors({});
     setEditingId(null);
   };
 
-  const handleEdit = (row: PujaItem) => {
-    setFormData({ name: row.name, description: row.description || '' });
+  const handleEdit = (row: MusicTypeItem) => {
+    setFormData({ name: row.name || '', type: row.type, description: row.description || '' });
     setEditingId(row.id);
     setShowAddModal(true);
   };
 
-  const handleChangeStatus = async (row: PujaItem) => {
+  const handleChangeStatus = async (row: MusicTypeItem) => {
     const newStatus = row.status === 'active' ? 'INACTIVE' : 'ACTIVE';
     const result = await Swal.fire({
       title: 'Update status?',
-      html: `Set <strong>"${row.name}"</strong> to <strong>${newStatus === 'ACTIVE' ? 'Active' : 'Inactive'}</strong>?`,
+      html: `Set <strong>"${row.type}"</strong> to <strong>${newStatus === 'ACTIVE' ? 'Active' : 'Inactive'}</strong>?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Yes',
@@ -141,7 +143,7 @@ export default function PujaPage() {
     });
     if (!result.isConfirmed) return;
     try {
-      await pujaApi.changeStatus(row.id, newStatus);
+      await musicTypeApi.changeStatus(row.id, newStatus);
       await fetchItems();
       await Swal.fire({ title: 'Updated', text: 'Status updated.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
@@ -151,7 +153,7 @@ export default function PujaPage() {
 
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
-      title: 'Delete puja?',
+      title: 'Delete music type?',
       text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
@@ -161,9 +163,9 @@ export default function PujaPage() {
     });
     if (!result.isConfirmed) return;
     try {
-      await pujaApi.delete(id);
+      await musicTypeApi.delete(id);
       await fetchItems();
-      await Swal.fire({ title: 'Deleted', text: 'Puja deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
+      await Swal.fire({ title: 'Deleted', text: 'Music type deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
       await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Delete failed', icon: 'error' });
     }
@@ -171,7 +173,8 @@ export default function PujaPage() {
 
   const filtered = items.filter(
     (i) =>
-      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (i.name && i.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      i.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   const sorted = [...filtered].sort((a, b) => {
@@ -221,14 +224,14 @@ export default function PujaPage() {
   return (
     <DashboardLayout>
       <div className="organization-page">
-        <Breadcrumb items={[{ label: 'Event Management', href: '/event-management' }, { label: 'Puja' }]} />
+        <Breadcrumb items={[{ label: 'Music', href: '/music' }, { label: 'Music Type' }]} />
         <PageHeaderWithInfo
-          title="Puja"
-          infoText="Manage puja entries. Add, edit, or remove puja with name and description."
+          title="Music Type"
+          infoText="Manage music types (e.g. Devotional Music, Mantras, Bhajans, Chants). Used when adding Music entries."
         >
           <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} />
-            <span>Add Puja</span>
+            <span>Add Music Type</span>
           </button>
         </PageHeaderWithInfo>
         {error && (
@@ -241,7 +244,7 @@ export default function PujaPage() {
             <Search size={20} />
             <input
               type="text"
-              placeholder="Search by name or description..."
+              placeholder="Search by type or description..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="search-input"
@@ -253,6 +256,7 @@ export default function PujaPage() {
             <thead>
               <tr>
                 <SortableTh columnKey="name">Name</SortableTh>
+                <SortableTh columnKey="type">Type</SortableTh>
                 <SortableTh columnKey="description">Description</SortableTh>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
@@ -261,12 +265,12 @@ export default function PujaPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={4} className="empty-state">
-                    <p>{items.length === 0 ? 'No puja found' : 'No puja match your search'}</p>
+                  <td colSpan={5} className="empty-state">
+                    <p>{items.length === 0 ? 'No music types found' : 'No music types match your search'}</p>
                   </td>
                 </tr>
               ) : (
@@ -274,16 +278,19 @@ export default function PujaPage() {
                   <tr key={row.id}>
                     <td>
                       <div className="org-name-cell">
-                        <span className="org-name">{row.name}</span>
+                        <span className="org-name">{row.name || '—'}</span>
                       </div>
                     </td>
+                    <td>{row.type}</td>
                     <td>{row.description || '—'}</td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
                         {row.status === 'active' && <Check size={14} />}
                         {row.status === 'inactive' && <X size={14} />}
                         {row.status === 'deleted' && <Trash2 size={14} />}
-                        <span>{row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
+                        <span>
+                          {row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}
+                        </span>
                       </span>
                     </td>
                     <td>
@@ -312,11 +319,11 @@ export default function PujaPage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={4}>
+                  <td colSpan={5}>
                     <div className="pagination-container">
                       <div className="pagination-left">
-                        <label htmlFor="items-per-page-puja" className="pagination-label">Show:</label>
-                        <select id="items-per-page-puja" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                        <label htmlFor="items-per-page-mt" className="pagination-label">Show:</label>
+                        <select id="items-per-page-mt" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
                           <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
@@ -360,7 +367,7 @@ export default function PujaPage() {
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
             <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>{editingId ? 'Edit Puja' : 'Add Puja'}</h2>
+                <h2>{editingId ? 'Edit Music Type' : 'Add Music Type'}</h2>
                 <button className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
                   <X size={24} />
                 </button>
@@ -369,12 +376,28 @@ export default function PujaPage() {
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                 <div className="form-group">
                   <label htmlFor="name" className="form-label">Name <span className="required">*</span></label>
-                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="Puja name" />
+                  <input id="name" name="name" type="text" value={formData.name ?? ''} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="e.g. Morning Chants" />
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
                 <div className="form-group">
+                  <label htmlFor="type" className="form-label">Type <span className="required">*</span></label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.type ? 'error' : ''}`}
+                  >
+                    <option value="">— Select type —</option>
+                    {MUSIC_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  {errors.type && <span className="form-error">{errors.type}</span>}
+                </div>
+                <div className="form-group">
                   <label htmlFor="description" className="form-label">Description</label>
-                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={3} placeholder="Optional" />
+                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>

@@ -27,7 +27,7 @@ interface LocalUnitType {
   id: string;
   name: string;
   description: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
 }
 
 function mapApiToLocalUnitType(raw: Record<string, unknown>): LocalUnitType {
@@ -36,7 +36,7 @@ function mapApiToLocalUnitType(raw: Record<string, unknown>): LocalUnitType {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
     description: String(raw.description ?? ''),
-    status: statusVal === 'ACTIVE' ? 'active' : 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
   };
 }
 
@@ -270,8 +270,10 @@ export default function LocalUnitTypeSetup() {
                     <td>{row.description || '—'}</td>
                     <td onClick={(e) => { e.stopPropagation(); handleChangeStatus(row); }} role="button" tabIndex={0} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') handleChangeStatus(row); }} title={`Set to ${row.status === 'active' ? 'Inactive' : 'Active'}`}>
                       <span className={`status-badge ${row.status}`}>
-                        {row.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{row.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {row.status === 'active' && <Check size={14} />}
+                        {row.status === 'inactive' && <X size={14} />}
+                        {row.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td style={{ width: 100 }} onClick={(e) => e.stopPropagation()}>
@@ -345,8 +347,10 @@ export default function LocalUnitTypeSetup() {
                     <label className="form-label">Status</label>
                     <p style={{ margin: 0, padding: '8px 0' }}>
                       <span className={`status-badge ${detailItem.status}`}>
-                        {detailItem.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{detailItem.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {detailItem.status === 'active' && <Check size={14} />}
+                        {detailItem.status === 'inactive' && <X size={14} />}
+                        {detailItem.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{detailItem.status === 'active' ? 'Active' : detailItem.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </p>
                   </div>

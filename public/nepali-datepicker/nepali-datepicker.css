@@ -1,0 +1,1803 @@
+﻿/**
+ * Custom Nepali Datepicker Styles
+ * Modern, responsive design with multiple themes
+ */
+
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+}
+
+input {
+    padding: 10px;
+}
+/* Input styles */
+.custom-nepali-datepicker-input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    background: #ffffff;
+    color: #2d3748;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.custom-nepali-datepicker-input:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.custom-nepali-datepicker-input:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1), 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.custom-nepali-datepicker-input::placeholder {
+    color: #a0aec0;
+    font-weight: 400;
+}
+
+.custom-nepali-datepicker-input.modern {
+    border: none;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.custom-nepali-datepicker-input.modern:hover {
+    background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.custom-nepali-datepicker-input.modern:focus {
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1), 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.custom-nepali-datepicker-input.minimal {
+    border: none;
+    border-bottom: 2px solid #e1e5e9;
+    border-radius: 0;
+    background: transparent;
+    padding: 14px 0;
+    box-shadow: none;
+    font-weight: 400;
+}
+
+.custom-nepali-datepicker-input.minimal:hover {
+    border-bottom-color: #cbd5e0;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.custom-nepali-datepicker-input.minimal:focus {
+    border-bottom-color: #3182ce;
+    box-shadow: 0 2px 0 rgba(49, 130, 206, 0.2);
+    background: rgba(49, 130, 206, 0.02);
+}
+
+.custom-nepali-datepicker-input.dark {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    border-color: #4a5568;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.custom-nepali-datepicker-input.dark:hover {
+    border-color: #718096;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.custom-nepali-datepicker-input.dark:focus {
+    border-color: #63b3ed;
+    box-shadow: 0 0 0 4px rgba(99, 179, 237, 0.2), 0 6px 20px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+.custom-nepali-datepicker-input.dark::placeholder {
+    color: #a0aec0;
+}
+
+/* Input states */
+.custom-nepali-datepicker-input.success {
+    border-color: #38a169;
+    background: rgba(56, 161, 105, 0.05);
+}
+
+.custom-nepali-datepicker-input.success:focus {
+    border-color: #38a169;
+    box-shadow: 0 0 0 4px rgba(56, 161, 105, 0.1);
+}
+
+.custom-nepali-datepicker-input.error {
+    border-color: #e53e3e;
+    background: rgba(229, 62, 62, 0.05);
+}
+
+.custom-nepali-datepicker-input.error:focus {
+    border-color: #e53e3e;
+    box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.1);
+}
+
+.custom-nepali-datepicker-input.disabled {
+    background: #f7fafc;
+    color: #a0aec0;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.custom-nepali-datepicker-input.disabled:hover {
+    border-color: #e1e5e9;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transform: none;
+}
+
+.custom-nepali-datepicker-input.disabled:focus {
+    border-color: #e1e5e9;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transform: none;
+}
+
+/* Datepicker container */
+.nepali-datepicker,
+.custom-nepali-datepicker {
+    position: absolute;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e1e5e9;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    z-index: 9999;
+    min-width: 280px;
+    max-width: 320px;
+    overflow: hidden;
+    animation: fadeInUp 0.3s ease;
+    transform-origin: top center;
+}
+
+/* Modal overlay */
+.nepali-datepicker-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(4px);
+}
+
+/* Modal content wrapper */
+.nepali-datepicker-modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal datepicker */
+.nepali-datepicker.modal,
+.custom-nepali-datepicker.modal {
+    position: relative;
+    z-index: 10002;
+    min-width: 320px;
+    max-width: 400px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalFadeIn 0.3s ease;
+    transform-origin: center center;
+    background: white;
+}
+
+/* Modal animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation classes for different positions */
+.custom-nepali-datepicker.positioned-above {
+    animation: fadeInDown 0.3s ease;
+    transform-origin: bottom center;
+}
+
+.custom-nepali-datepicker.positioned-below {
+    animation: fadeInUp 0.3s ease;
+    transform-origin: top center;
+}
+
+/* Header */
+.datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: relative;
+}
+
+.nav-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 10px;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.nav-btn:active {
+    transform: scale(0.95);
+}
+
+.nav-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn.disabled:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: none;
+}
+
+.nav-btn.disabled:active {
+    transform: none;
+}
+
+.month-year {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    gap: 2px;
+}
+
+/* Month-year hover effect removed since it's no longer clickable */
+
+.nepali-date-display {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.month {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.year {
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.english-date-header {
+    font-size: 10px;
+    opacity: 0.8;
+    font-weight: 400;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Body */
+.datepicker-body {
+    padding: 12px;
+    background: aliceblue;
+}
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.weekday {
+    text-align: center;
+    font-size: 10px;
+    font-weight: bolder;
+    color: #718096;
+    padding: 4px 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 4px;
+}
+
+.day {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+    color: #2d3748;
+}
+
+/* Disabled date styles */
+.day.disabled {
+    color: #a0aec0 !important;
+    background: #f7fafc !important;
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
+
+.day.disabled:hover {
+    background: #f7fafc !important;
+    transform: none !important;
+}
+
+.day.disabled .nepali-date,
+.day.disabled .english-date-subscript {
+    color: #a0aec0 !important;
+}
+
+.day:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.day.today {
+    background: #3182ce;
+    color: white;
+    font-weight: 600;
+}
+
+.day.today:hover {
+    background: #2c5aa0;
+}
+
+.day.selected {
+    background: #38a169;
+    color: white;
+    font-weight: 600;
+}
+
+.day.selected:hover {
+    background: #2f855a;
+}
+
+.day.other-month {
+    color: #a0aec0;
+    opacity: 0.5;
+}
+
+.day.other-month:hover {
+    background: #f7fafc;
+    opacity: 0.8;
+}
+
+.day.disabled {
+    color: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.day.disabled:hover {
+    background: transparent;
+    transform: none;
+}
+
+/* Saturday column styling (7th column) */
+.day:nth-child(7n) {
+    color: #e53e3e;
+    font-weight: 600;
+}
+
+.day:nth-child(7n):hover {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.day:nth-child(7n).today {
+    background: #e53e3e;
+    color: white;
+}
+
+.day:nth-child(7n).today:hover {
+    background: #c53030;
+}
+
+.day:nth-child(7n).selected {
+    background: #e53e3e;
+    color: white;
+}
+
+.day:nth-child(7n).selected:hover {
+    background: #c53030;
+}
+
+/* Saturday weekday header styling */
+.weekday:nth-child(7) {
+    color: #e53e3e;
+    font-weight: bold;
+}
+
+/* Year and Decade views */
+.year-view, .decade-view {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
+    /*height: 180px;*/ /* Match main calendar height exactly */
+    width: calc(100% - 0px); /* Match header content width (subtract body padding) */
+    margin: 0 auto; /* Center the grid within the body */
+}
+
+.year-item, .decade-item {
+    padding: 26px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: #2d3748;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px; /* Fixed height to match day cells */
+}
+
+.year-item:hover, .decade-item:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.year-item.current, .decade-item.current {
+    background: #3182ce;
+    color: white;
+}
+
+.year-item.selected {
+    background: #38a169;
+    color: white;
+}
+
+.year-item.disabled {
+    background: #f7fafc;
+    color: #a0aec0;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.year-item.disabled:hover {
+    background: #f7fafc;
+    transform: none;
+}
+
+/* Year range display */
+.year-range {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.year-range:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Month list view */
+.month-list-view {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
+    /* height: 180px;*/ /* Match main calendar height exactly */
+    width: calc(100% - 0px); /* Match header content width (subtract body padding) */
+    margin: 0 auto; /* Center the grid within the body */
+}
+
+.month-item {
+    padding: 18px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: #2d3748;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px; /* Fixed height to match day cells */
+}
+
+.month-item:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.month-item.current {
+    background: #3182ce;
+    color: white;
+}
+
+.month-item.selected {
+    background: #38a169;
+    color: white;
+}
+
+/* Year display in month list */
+.year-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+
+/* Theme variations */
+.nepali-datepicker.dark,
+.custom-nepali-datepicker.dark {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.nepali-datepicker.dark .datepicker-header,
+.custom-nepali-datepicker.dark .datepicker-header {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+}
+
+.nepali-datepicker.dark .day,
+.custom-nepali-datepicker.dark .day {
+    color: #000000;
+}
+
+.nepali-datepicker.dark .day:hover,
+.custom-nepali-datepicker.dark .day:hover {
+    background: #4a5568;
+}
+
+.nepali-datepicker.dark .day.other-month,
+.custom-nepali-datepicker.dark .day.other-month {
+    color: #718096;
+}
+
+.nepali-datepicker.dark .day.disabled,
+.custom-nepali-datepicker.dark .day.disabled {
+    color: #4a5568 !important;
+    background: #1a202c !important;
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
+
+.nepali-datepicker.dark .day.disabled:hover,
+.custom-nepali-datepicker.dark .day.disabled:hover {
+    background: #1a202c !important;
+    transform: none !important;
+}
+
+.nepali-datepicker.dark .day.disabled .nepali-date,
+.nepali-datepicker.dark .day.disabled .english-date-subscript,
+.custom-nepali-datepicker.dark .day.disabled .nepali-date,
+.custom-nepali-datepicker.dark .day.disabled .english-date-subscript {
+    color: #4a5568 !important;
+}
+
+
+.nepali-datepicker.blue,
+.custom-nepali-datepicker.blue {
+    border-color: #3182ce;
+}
+
+.nepali-datepicker.blue .datepicker-header,
+.custom-nepali-datepicker.blue .datepicker-header {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+}
+
+.nepali-datepicker.blue .day.today,
+.custom-nepali-datepicker.blue .day.today {
+    background: #3182ce;
+}
+
+.nepali-datepicker.blue .day.selected,
+.custom-nepali-datepicker.blue .day.selected {
+    background: #3182ce;
+}
+
+.nepali-datepicker.green,
+.custom-nepali-datepicker.green {
+    border-color: #38a169;
+}
+
+.nepali-datepicker.green .datepicker-header,
+.custom-nepali-datepicker.green .datepicker-header {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+}
+
+.nepali-datepicker.green .day.today,
+.custom-nepali-datepicker.green .day.today {
+    background: #38a169;
+}
+
+.nepali-datepicker.green .day.selected,
+.custom-nepali-datepicker.green .day.selected {
+    background: #38a169;
+}
+
+.nepali-datepicker.red,
+.custom-nepali-datepicker.red {
+    border-color: #e53e3e;
+}
+
+.nepali-datepicker.red .datepicker-header,
+.custom-nepali-datepicker.red .datepicker-header {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+
+.nepali-datepicker.red .day.today,
+.custom-nepali-datepicker.red .day.today {
+    background: #e53e3e;
+}
+
+.nepali-datepicker.red .day.selected,
+.custom-nepali-datepicker.red .day.selected {
+    background: #e53e3e;
+}
+
+.nepali-datepicker.purple,
+.custom-nepali-datepicker.purple {
+    border-color: #805ad5;
+}
+
+.nepali-datepicker.purple .datepicker-header,
+.custom-nepali-datepicker.purple .datepicker-header {
+    background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+}
+
+.nepali-datepicker.purple .day.today,
+.custom-nepali-datepicker.purple .day.today {
+    background: #805ad5;
+}
+
+.nepali-datepicker.purple .day.selected,
+.custom-nepali-datepicker.purple .day.selected {
+    background: #805ad5;
+}
+
+.nepali-datepicker.orange,
+.custom-nepali-datepicker.orange {
+    border-color: #ed8936;
+}
+
+.nepali-datepicker.orange .datepicker-header,
+.custom-nepali-datepicker.orange .datepicker-header {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.nepali-datepicker.orange .day.today,
+.custom-nepali-datepicker.orange .day.today {
+    background: #ed8936;
+}
+
+.nepali-datepicker.orange .day.selected,
+.custom-nepali-datepicker.orange .day.selected {
+    background: #ed8936;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nepali-datepicker,
+    .custom-nepali-datepicker {
+        min-width: 260px;
+        max-width: 95vw;
+        font-size: 11px;
+    }
+    
+    .day {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+    
+    .datepicker-header {
+        padding: 6px 10px;
+    }
+    
+    .datepicker-body {
+        padding: 10px;
+    }
+    
+    /* Input responsive styles for tablet */
+    .custom-nepali-datepicker-input {
+        padding: 12px 16px;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+    
+    .custom-nepali-datepicker-input.modern {
+        padding: 14px 18px;
+        font-size: 15px;
+        border-radius: 12px;
+    }
+    
+    .custom-nepali-datepicker-input.minimal {
+        padding: 12px 0;
+    }
+    
+    /* Year and month views on tablet */
+    .year-view, .month-list-view {
+        height: 160px;
+        gap: 3px;
+        width: calc(100% - 20px); /* Match tablet body padding (10px * 2) */
+    }
+    
+    .year-item, .month-item {
+        height: 35px;
+        font-size: 11px;
+        padding: 0;
+    }
+    
+}
+
+@media (max-width: 480px) {
+    .nepali-datepicker,
+    .custom-nepali-datepicker {
+        min-width: 240px;
+        max-width: 90vw;
+        font-size: 10px;
+    }
+    
+    .day {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+    }
+    
+    .datepicker-header {
+        padding: 6px 8px;
+    }
+    
+    .datepicker-body {
+        padding: 8px;
+    }
+    
+    /* Input responsive styles for mobile */
+    .custom-nepali-datepicker-input {
+        padding: 12px 14px;
+        font-size: 16px; /* Prevent zoom on iOS */
+        border-radius: 8px;
+        min-height: 48px; /* Touch-friendly minimum height */
+    }
+    
+    .custom-nepali-datepicker-input.modern {
+        padding: 14px 16px;
+        font-size: 16px;
+        border-radius: 10px;
+        min-height: 52px;
+    }
+    
+    .custom-nepali-datepicker-input.minimal {
+        padding: 12px 0;
+        font-size: 16px;
+        min-height: 48px;
+    }
+    
+    
+    .weekdays {
+        gap: 2px;
+        margin-bottom: 6px;
+    }
+    
+    .weekday {
+        font-size: 9px;
+        padding: 4px 1px;
+    }
+    
+    .days {
+        gap: 2px;
+        grid-template-rows: repeat(5, 1fr);
+    }
+    
+    /* Year and month views on mobile */
+    .year-view, .month-list-view {
+        height: 140px;
+        gap: 2px;
+        width: calc(100% - 16px); /* Match mobile body padding (8px * 2) */
+    }
+    
+    .year-item, .month-item {
+        height: 30px;
+        font-size: 10px;
+        padding: 0;
+    }
+}
+
+/* Mobile view specific styles */
+.nepali-datepicker.mobile-view,
+.custom-nepali-datepicker.mobile-view {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-height: 80vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.3s ease !important;
+    transform-origin: center center !important;
+}
+
+/* Modal responsive styles */
+@media (max-width: 768px) {
+    .nepali-datepicker.modal,
+    .custom-nepali-datepicker.modal {
+        min-width: 300px;
+        max-width: 95vw;
+        width: 90vw;
+        max-height: 85vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .nepali-datepicker.modal,
+    .custom-nepali-datepicker.modal {
+        min-width: 280px;
+        max-width: 95vw;
+        width: 95vw;
+        max-height: 90vh;
+        border-radius: 8px;
+    }
+    
+    .nepali-datepicker-modal-overlay {
+        padding: 10px;
+    }
+}
+
+.nepali-datepicker.mobile-view .datepicker-header,
+.custom-nepali-datepicker.mobile-view .datepicker-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .day, .nav-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .day {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .nav-btn {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* Animation classes */
+.nepali-datepicker.fade-in,
+.custom-nepali-datepicker.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.nepali-datepicker.slide-up,
+.custom-nepali-datepicker.slide-up {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Demo page styles */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    font-weight: 700;
+}
+
+.header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.demo-section {
+    margin-bottom: 40px;
+}
+
+.demo-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 24px;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.example-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.example-card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+}
+
+.example-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.example-card h3 {
+    margin-bottom: 16px;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.config-panel {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e1e5e9;
+}
+
+.config-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.config-group label {
+    font-weight: 500;
+    color: #2d3748;
+    min-width: 100px;
+}
+
+.config-group select {
+    padding: 8px 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    color: #2d3748;
+    cursor: pointer;
+}
+
+.config-group select:focus {
+    outline: none;
+    border-color: #3182ce;
+}
+
+.config-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3182ce;
+}
+
+
+/* SweetAlert2 Custom Styling */
+.swal2-popup-custom {
+    border-radius: 16px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+.swal2-title-custom {
+    color: #1f2937 !important;
+    font-weight: 700 !important;
+    font-size: 24px !important;
+    margin-bottom: 20px !important;
+}
+
+.swal2-confirm-custom {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-confirm-custom:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(49, 130, 206, 0.3) !important;
+}
+
+.swal2-close {
+    color: #6b7280 !important;
+    font-size: 20px !important;
+    transition: color 0.3s ease !important;
+}
+
+.swal2-close:hover {
+    color: #374151 !important;
+}
+
+.swal2-timer-progress-bar {
+    background: linear-gradient(90deg, #3182ce, #2c5aa0) !important;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3182ce;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2c5aa0;
+    transform: translateY(-1px);
+}
+
+/* Range Picker Styles */
+.range-card {
+    grid-column: 1 / -1;
+    max-width: 100%;
+}
+
+.range-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Unified Range Picker Styles */
+.unified-range-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 12px;
+    border: 1px solid #0ea5e9;
+}
+
+.single-picker-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.single-picker-wrapper input {
+    width: 100%;
+    max-width: 400px;
+    padding: 16px 20px;
+    border: 3px solid #0ea5e9;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+    background: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+}
+
+.single-picker-wrapper input:focus {
+    outline: none;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+    transform: translateY(-2px);
+}
+
+.range-instructions {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.range-instructions p {
+    margin: 0 0 8px 0;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.range-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #92400e;
+}
+
+.range-instructions li {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Range Highlighting Styles - professional, calm palette */
+.nepali-datepicker .day.range-start {
+    background: #4f46e5 !important; /* Indigo 600 */
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
+    position: relative !important;
+}
+
+.nepali-datepicker .day.range-end {
+    background: #0ea5e9 !important; /* Sky 500 */
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
+    position: relative !important;
+}
+
+.nepali-datepicker .day.range-between {
+    background: #e0e7ff !important; /* Indigo 100 */
+    color: #1e1b4b !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    position: relative !important;
+}
+
+/* Subtle hover for range dates */
+.nepali-datepicker .day.range-start:hover,
+.nepali-datepicker .day.range-end:hover,
+.nepali-datepicker .day.range-between:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(30, 41, 59, 0.12) !important;
+    z-index: 10 !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Gentle emphasis animation */
+@keyframes rangeFadeIn {
+    0% { transform: scale(0.96); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.nepali-datepicker .day.range-start,
+.nepali-datepicker .day.range-end,
+.nepali-datepicker .day.range-between {
+    animation: rangeFadeIn 0.18s ease-out;
+}
+
+/* OK Button Styles - positioned like today button */
+.range-ok-button {
+    display: inline-block;
+    margin: 0;
+}
+
+.btn-ok-range {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-ok-range:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.btn-ok-range:active {
+    transform: translateY(0);
+}
+
+.range-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.range-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.range-input-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.range-input-group input {
+    padding: 12px 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.range-input-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.range-display {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+}
+
+.range-result-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.range-label {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+#range-text {
+    font-size: 16px;
+    color: #1f2937;
+    font-weight: 500;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    border-left: 4px solid #3b82f6;
+}
+
+.range-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e1e5e9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.close {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.nepali-datepicker {
+    z-index: 10000 !important;
+}
+
+/* English Date Header */
+.english-date-header {
+    font-size: 12px;
+    color: white;
+    font-weight: 500;
+    margin-top: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+}
+
+/* Clickable Month and Year (Official Library Pattern) */
+.clickable-month {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.clickable-month:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.clickable-year {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.clickable-year:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+
+/* Year List Container */
+.year-list-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-top: 4px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 1000;
+    display: none; /* Ensure it's hidden by default */
+}
+
+/* Ensure header is positioned relative for year list positioning */
+.datepicker-header {
+    position: relative;
+}
+
+.year-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.year-range-display {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.year-list-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    padding: 8px;
+}
+
+.year-list-item {
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4a5568;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.year-list-item:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.year-list-item.current {
+    background: #3182ce;
+    color: white;
+    font-weight: 600;
+}
+
+.year-list-item.disabled {
+    color: #a0aec0;
+    cursor: not-allowed;
+}
+
+.year-list-item.disabled:hover {
+    background: transparent;
+    color: #a0aec0;
+}
+
+/* Date Grid with English Subscripts */
+.day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 2px;
+}
+
+.nepali-date {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 1px;
+}
+
+.english-date-subscript {
+    font-size: 9px;
+    color: #6c757d;
+    font-weight: 400;
+    line-height: 1;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Saturday styling for both Nepali and English dates */
+.day:nth-child(7n) .nepali-date,
+.day:nth-child(7n) .english-date-subscript {
+    color: #dc3545;
+}
+
+.day:nth-child(7n).today .nepali-date,
+.day:nth-child(7n).today .english-date-subscript {
+    color: #ffffff !important;
+}
+
+/* Selected date styling */
+.day.selected .nepali-date,
+.day.selected .english-date-subscript {
+    color: white;
+}
+
+/* Today styling */
+.day.today .nepali-date {
+    font-weight: 700;
+}
+
+.day.today .english-date-subscript {
+    font-weight: 500;
+}
+
+/* Responsive styles for English date header and subscripts */
+@media (max-width: 768px) {
+    .english-date-header {
+        font-size: 11px;
+        margin-top: 2px;
+    }
+    
+    .nepali-date {
+        font-size: 13px;
+    }
+    
+    .english-date-subscript {
+        font-size: 8px;
+    }
+    
+    .day {
+        min-height: 36px;
+    }
+    
+    .year-list-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        padding: 6px;
+    }
+    
+    .year-list-item {
+        padding: 6px 2px;
+        font-size: 11px;
+    }
+    
+    .year-range-display {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .english-date-header {
+        font-size: 10px;
+        margin-top: 1px;
+    }
+    
+    .nepali-date {
+        font-size: 12px;
+    }
+    
+    .english-date-subscript {
+        font-size: 7px;
+    }
+    
+    .day {
+        min-height: 32px;
+        padding: 1px;
+    }
+    
+    .year-list-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1px;
+        padding: 4px;
+    }
+    
+    .year-list-item {
+        padding: 4px 2px;
+        font-size: 10px;
+    }
+    
+    .year-range-display {
+        font-size: 10px;
+    }
+    
+    .year-list-header {
+        padding: 6px 8px;
+    }
+}
+
+/* Today Button */
+.datepicker-footer {
+    padding: 8px 12px;
+    border-top: 1px solid #e2e8f0;
+    background: #f7fafc;
+    text-align: center;
+}
+
+.btn-today {
+    background: #3182ce;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-today:hover {
+    background: #2c5aa0;
+    transform: translateY(-1px);
+}
+
+.today-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.today-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Utility classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mb-4 { margin-bottom: 1rem; }
+.mb-8 { margin-bottom: 2rem; }
+
+.p-4 { padding: 1rem; }
+.p-8 { padding: 2rem; }
+
+.rounded { border-radius: 0.375rem; }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-xl { border-radius: 0.75rem; }
+
+.shadow { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }

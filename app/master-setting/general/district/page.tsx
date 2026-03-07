@@ -38,7 +38,7 @@ interface District {
   stateName: string;
   countryId: string;
   countryName: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
 }
 
 function mapApiToDistrict(raw: Record<string, unknown>): District {
@@ -53,7 +53,7 @@ function mapApiToDistrict(raw: Record<string, unknown>): District {
     stateName: state ? String(state.name ?? '') : '',
     countryId: country ? String(country.id ?? '') : '',
     countryName: country ? String(country.name ?? '') : '',
-    status: statusVal === 'ACTIVE' ? 'active' : 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
   };
 }
 
@@ -539,8 +539,10 @@ export default function DistrictSetup() {
                       title={`Set to ${district.status === 'active' ? 'Inactive' : 'Active'}`}
                     >
                       <span className={`status-badge ${district.status}`}>
-                        {district.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{district.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {district.status === 'active' && <Check size={14} />}
+                        {district.status === 'inactive' && <X size={14} />}
+                        {district.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{district.status === 'active' ? 'Active' : district.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td style={{ width: 100 }} onClick={(e) => e.stopPropagation()}>
@@ -699,8 +701,10 @@ export default function DistrictSetup() {
                     <label className="form-label">Status</label>
                     <p style={{ margin: 0, padding: '8px 0' }}>
                       <span className={`status-badge ${detailDistrict.status}`}>
-                        {detailDistrict.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{detailDistrict.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {detailDistrict.status === 'active' && <Check size={14} />}
+                        {detailDistrict.status === 'inactive' && <X size={14} />}
+                        {detailDistrict.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{detailDistrict.status === 'active' ? 'Active' : detailDistrict.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </p>
                   </div>

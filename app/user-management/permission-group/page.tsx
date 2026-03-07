@@ -121,7 +121,7 @@ function mapItem(raw: PermissionGroupResponse) {
     name: String(raw.name ?? ''),
     code: String(raw.code ?? ''),
     description: String(raw.description ?? ''),
-    status: (statusVal === 'ACTIVE' ? 'active' : 'inactive') as 'active' | 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
     hasSubChild: raw.hasSubChild ?? 'TRUE',
     parentId: raw.parentId ? String(raw.parentId) : undefined,
     parentName: raw.parentName,
@@ -135,7 +135,7 @@ function mapPermission(raw: PermissionResponse) {
     name: String(raw.name ?? ''),
     code: String(raw.code ?? ''),
     description: String(raw.description ?? ''),
-    status: (statusVal === 'ACTIVE' ? 'active' : 'inactive') as 'active' | 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
     permissionGroupId: raw.permissionGroupId ? String(raw.permissionGroupId) : undefined,
     permissionGroupName: raw.permissionGroupName,
   };

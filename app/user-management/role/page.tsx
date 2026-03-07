@@ -31,7 +31,7 @@ function mapItem(raw: RoleResponse) {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
     description: String(raw.description ?? ''),
-    status: (statusVal === 'ACTIVE' ? 'active' : 'inactive') as 'active' | 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
     permissionIds: (raw.permissions ?? []).map((p) => String(p.id)),
     permissionNames: (raw.permissions ?? []).map((p) => p.name),
   };
@@ -186,7 +186,7 @@ export default function RolePage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'active' as 'active' | 'inactive',
+    status: 'active',
     permissionIds: [] as string[],
     selectedGroupIds: [] as string[],
   });
@@ -592,8 +592,10 @@ export default function RolePage() {
                     <td>{row.description || '—'}</td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
-                        {row.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{row.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {row.status === 'active' && <Check size={14} />}
+                        {row.status === 'inactive' && <X size={14} />}
+                        {row.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
@@ -722,7 +724,7 @@ export default function RolePage() {
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: 14 }}>Status</label>
                     <p className="permission-detail-value" style={{ margin: 0, padding: '8px 0', fontSize: 15 }}>
-                      <span className={`status-badge ${detailRole.status}`}>{detailRole.status === 'active' ? <Check size={14} /> : <X size={14} />}<span>{detailRole.status === 'active' ? 'Active' : 'Inactive'}</span></span>
+                      <span className={`status-badge ${detailRole.status}`}>{detailRole.status === 'active' && <Check size={14} />}{detailRole.status === 'inactive' && <X size={14} />}{detailRole.status === 'deleted' && <Trash2 size={14} />}<span>{detailRole.status === 'active' ? 'Active' : detailRole.status === 'deleted' ? 'Deleted' : 'Inactive'}</span></span>
                     </p>
                   </div>
                 </div>

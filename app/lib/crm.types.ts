@@ -42,8 +42,10 @@ export interface ZodiacSignListRequest extends CrmListRequest {
 }
 
 // ---- Music Type ----
+/** type: one of Devotional Music, Mantras, Bhajans, Chants (backend MusicTypeEnum) */
 export interface MusicTypeRequest {
   name: string;
+  type: string;
   description?: string;
 }
 
@@ -54,6 +56,8 @@ export interface MusicRequest {
   name: string;
   description?: string;
   mp3Url?: string;
+  /** Duration in seconds */
+  durationSeconds?: number;
   musicTypeId?: string;
 }
 

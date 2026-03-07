@@ -1,0 +1,818 @@
+/* English DatePicker Styles - Matching Nepali DatePicker Design */
+
+.english-datepicker,
+.nepali-datepicker {
+    position: absolute;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e1e5e9;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    z-index: 9999;
+    min-width: 280px;
+    user-select: none;
+}
+
+.english-datepicker-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
+
+.english-datepicker-modal-content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Modal datepicker positioning */
+.modal .nepali-datepicker {
+    position: absolute !important;
+    z-index: 10000 !important;
+}
+
+.modal .english-datepicker-modal-overlay .nepali-datepicker {
+    position: relative !important;
+    z-index: auto !important;
+}
+
+/* Fixed positioning for datepickers inside modals */
+.nepali-datepicker[style*="position: fixed"] {
+    position: fixed !important;
+    z-index: 10001 !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid #e1e5e9 !important;
+}
+
+/* Header */
+.english-datepicker .datepicker-header,
+.nepali-datepicker .datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: relative;
+}
+
+.english-datepicker .nav-btn,
+.nepali-datepicker .nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    transition: all 0.2s ease;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.english-datepicker .nav-btn:hover:not(.disabled),
+.nepali-datepicker .nav-btn:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.english-datepicker .nav-btn.disabled,
+.nepali-datepicker .nav-btn.disabled {
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.english-datepicker .month-year,
+.nepali-datepicker .month-year {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    color: white;
+}
+
+.english-datepicker .month-year:hover,
+.nepali-datepicker .month-year:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.english-datepicker .date-display,
+.nepali-datepicker .date-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.english-datepicker .month,
+.nepali-datepicker .month {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.english-datepicker .year,
+.nepali-datepicker .year {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 2px;
+}
+
+/* Body */
+.english-datepicker .datepicker-body,
+.nepali-datepicker .datepicker-body {
+    padding: 12px;
+}
+
+/* Footer */
+.english-datepicker .datepicker-footer,
+.nepali-datepicker .datepicker-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-top: 1px solid #e1e5e9;
+    background: #f7fafc;
+}
+
+.english-datepicker .btn-today,
+.nepali-datepicker .btn-today {
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: #667eea;
+    background: transparent;
+    border: 1px solid #667eea;
+    transition: all 0.2s ease;
+}
+
+.english-datepicker .btn-today:hover,
+.nepali-datepicker .btn-today:hover {
+    background: #667eea;
+    color: white;
+}
+
+.english-datepicker .weekdays,
+.nepali-datepicker .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.english-datepicker .weekday,
+.nepali-datepicker .weekday {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a5568;
+    padding: 6px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.english-datepicker .days,
+.nepali-datepicker .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 4px;
+}
+
+.english-datepicker .day,
+.nepali-datepicker .day {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+    color: #2d3748;
+}
+
+/* Hide range OK/Clear controls to match Nepali single-input range UX */
+.english-datepicker .range-controls {
+    display: none !important;
+}
+
+/* Range Highlighting Styles */
+.english-datepicker .day.range-start {
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
+    position: relative !important;
+}
+
+.english-datepicker .day.range-end {
+    background: #0ea5e9 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
+    position: relative !important;
+}
+
+.english-datepicker .day.in-range {
+    background: #e0e7ff !important;
+    color: #1e1b4b !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    position: relative !important;
+}
+
+.english-datepicker .day.range-start:hover,
+.english-datepicker .day.range-end:hover,
+.english-datepicker .day.in-range:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(30, 41, 59, 0.12) !important;
+    z-index: 10 !important;
+    transition: all 0.2s ease !important;
+}
+
+.english-datepicker .day:hover,
+.nepali-datepicker .day:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.english-datepicker .day.today,
+.nepali-datepicker .day.today {
+    background: #3182ce;
+    color: white;
+    font-weight: 600;
+}
+
+.english-datepicker .day.today:hover,
+.nepali-datepicker .day.today:hover {
+    background: #2c5aa0;
+}
+
+.english-datepicker .day.selected,
+.nepali-datepicker .day.selected {
+    background: #38a169;
+    color: white;
+    font-weight: 600;
+}
+
+.english-datepicker .day.selected:hover,
+.nepali-datepicker .day.selected:hover {
+    background: #2f855a;
+}
+
+/* Range Highlighting - ensure it wins over other styles */
+.english-datepicker .day.range-start,
+.english-datepicker .day.range-start.selected,
+.english-datepicker .day.range-start.today {
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
+}
+
+.english-datepicker .day.range-end,
+.english-datepicker .day.range-end.selected,
+.english-datepicker .day.range-end.today {
+    background: #0ea5e9 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
+}
+
+.english-datepicker .day.in-range,
+.english-datepicker .day.range-between,
+.english-datepicker .day.in-range.selected,
+.english-datepicker .day.in-range.today {
+    background: #e0e7ff !important;
+    color: #1e1b4b !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+}
+
+.english-datepicker .day.other-month,
+.nepali-datepicker .day.other-month {
+    color: #a0aec0;
+    opacity: 0.5;
+}
+
+.english-datepicker .day.other-month:hover,
+.nepali-datepicker .day.other-month:hover {
+    background: #f7fafc;
+    opacity: 0.8;
+}
+
+.english-datepicker .day.disabled,
+.nepali-datepicker .day.disabled {
+    color: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.english-datepicker .day.disabled:hover,
+.nepali-datepicker .day.disabled:hover {
+    background: transparent;
+    transform: none;
+}
+
+/* Saturday column styling (7th column) */
+.english-datepicker .day:nth-child(7n),
+.nepali-datepicker .day:nth-child(7n) {
+    color: #e53e3e;
+    font-weight: 600;
+}
+
+.english-datepicker .day:nth-child(7n):hover,
+.nepali-datepicker .day:nth-child(7n):hover {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.english-datepicker .day:nth-child(7n).today,
+.nepali-datepicker .day:nth-child(7n).today {
+    background: #e53e3e;
+    color: white;
+}
+
+.english-datepicker .day:nth-child(7n).today:hover,
+.nepali-datepicker .day:nth-child(7n).today:hover {
+    background: #c53030;
+}
+
+.english-datepicker .day:nth-child(7n).selected,
+.nepali-datepicker .day:nth-child(7n).selected {
+    background: #e53e3e;
+    color: white;
+}
+
+.english-datepicker .day:nth-child(7n).selected:hover,
+.nepali-datepicker .day:nth-child(7n).selected:hover {
+    background: #c53030;
+}
+
+/* Saturday weekday header styling */
+.english-datepicker .weekday:nth-child(7),
+.nepali-datepicker .weekday:nth-child(7) {
+    color: #e53e3e;
+    font-weight: bold;
+}
+
+.english-datepicker .date,
+.nepali-datepicker .date {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Theme variations */
+.english-datepicker.light,
+.nepali-datepicker.light {
+    background: #ffffff;
+    border-color: #e1e5e9;
+    color: #2d3748;
+}
+
+.english-datepicker.dark,
+.nepali-datepicker.dark {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.english-datepicker.dark .datepicker-header,
+.nepali-datepicker.dark .datepicker-header {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+}
+
+.english-datepicker.dark .day,
+.nepali-datepicker.dark .day {
+    color: #000000;
+}
+
+.english-datepicker.dark .day:hover,
+.nepali-datepicker.dark .day:hover {
+    background: #4a5568;
+}
+
+.english-datepicker.dark .day.other-month,
+.nepali-datepicker.dark .day.other-month {
+    color: #718096;
+}
+
+.english-datepicker.dark .day.disabled,
+.nepali-datepicker.dark .day.disabled {
+    color: #4a5568 !important;
+    background: #1a202c !important;
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
+
+.english-datepicker.dark .day.disabled:hover,
+.nepali-datepicker.dark .day.disabled:hover {
+    background: #1a202c !important;
+    transform: none !important;
+}
+
+.english-datepicker.blue,
+.nepali-datepicker.blue {
+    border-color: #3182ce;
+}
+
+.english-datepicker.blue .datepicker-header,
+.nepali-datepicker.blue .datepicker-header {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+}
+
+.english-datepicker.blue .day.today,
+.nepali-datepicker.blue .day.today {
+    background: #3182ce;
+}
+
+.english-datepicker.blue .day.selected,
+.nepali-datepicker.blue .day.selected {
+    background: #3182ce;
+}
+
+.english-datepicker.green,
+.nepali-datepicker.green {
+    border-color: #38a169;
+}
+
+.english-datepicker.green .datepicker-header,
+.nepali-datepicker.green .datepicker-header {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+}
+
+.english-datepicker.green .day.today,
+.nepali-datepicker.green .day.today {
+    background: #38a169;
+}
+
+.english-datepicker.green .day.selected,
+.nepali-datepicker.green .day.selected {
+    background: #38a169;
+}
+
+.english-datepicker.red,
+.nepali-datepicker.red {
+    border-color: #e53e3e;
+}
+
+.english-datepicker.red .datepicker-header,
+.nepali-datepicker.red .datepicker-header {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+
+.english-datepicker.red .day.today,
+.nepali-datepicker.red .day.today {
+    background: #e53e3e;
+}
+
+.english-datepicker.red .day.selected,
+.nepali-datepicker.red .day.selected {
+    background: #e53e3e;
+}
+
+.english-datepicker.purple,
+.nepali-datepicker.purple {
+    border-color: #805ad5;
+}
+
+.english-datepicker.purple .datepicker-header,
+.nepali-datepicker.purple .datepicker-header {
+    background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+}
+
+.english-datepicker.purple .day.today,
+.nepali-datepicker.purple .day.today {
+    background: #805ad5;
+}
+
+.english-datepicker.purple .day.selected,
+.nepali-datepicker.purple .day.selected {
+    background: #805ad5;
+}
+
+.english-datepicker.orange,
+.nepali-datepicker.orange {
+    border-color: #ed8936;
+}
+
+.english-datepicker.orange .datepicker-header,
+.nepali-datepicker.orange .datepicker-header {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.english-datepicker.orange .day.today,
+.nepali-datepicker.orange .day.today {
+    background: #ed8936;
+}
+
+.english-datepicker.orange .day.selected,
+.nepali-datepicker.orange .day.selected {
+    background: #ed8936;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .english-datepicker,
+    .nepali-datepicker {
+        min-width: 260px;
+        max-width: 95vw;
+        font-size: 11px;
+    }
+    
+    .english-datepicker .day,
+    .nepali-datepicker .day {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+    
+    .english-datepicker .datepicker-header,
+    .nepali-datepicker .datepicker-header {
+        padding: 6px 10px;
+    }
+    
+    .english-datepicker .datepicker-body,
+    .nepali-datepicker .datepicker-body {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .english-datepicker,
+    .nepali-datepicker {
+        min-width: 240px;
+        max-width: 90vw;
+        font-size: 10px;
+    }
+    
+    .english-datepicker .day,
+    .nepali-datepicker .day {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+    }
+    
+    .english-datepicker .datepicker-header,
+    .nepali-datepicker .datepicker-header {
+        padding: 6px 8px;
+    }
+    
+    .english-datepicker .datepicker-body,
+    .nepali-datepicker .datepicker-body {
+        padding: 8px;
+    }
+    
+    .english-datepicker .days,
+    .nepali-datepicker .days {
+        gap: 2px;
+        grid-template-rows: repeat(5, 1fr);
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .english-datepicker .day, .english-datepicker .nav-btn,
+    .nepali-datepicker .day, .nepali-datepicker .nav-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .english-datepicker .day,
+    .nepali-datepicker .day {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .english-datepicker .nav-btn,
+    .nepali-datepicker .nav-btn {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* Focus styles for accessibility */
+.english-datepicker .nav-btn:focus,
+.english-datepicker .month-year:focus,
+.english-datepicker .day:focus,
+.nepali-datepicker .nav-btn:focus,
+.nepali-datepicker .month-year:focus,
+.nepali-datepicker .day:focus {
+    outline: 2px solid #1976d2;
+    outline-offset: 2px;
+}
+
+/* Animation classes */
+.english-datepicker.fade-in,
+.nepali-datepicker.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.english-datepicker.slide-up,
+.nepali-datepicker.slide-up {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Default animation */
+.english-datepicker,
+.nepali-datepicker {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Year View Styles */
+.english-datepicker .year-range,
+.nepali-datepicker .year-range {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    padding: 8px 12px;
+}
+
+.english-datepicker .year-view,
+.nepali-datepicker .year-view {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px;
+}
+
+.english-datepicker .year-item,
+.nepali-datepicker .year-item {
+    padding: 12px 8px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2d3748;
+    background: #f7fafc;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.english-datepicker .year-item:hover,
+.nepali-datepicker .year-item:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+    border-color: #cbd5e0;
+}
+
+.english-datepicker .year-item.current,
+.nepali-datepicker .year-item.current {
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    border-color: #667eea;
+}
+
+.english-datepicker .year-item.selected,
+.nepali-datepicker .year-item.selected {
+    background: #38a169;
+    color: white;
+    font-weight: 600;
+    border-color: #38a169;
+}
+
+.english-datepicker .year-item.current.selected,
+.nepali-datepicker .year-item.current.selected {
+    background: #667eea;
+    color: white;
+}
+
+/* Month List View Styles */
+.english-datepicker .year-display,
+.nepali-datepicker .year-display {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    padding: 8px 12px;
+}
+
+.english-datepicker .clickable-year,
+.nepali-datepicker .clickable-year {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    display: inline-block;
+}
+
+.english-datepicker .clickable-year:hover,
+.nepali-datepicker .clickable-year:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.english-datepicker .month-list-view,
+.nepali-datepicker .month-list-view {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 8px;
+}
+
+.english-datepicker .month-item,
+.nepali-datepicker .month-item {
+    padding: 16px 8px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2d3748;
+    background: #f7fafc;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.english-datepicker .month-item:hover,
+.nepali-datepicker .month-item:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+    border-color: #cbd5e0;
+}
+
+.english-datepicker .month-item.current,
+.nepali-datepicker .month-item.current {
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    border-color: #667eea;
+}
+
+.english-datepicker .month-item.selected,
+.nepali-datepicker .month-item.selected {
+    background: #38a169;
+    color: white;
+    font-weight: 600;
+    border-color: #38a169;
+}
+
+.english-datepicker .month-item.current.selected,
+.nepali-datepicker .month-item.current.selected {
+    background: #667eea;
+    color: white;
+}

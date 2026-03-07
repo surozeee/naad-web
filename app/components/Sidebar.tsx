@@ -3,13 +3,146 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { getProfile } from '@/app/lib/profile.service';
+import type { MenuResponse } from '@/app/lib/user-api.types';
 
 interface SidebarProps {
   collapsed: boolean;
   onCollapseToggle?: () => void;
 }
 
+export type SidebarMenuItem = {
+  id: string;
+  icon: string;
+  label: string;
+  href: string;
+  submenu?: Array<{ label: string; href: string; submenu?: Array<{ label: string; href: string }> }>;
+};
+
 const HOVER_CLOSE_DELAY_MS = 200;
+
+/** Menus shown only to CUSTOMER role (Horoscope, Astrology, Puja, Music). */
+const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
+  { id: 'horoscope', icon: '♈', label: 'Horoscope', href: '/horoscope', submenu: [
+    { label: 'Daily Horoscope', href: '/horoscope/daily' }, { label: 'Weekly Horoscope', href: '/horoscope/weekly' },
+    { label: 'Monthly Horoscope', href: '/horoscope/monthly' }, { label: 'Yearly Horoscope', href: '/horoscope/yearly' },
+  ]},
+  { id: 'astrology', icon: '⭐', label: 'Astrology', href: '/astrology', submenu: [
+    { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' }, { label: 'Birth Chart', href: '/astrology/birth-chart' }, { label: 'Planetary Positions', href: '/astrology/planets' },
+    { label: 'Transits', href: '/astrology/transits' }, { label: 'Compatibility', href: '/astrology/compatibility' },
+  ]},
+  { id: 'puja', icon: '🕉️', label: 'Puja', href: '/puja', submenu: [
+    { label: 'Daily Puja', href: '/puja/daily' }, { label: 'Festival Puja', href: '/puja/festival' },
+    { label: 'Special Puja', href: '/puja/special' }, { label: 'Puja Calendar', href: '/puja/calendar' },
+  ]},
+  { id: 'music', icon: '🎵', label: 'Music', href: '/music', submenu: [
+    { label: 'Music Type', href: '/music/music-type' }, { label: 'Music', href: '/music/music' },
+    { label: 'Devotional Music', href: '/music/devotional' }, { label: 'Mantras', href: '/music/mantras' },
+    { label: 'Bhajans', href: '/music/bhajans' }, { label: 'Chants', href: '/music/chants' },
+  ]},
+];
+
+/** Fallback for Superadmin when menu tree API fails or returns empty (full admin CRUD menus). */
+const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
+  ...CUSTOMER_MENU_ITEMS,
+  { id: 'master-setting', icon: '⚙️', label: 'Master Setting', href: '/master-setting', submenu: [
+    { label: 'General', href: '/master-setting/general', submenu: [
+      { label: 'Country', href: '/master-setting/general/country' }, { label: 'State', href: '/master-setting/general/state' },
+      { label: 'District', href: '/master-setting/general/district' }, { label: 'Local Unit Type', href: '/master-setting/general/local-unit-type' },
+      { label: 'Local Unit', href: '/master-setting/general/local-unit' },
+    ]},
+  ]},
+  { id: 'settings', icon: '🔧', label: 'Settings', href: '/settings', submenu: [
+    { label: 'Configuration', href: '/settings/system-settings' },
+  ]},
+  { id: 'user-management', icon: '👥', label: 'User Management', href: '/user-management', submenu: [
+    { label: 'User', href: '/user-management/user' }, { label: 'Role', href: '/user-management/role' },
+    { label: 'Permission', href: '/user-management/permission' }, { label: 'Permission Group', href: '/user-management/permission-group' },
+    { label: 'Menu', href: '/user-management/menu' }, { label: 'Customers', href: '/user-management/customers' },
+  ]},
+  { id: 'event-management', icon: '📅', label: 'Event Management', href: '/event-management', submenu: [
+    { label: 'Event Category', href: '/event-management/event-category' }, { label: 'Event', href: '/event-management/event' },
+    { label: 'Ticketing', href: '/event-management/ticketing' }, { label: 'Chat', href: '/event-management/chat' },
+    { label: 'Puja', href: '/event-management/puja' }, { label: 'Concert', href: '/event-management/concert' },
+  ]},
+  { id: 'message-management', icon: '💬', label: 'Message Management', href: '/support', submenu: [
+    { label: 'Support Message', href: '/support/support-message' }, { label: 'Ticket', href: '/support/ticket' },
+    { label: 'FAQ', href: '/support/faq' }, { label: 'FAQ Category', href: '/support/faq-category' },
+    { label: 'Message Template', href: '/support/messaging-template' }, { label: 'Bulk Message', href: '/support/bulk-message' },
+  ]},
+];
+
+/** Known route → display label (fixes API returning wrong/corrupt names e.g. "ateasier Management"). */
+const KNOWN_MENU_LABELS: Record<string, string> = {
+  '/user-management': 'User Management',
+  '/user-management/user': 'User',
+  '/user-management/role': 'Role',
+  '/user-management/permission': 'Permission',
+  '/user-management/permission-group': 'Permission Group',
+  '/user-management/menu': 'Menu',
+  '/user-management/customers': 'Customers',
+  '/master-setting': 'Master Setting',
+  '/master-setting/general': 'General',
+  '/settings': 'Settings',
+  '/settings/system-settings': 'Configuration',
+  '/event-management': 'Event Management',
+  '/event-management/event-category': 'Event Category',
+  '/event-management/event': 'Event',
+  '/event-management/puja': 'Puja',
+  '/support': 'Message Management',
+  '/support/support-message': 'Support Message',
+  '/support/ticket': 'Ticket',
+  '/support/faq': 'FAQ',
+  '/support/faq-category': 'FAQ Category',
+  '/support/messaging-template': 'Message Template',
+  '/support/bulk-message': 'Bulk Message',
+  '/horoscope': 'Horoscope',
+  '/astrology': 'Astrology',
+  '/astrology/zodiac-sign': 'Zodiac Sign',
+  '/puja': 'Puja',
+  '/music': 'Music',
+  '/music/music-type': 'Music Type',
+  '/music/music': 'Music',
+  '/master-setting/general/country': 'Country',
+  '/master-setting/general/state': 'State',
+  '/master-setting/general/district': 'District',
+  '/master-setting/general/local-unit-type': 'Local Unit Type',
+  '/master-setting/general/local-unit': 'Local Unit',
+};
+
+function normalizeHref(href: string): string {
+  const s = (href || '').replace(/\?.*$/, '').trim();
+  const withSlash = s.startsWith('/') ? s : `/${s}`;
+  return withSlash.replace(/\/+$/, '') || '/';
+}
+
+function getDisplayLabel(href: string, apiName: string): string {
+  const key = normalizeHref(href);
+  return KNOWN_MENU_LABELS[key] ?? apiName ?? '';
+}
+
+function mapMenuResponseToItem(m: MenuResponse): SidebarMenuItem {
+  const href = m.url || '#';
+  const submenu = m.subMenu?.length
+    ? m.subMenu.map((sub) => {
+        const subHref = sub.url || '#';
+        return {
+          label: getDisplayLabel(subHref, sub.name),
+          href: subHref,
+          submenu: sub.subMenu?.length
+            ? sub.subMenu.map((n) => ({ label: getDisplayLabel(n.url || '#', n.name), href: n.url || '#' }))
+            : undefined,
+        };
+      })
+    : undefined;
+  return {
+    id: String(m.id),
+    icon: m.icon || '•',
+    label: getDisplayLabel(href, m.name),
+    href,
+    submenu,
+  };
+}
 
 export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   const pathname = usePathname();
@@ -80,135 +213,32 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
     });
   }, [collapsedOpenId, collapsed]);
 
-  const menuItems = [
-    {
-      id: 'horoscope',
-      icon: '♈',
-      label: 'Horoscope',
-      href: '/horoscope',
-      submenu: [
-        { label: 'Daily Horoscope', href: '/horoscope/daily' },
-        { label: 'Weekly Horoscope', href: '/horoscope/weekly' },
-        { label: 'Monthly Horoscope', href: '/horoscope/monthly' },
-        { label: 'Yearly Horoscope', href: '/horoscope/yearly' },
-      ]
-    },
-    {
-      id: 'astrology',
-      icon: '⭐',
-      label: 'Astrology',
-      href: '/astrology',
-      submenu: [
-        { label: 'Birth Chart', href: '/astrology/birth-chart' },
-        { label: 'Planetary Positions', href: '/astrology/planets' },
-        { label: 'Transits', href: '/astrology/transits' },
-        { label: 'Compatibility', href: '/astrology/compatibility' },
-      ]
-    },
-    {
-      id: 'puja',
-      icon: '🕉️',
-      label: 'Puja',
-      href: '/puja',
-      submenu: [
-        { label: 'Daily Puja', href: '/puja/daily' },
-        { label: 'Festival Puja', href: '/puja/festival' },
-        { label: 'Special Puja', href: '/puja/special' },
-        { label: 'Puja Calendar', href: '/puja/calendar' },
-      ]
-    },
-    {
-      id: 'music',
-      icon: '🎵',
-      label: 'Music',
-      href: '/music',
-      submenu: [
-        { label: 'Devotional Music', href: '/music/devotional' },
-        { label: 'Mantras', href: '/music/mantras' },
-        { label: 'Bhajans', href: '/music/bhajans' },
-        { label: 'Chants', href: '/music/chants' },
-      ]
-    },
-    {
-      id: 'master-setting',
-      icon: '⚙️',
-      label: 'Master Setting',
-      href: '/master-setting',
-      submenu: [
-        {
-          label: 'General',
-          href: '/master-setting/general',
-          submenu: [
-            { label: 'Country', href: '/master-setting/general/country' },
-            { label: 'State', href: '/master-setting/general/state' },
-            { label: 'District', href: '/master-setting/general/district' },
-            { label: 'Local Unit Type', href: '/master-setting/general/local-unit-type' },
-            { label: 'Local Unit', href: '/master-setting/general/local-unit' },
-          ]
-        },
-      ]
-    },
-    {
-      id: 'settings',
-      icon: '🔧',
-      label: 'Settings',
-      href: '/settings',
-      submenu: [
-        { label: 'Configuration', href: '/settings/system-settings' },
-      ]
-    },
-    {
-      id: 'user-management',
-      icon: '👥',
-      label: 'User Management',
-      href: '/user-management',
-      submenu: [
-        { label: 'User', href: '/user-management/user' },
-        { label: 'Role', href: '/user-management/role' },
-        { label: 'Permission', href: '/user-management/permission' },
-        { label: 'Permission Group', href: '/user-management/permission-group' },
-        { label: 'Menu', href: '/user-management/menu' },
-      ]
-    },
-    {
-      id: 'event-management',
-      icon: '📅',
-      label: 'Event Management',
-      href: '/event-management',
-      submenu: [
-        { label: 'Ticketing', href: '/event-management/ticketing' },
-        { label: 'Chat', href: '/event-management/chat' },
-        { label: 'Puja', href: '/event-management/puja' },
-        { label: 'Concert', href: '/event-management/concert' },
-      ]
-    },
-    {
-      id: 'message-management',
-      icon: '💬',
-      label: 'Message Management',
-      href: '/support',
-      submenu: [
-        { label: 'Support Message', href: '/support/support-message' },
-        { label: 'Ticket', href: '/support/ticket' },
-        { label: 'FAQ', href: '/support/faq' },
-        { label: 'FAQ Category', href: '/support/faq-category' },
-        { label: 'Message Template', href: '/support/messaging-template' },
-        { label: 'Bulk Message', href: '/support/bulk-message' },
-      ]
-    },
-    {
-      id: 'customer',
-      icon: '👤',
-      label: 'Customer',
-      href: '/customer',
-      submenu: [
-        { label: 'Support', href: '/customer/support' },
-        { label: 'Contact', href: '/customer/contact' },
-        { label: 'Notification', href: '/customer/notification' },
-        { label: 'Email Template', href: '/customer/email-template' },
-      ]
-    },
-  ];
+  const [menuItems, setMenuItems] = useState<SidebarMenuItem[]>(ADMIN_MENU_ITEMS);
+  const [menuLoading, setMenuLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const profile = await getProfile();
+        const roleName = (profile?.roleName ?? '').trim();
+        const isCustomer = /customer/i.test(roleName) || profile?.userDetail?.userType === 'CUSTOMER';
+        if (isCustomer) {
+          if (!cancelled) setMenuItems(CUSTOMER_MENU_ITEMS);
+          setMenuLoading(false);
+          return;
+        }
+        // Superadmin: use static admin menu so labels and structure are always correct.
+        // Menu CRUD (User Management → Menu) still configures backend; sidebar uses this list.
+        if (!cancelled) setMenuItems(ADMIN_MENU_ITEMS);
+      } catch {
+        if (!cancelled) setMenuItems(ADMIN_MENU_ITEMS);
+      } finally {
+        if (!cancelled) setMenuLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
@@ -246,8 +276,8 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
           };
         }
         return null;
-      }).filter(item => item !== null) as typeof menuItems;
-  }, [searchQuery]);
+      }).filter(item => item !== null) as SidebarMenuItem[];
+  }, [searchQuery, menuItems]);
 
   if (collapsed) {
     return (
@@ -313,7 +343,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                           itemActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50' : 'text-slate-800 dark:text-slate-200'
                         }`}
                       >
-                        {item.label}
+                        {getDisplayLabel(item.href, item.label)}
                       </Link>
                       <div className="pt-1 pb-0">
                         {item.submenu.map((subItem, idx) => {
@@ -329,7 +359,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                   subActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-slate-700 dark:text-slate-300'
                                 }`}
                               >
-                                {subItem.label}
+                                {getDisplayLabel(subItem.href, subItem.label)}
                               </Link>
                               {hasNested && 'submenu' in subItem && subItem.submenu?.map((nested: { label: string; href: string }, nestedIdx: number) => (
                                 <Link
@@ -418,7 +448,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                       onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
-                      <span className="flex-1 text-sm">{item.label}</span>
+                      <span className="flex-1 text-sm">{getDisplayLabel(item.href, item.label)}</span>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">▶</span>
                       
                       {/* Submenu – same alignment (padding) as menu, delay before close */}
@@ -447,7 +477,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                     }
                                   }}
                                 >
-                                  {subItem.label}
+                                  {getDisplayLabel(subItem.href, subItem.label)}
                                   <span className="text-slate-400 dark:text-slate-500 absolute right-3">›</span>
                                   
                                   {/* Nested Submenu */}
@@ -459,7 +489,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                         prefetch={true}
                                         className={`nested-submenu-item ${isActive(nestedItem.href) ? 'active' : ''}`}
                                       >
-                                        {nestedItem.label}
+                                        {getDisplayLabel(nestedItem.href, nestedItem.label)}
                                       </Link>
                                     ))}
                                   </div>
@@ -470,7 +500,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                   prefetch={true}
                                   className={`sidebar-submenu-item ${subItemActive ? 'active' : ''}`}
                                 >
-                                  {subItem.label}
+                                  {getDisplayLabel(subItem.href, subItem.label)}
                                 </Link>
                               )}
                             </div>
@@ -485,7 +515,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                       className={`sidebar-menu-item ${itemActive ? 'active' : ''}`}
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
-                      <span className="flex-1 text-sm">{item.label}</span>
+                      <span className="flex-1 text-sm">{getDisplayLabel(item.href, item.label)}</span>
                     </Link>
                   )}
                 </div>

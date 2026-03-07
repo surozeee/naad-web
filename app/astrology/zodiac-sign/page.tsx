@@ -20,67 +20,103 @@ import DashboardLayout from '../../components/DashboardLayout';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
-import { pujaApi } from '@/app/lib/crm.service';
-import type { PujaRequest } from '@/app/lib/crm.types';
+import { zodiacSignApi, horoscopeScopeApi } from '@/app/lib/crm.service';
+import type { ZodiacSignRequest } from '@/app/lib/crm.types';
 
-interface PujaItem {
+interface ScopeOption {
+  id: string;
+  scope: string;
+}
+
+interface ZodiacSignItem {
   id: string;
   name: string;
   description: string;
+  logoUrl: string;
+  startingName: string;
+  horoscopeScopeId: string;
+  scopeName?: string;
   status: 'active' | 'inactive' | 'deleted';
 }
 
-function mapApiToItem(raw: Record<string, unknown>): PujaItem {
+function mapApiToItem(raw: Record<string, unknown>): ZodiacSignItem {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
-  const status: PujaItem['status'] = statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive';
+  const scope = raw.horoscopeScope as Record<string, unknown> | undefined;
   return {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
     description: String(raw.description ?? ''),
-    status,
+    logoUrl: String(raw.logoUrl ?? ''),
+    startingName: String(raw.startingName ?? ''),
+    horoscopeScopeId: raw.horoscopeScopeId ? String(raw.horoscopeScopeId) : (scope?.id ? String(scope.id) : ''),
+    scopeName: scope?.scope ? String(scope.scope) : undefined,
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
   };
 }
 
-export default function PujaPage() {
+export default function ZodiacSignPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [items, setItems] = useState<PujaItem[]>([]);
+  const [items, setItems] = useState<ZodiacSignItem[]>([]);
+  const [scopes, setScopes] = useState<ScopeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<PujaRequest>({ name: '', description: '' });
+  const [formData, setFormData] = useState<ZodiacSignRequest>({
+    name: '',
+    description: '',
+    logoUrl: '',
+    startingName: '',
+    horoscopeScopeId: '',
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<'name' | 'description' | 'status'>('name');
+  const [filterScopeId, setFilterScopeId] = useState<string>('');
+  const [sortKey, setSortKey] = useState<'name' | 'startingName' | 'scopeName' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const fetchScopes = useCallback(async () => {
+    try {
+      const res = await horoscopeScopeApi.listActive();
+      const list = (res.data ?? []) as Record<string, unknown>[];
+      setScopes(list.map((r) => ({ id: String(r.id ?? ''), scope: String(r.scope ?? '') })));
+    } catch {
+      setScopes([]);
+    }
+  }, []);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await pujaApi.list({
+      const res = await zodiacSignApi.list({
         pageNo: 0,
         pageSize: 500,
         searchKey: searchTerm || undefined,
+        horoscopeScopeId: filterScopeId || undefined,
         sortBy: 'name',
         sortDirection: 'asc',
       });
       const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
       setItems(list.map(mapApiToItem));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load puja');
+      setError(err instanceof Error ? err.message : 'Failed to load zodiac signs');
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
+  }, [searchTerm, filterScopeId]);
+
+  useEffect(() => {
+    fetchScopes();
+  }, [fetchScopes]);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -97,17 +133,20 @@ export default function PujaPage() {
     e.preventDefault();
     if (!validateForm()) return;
     setError(null);
-    const body: PujaRequest = {
+    const body: ZodiacSignRequest = {
       name: formData.name.trim(),
       description: formData.description?.trim() || undefined,
+      logoUrl: formData.logoUrl?.trim() || undefined,
+      startingName: formData.startingName?.trim() || undefined,
+      horoscopeScopeId: formData.horoscopeScopeId?.trim() || undefined,
     };
     try {
       if (editingId) {
-        await pujaApi.update(editingId, body);
-        await Swal.fire({ title: 'Updated', text: 'Puja updated.', icon: 'success', timer: 1500, showConfirmButton: false });
+        await zodiacSignApi.update(editingId, body);
+        await Swal.fire({ title: 'Updated', text: 'Zodiac sign updated.', icon: 'success', timer: 1500, showConfirmButton: false });
       } else {
-        await pujaApi.create(body);
-        await Swal.fire({ title: 'Created', text: 'Puja created.', icon: 'success', timer: 1500, showConfirmButton: false });
+        await zodiacSignApi.create(body);
+        await Swal.fire({ title: 'Created', text: 'Zodiac sign created.', icon: 'success', timer: 1500, showConfirmButton: false });
       }
       await fetchItems();
       setShowAddModal(false);
@@ -118,18 +157,24 @@ export default function PujaPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', logoUrl: '', startingName: '', horoscopeScopeId: '' });
     setErrors({});
     setEditingId(null);
   };
 
-  const handleEdit = (row: PujaItem) => {
-    setFormData({ name: row.name, description: row.description || '' });
+  const handleEdit = (row: ZodiacSignItem) => {
+    setFormData({
+      name: row.name,
+      description: row.description || '',
+      logoUrl: row.logoUrl || '',
+      startingName: row.startingName || '',
+      horoscopeScopeId: row.horoscopeScopeId || '',
+    });
     setEditingId(row.id);
     setShowAddModal(true);
   };
 
-  const handleChangeStatus = async (row: PujaItem) => {
+  const handleChangeStatus = async (row: ZodiacSignItem) => {
     const newStatus = row.status === 'active' ? 'INACTIVE' : 'ACTIVE';
     const result = await Swal.fire({
       title: 'Update status?',
@@ -141,7 +186,7 @@ export default function PujaPage() {
     });
     if (!result.isConfirmed) return;
     try {
-      await pujaApi.changeStatus(row.id, newStatus);
+      await zodiacSignApi.changeStatus(row.id, newStatus);
       await fetchItems();
       await Swal.fire({ title: 'Updated', text: 'Status updated.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
@@ -151,7 +196,7 @@ export default function PujaPage() {
 
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
-      title: 'Delete puja?',
+      title: 'Delete zodiac sign?',
       text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
@@ -161,9 +206,9 @@ export default function PujaPage() {
     });
     if (!result.isConfirmed) return;
     try {
-      await pujaApi.delete(id);
+      await zodiacSignApi.delete(id);
       await fetchItems();
-      await Swal.fire({ title: 'Deleted', text: 'Puja deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
+      await Swal.fire({ title: 'Deleted', text: 'Zodiac sign deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
       await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Delete failed', icon: 'error' });
     }
@@ -172,11 +217,13 @@ export default function PujaPage() {
   const filtered = items.filter(
     (i) =>
       i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (i.startingName && i.startingName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (i.scopeName && i.scopeName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   const sorted = [...filtered].sort((a, b) => {
-    const aVal = String(a[sortKey] ?? '').toLowerCase();
-    const bVal = String(b[sortKey] ?? '').toLowerCase();
+    const aVal = String(sortKey === 'scopeName' ? a.scopeName : a[sortKey] ?? '').toLowerCase();
+    const bVal = String(sortKey === 'scopeName' ? b.scopeName : b[sortKey] ?? '').toLowerCase();
     const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
     return sortDirection === 'asc' ? cmp : -cmp;
   });
@@ -221,14 +268,14 @@ export default function PujaPage() {
   return (
     <DashboardLayout>
       <div className="organization-page">
-        <Breadcrumb items={[{ label: 'Event Management', href: '/event-management' }, { label: 'Puja' }]} />
+        <Breadcrumb items={[{ label: 'Astrology', href: '/astrology' }, { label: 'Zodiac Sign' }]} />
         <PageHeaderWithInfo
-          title="Puja"
-          infoText="Manage puja entries. Add, edit, or remove puja with name and description."
+          title="Zodiac Sign"
+          infoText="Manage zodiac signs. Set name, description, logo URL, starting name, and horoscope scope."
         >
           <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} />
-            <span>Add Puja</span>
+            <span>Add Zodiac Sign</span>
           </button>
         </PageHeaderWithInfo>
         {error && (
@@ -236,24 +283,38 @@ export default function PujaPage() {
             {error}
           </div>
         )}
-        <div className="search-section">
-          <div className="search-wrapper">
+        <div className="search-section" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="search-wrapper" style={{ flex: 1, minWidth: 200 }}>
             <Search size={20} />
             <input
               type="text"
-              placeholder="Search by name or description..."
+              placeholder="Search by name, description, scope..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="search-input"
             />
           </div>
+          <select
+            className="form-input"
+            style={{ width: 200 }}
+            value={filterScopeId}
+            onChange={(e) => { setFilterScopeId(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="">All scopes</option>
+            {scopes.map((s) => (
+              <option key={s.id} value={s.id}>{s.scope}</option>
+            ))}
+          </select>
         </div>
         <div className="table-container" style={{ padding: '1rem' }}>
           <table className="data-table">
             <thead>
               <tr>
                 <SortableTh columnKey="name">Name</SortableTh>
-                <SortableTh columnKey="description">Description</SortableTh>
+                <th>Description</th>
+                <SortableTh columnKey="startingName">Starting Name</SortableTh>
+                <SortableTh columnKey="scopeName">Scope</SortableTh>
+                <th>Logo URL</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
               </tr>
@@ -261,12 +322,12 @@ export default function PujaPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={4} className="empty-state">
-                    <p>{items.length === 0 ? 'No puja found' : 'No puja match your search'}</p>
+                  <td colSpan={7} className="empty-state">
+                    <p>{items.length === 0 ? 'No zodiac signs found' : 'No zodiac signs match your search'}</p>
                   </td>
                 </tr>
               ) : (
@@ -277,7 +338,16 @@ export default function PujaPage() {
                         <span className="org-name">{row.name}</span>
                       </div>
                     </td>
-                    <td>{row.description || '—'}</td>
+                    <td style={{ maxWidth: 180 }}>{row.description ? (row.description.length > 50 ? row.description.slice(0, 50) + '…' : row.description) : '—'}</td>
+                    <td>{row.startingName || '—'}</td>
+                    <td>{row.scopeName || '—'}</td>
+                    <td>
+                      {row.logoUrl ? (
+                        <a href={row.logoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>Link</a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
                         {row.status === 'active' && <Check size={14} />}
@@ -312,11 +382,11 @@ export default function PujaPage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={4}>
+                  <td colSpan={7}>
                     <div className="pagination-container">
                       <div className="pagination-left">
-                        <label htmlFor="items-per-page-puja" className="pagination-label">Show:</label>
-                        <select id="items-per-page-puja" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                        <label htmlFor="items-per-page-zs" className="pagination-label">Show:</label>
+                        <select id="items-per-page-zs" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
                           <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
@@ -358,9 +428,9 @@ export default function PujaPage() {
 
         {showAddModal && (
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
-            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
               <div className="modal-header">
-                <h2>{editingId ? 'Edit Puja' : 'Add Puja'}</h2>
+                <h2>{editingId ? 'Edit Zodiac Sign' : 'Add Zodiac Sign'}</h2>
                 <button className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
                   <X size={24} />
                 </button>
@@ -369,12 +439,29 @@ export default function PujaPage() {
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                 <div className="form-group">
                   <label htmlFor="name" className="form-label">Name <span className="required">*</span></label>
-                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="Puja name" />
+                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="e.g. Aries" />
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
                 <div className="form-group">
                   <label htmlFor="description" className="form-label">Description</label>
-                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={3} placeholder="Optional" />
+                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="startingName" className="form-label">Starting Name</label>
+                  <input type="text" id="startingName" name="startingName" value={formData.startingName ?? ''} onChange={handleInputChange} className="form-input" placeholder="Optional" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="logoUrl" className="form-label">Logo URL</label>
+                  <input type="url" id="logoUrl" name="logoUrl" value={formData.logoUrl ?? ''} onChange={handleInputChange} className="form-input" placeholder="https://..." />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="horoscopeScopeId" className="form-label">Horoscope Scope</label>
+                  <select id="horoscopeScopeId" name="horoscopeScopeId" value={formData.horoscopeScopeId ?? ''} onChange={handleInputChange} className="form-input">
+                    <option value="">— Select scope —</option>
+                    {scopes.map((s) => (
+                      <option key={s.id} value={s.id}>{s.scope}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>

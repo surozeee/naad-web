@@ -50,7 +50,7 @@ interface Country {
   phoneCode: string;
   currency: string;
   currencySymbol: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
   isDefault: boolean;
   baseCurrencyId?: string;
   baseCurrencyName?: string;
@@ -72,7 +72,7 @@ function mapApiToCountry(row: Record<string, unknown>): Country {
     phoneCode: String((row as { teleCode?: string }).teleCode ?? row.phoneCode ?? ''),
     currency: baseCurrency ? String(baseCurrency.code ?? baseCurrency.name ?? '') : '',
     currencySymbol: baseCurrency ? String(baseCurrency.symbol ?? '') : '',
-    status: ((row.status as string)?.toLowerCase() === 'inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
+    status: (row.status as string)?.toUpperCase() === 'DELETED' ? 'deleted' : (row.status as string)?.toLowerCase() === 'inactive' ? 'inactive' : 'active',
     isDefault: Boolean((row as { isDefault?: boolean }).isDefault ?? row.isDefault ?? false),
     baseCurrencyId: baseCurrency ? String(baseCurrency.id ?? '') : undefined,
     baseCurrencyName: baseCurrency
@@ -734,8 +734,10 @@ export default function CountrySetup() {
                     title={`Set to ${country.status === 'active' ? 'Inactive' : 'Active'}`}
                   >
                     <span className={`status-badge ${country.status}`}>
-                      {country.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                      <span>{country.status.charAt(0).toUpperCase() + country.status.slice(1)}</span>
+                      {country.status === 'active' && <Check size={14} />}
+                      {country.status === 'inactive' && <X size={14} />}
+                      {country.status === 'deleted' && <Trash2 size={14} />}
+                      <span>{country.status === 'active' ? 'Active' : country.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                     </span>
                   </td>
                   <td>
@@ -907,8 +909,10 @@ export default function CountrySetup() {
                   <label className="form-label">Status</label>
                   <p style={{ margin: 0, padding: '8px 0' }}>
                     <span className={`status-badge ${detailCountry.status}`}>
-                      {detailCountry.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                      <span>{detailCountry.status.charAt(0).toUpperCase() + detailCountry.status.slice(1)}</span>
+                      {detailCountry.status === 'active' && <Check size={14} />}
+                      {detailCountry.status === 'inactive' && <X size={14} />}
+                      {detailCountry.status === 'deleted' && <Trash2 size={14} />}
+                      <span>{detailCountry.status === 'active' ? 'Active' : detailCountry.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                     </span>
                   </p>
                 </div>

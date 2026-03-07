@@ -284,6 +284,7 @@ body {
 
 .status-badge.active { background: #c7f0dd; color: #065f46; }
 .status-badge.inactive { background: #fee2e2; color: #991b1b; }
+.status-badge.deleted { background: #f1f5f9; color: #64748b; }
 
 .action-buttons { display: flex; gap: 8px; }
 

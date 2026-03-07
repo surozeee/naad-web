@@ -20,19 +20,19 @@ import DashboardLayout from '../../components/DashboardLayout';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
-import { pujaApi } from '@/app/lib/crm.service';
-import type { PujaRequest } from '@/app/lib/crm.types';
+import { eventCategoryApi } from '@/app/lib/crm.service';
+import type { EventCategoryRequest } from '@/app/lib/crm.types';
 
-interface PujaItem {
+interface EventCategoryItem {
   id: string;
   name: string;
   description: string;
   status: 'active' | 'inactive' | 'deleted';
 }
 
-function mapApiToItem(raw: Record<string, unknown>): PujaItem {
+function mapApiToItem(raw: Record<string, unknown>): EventCategoryItem {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
-  const status: PujaItem['status'] = statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive';
+  const status: EventCategoryItem['status'] = statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive';
   return {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
@@ -41,15 +41,15 @@ function mapApiToItem(raw: Record<string, unknown>): PujaItem {
   };
 }
 
-export default function PujaPage() {
+export default function EventCategoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [items, setItems] = useState<PujaItem[]>([]);
+  const [items, setItems] = useState<EventCategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<PujaRequest>({ name: '', description: '' });
+  const [formData, setFormData] = useState<EventCategoryRequest>({ name: '', description: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<'name' | 'description' | 'status'>('name');
@@ -59,7 +59,7 @@ export default function PujaPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await pujaApi.list({
+      const res = await eventCategoryApi.list({
         pageNo: 0,
         pageSize: 500,
         searchKey: searchTerm || undefined,
@@ -69,7 +69,7 @@ export default function PujaPage() {
       const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
       setItems(list.map(mapApiToItem));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load puja');
+      setError(err instanceof Error ? err.message : 'Failed to load event categories');
       setItems([]);
     } finally {
       setLoading(false);
@@ -97,17 +97,17 @@ export default function PujaPage() {
     e.preventDefault();
     if (!validateForm()) return;
     setError(null);
-    const body: PujaRequest = {
+    const body: EventCategoryRequest = {
       name: formData.name.trim(),
       description: formData.description?.trim() || undefined,
     };
     try {
       if (editingId) {
-        await pujaApi.update(editingId, body);
-        await Swal.fire({ title: 'Updated', text: 'Puja updated.', icon: 'success', timer: 1500, showConfirmButton: false });
+        await eventCategoryApi.update(editingId, body);
+        await Swal.fire({ title: 'Updated', text: 'Event category updated.', icon: 'success', timer: 1500, showConfirmButton: false });
       } else {
-        await pujaApi.create(body);
-        await Swal.fire({ title: 'Created', text: 'Puja created.', icon: 'success', timer: 1500, showConfirmButton: false });
+        await eventCategoryApi.create(body);
+        await Swal.fire({ title: 'Created', text: 'Event category created.', icon: 'success', timer: 1500, showConfirmButton: false });
       }
       await fetchItems();
       setShowAddModal(false);
@@ -123,13 +123,13 @@ export default function PujaPage() {
     setEditingId(null);
   };
 
-  const handleEdit = (row: PujaItem) => {
+  const handleEdit = (row: EventCategoryItem) => {
     setFormData({ name: row.name, description: row.description || '' });
     setEditingId(row.id);
     setShowAddModal(true);
   };
 
-  const handleChangeStatus = async (row: PujaItem) => {
+  const handleChangeStatus = async (row: EventCategoryItem) => {
     const newStatus = row.status === 'active' ? 'INACTIVE' : 'ACTIVE';
     const result = await Swal.fire({
       title: 'Update status?',
@@ -141,7 +141,7 @@ export default function PujaPage() {
     });
     if (!result.isConfirmed) return;
     try {
-      await pujaApi.changeStatus(row.id, newStatus);
+      await eventCategoryApi.changeStatus(row.id, newStatus);
       await fetchItems();
       await Swal.fire({ title: 'Updated', text: 'Status updated.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
@@ -151,7 +151,7 @@ export default function PujaPage() {
 
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
-      title: 'Delete puja?',
+      title: 'Delete event category?',
       text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
@@ -161,9 +161,9 @@ export default function PujaPage() {
     });
     if (!result.isConfirmed) return;
     try {
-      await pujaApi.delete(id);
+      await eventCategoryApi.delete(id);
       await fetchItems();
-      await Swal.fire({ title: 'Deleted', text: 'Puja deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
+      await Swal.fire({ title: 'Deleted', text: 'Event category deleted.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
       await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Delete failed', icon: 'error' });
     }
@@ -221,14 +221,14 @@ export default function PujaPage() {
   return (
     <DashboardLayout>
       <div className="organization-page">
-        <Breadcrumb items={[{ label: 'Event Management', href: '/event-management' }, { label: 'Puja' }]} />
+        <Breadcrumb items={[{ label: 'Event Management', href: '/event-management' }, { label: 'Event Category' }]} />
         <PageHeaderWithInfo
-          title="Puja"
-          infoText="Manage puja entries. Add, edit, or remove puja with name and description."
+          title="Event Category"
+          infoText="Manage event categories. Add, edit, or remove categories used for events."
         >
           <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} />
-            <span>Add Puja</span>
+            <span>Add Event Category</span>
           </button>
         </PageHeaderWithInfo>
         {error && (
@@ -266,7 +266,7 @@ export default function PujaPage() {
               ) : hasNoData ? (
                 <tr>
                   <td colSpan={4} className="empty-state">
-                    <p>{items.length === 0 ? 'No puja found' : 'No puja match your search'}</p>
+                    <p>{items.length === 0 ? 'No event categories found' : 'No event categories match your search'}</p>
                   </td>
                 </tr>
               ) : (
@@ -315,8 +315,8 @@ export default function PujaPage() {
                   <td colSpan={4}>
                     <div className="pagination-container">
                       <div className="pagination-left">
-                        <label htmlFor="items-per-page-puja" className="pagination-label">Show:</label>
-                        <select id="items-per-page-puja" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                        <label htmlFor="items-per-page-ec" className="pagination-label">Show:</label>
+                        <select id="items-per-page-ec" className="pagination-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
                           <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
@@ -360,7 +360,7 @@ export default function PujaPage() {
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
             <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>{editingId ? 'Edit Puja' : 'Add Puja'}</h2>
+                <h2>{editingId ? 'Edit Event Category' : 'Add Event Category'}</h2>
                 <button className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
                   <X size={24} />
                 </button>
@@ -369,7 +369,7 @@ export default function PujaPage() {
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                 <div className="form-group">
                   <label htmlFor="name" className="form-label">Name <span className="required">*</span></label>
-                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="Puja name" />
+                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} className={`form-input ${errors.name ? 'error' : ''}`} placeholder="Category name" />
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
                 <div className="form-group">

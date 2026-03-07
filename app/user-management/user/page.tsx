@@ -25,7 +25,7 @@ import type { UserResponse, RoleResponse } from '@/app/lib/user-api.types';
 
 function mapItem(raw: UserResponse) {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
-  const status = statusVal === 'ACTIVE' ? 'active' : 'inactive';
+  const status = statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive';
   return {
     id: String(raw.id ?? ''),
     emailAddress: raw.emailAddress ?? '',
@@ -33,7 +33,7 @@ function mapItem(raw: UserResponse) {
     roleId: raw.roleId ? String(raw.roleId) : undefined,
     roleName: raw.roleName ?? '',
     name: raw.userDetail?.name ?? raw.emailAddress ?? '',
-    status: status as 'active' | 'inactive',
+    status,
     enabled: raw.enabled ?? true,
   };
 }
@@ -361,8 +361,10 @@ export default function UsersManagement() {
                     <td>{row.roleName || '—'}</td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
-                        {row.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{row.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {row.status === 'active' && <Check size={14} />}
+                        {row.status === 'inactive' && <X size={14} />}
+                        {row.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td>

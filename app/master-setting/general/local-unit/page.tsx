@@ -31,7 +31,7 @@ interface LocalUnit {
   districtName: string;
   localUnitTypeId: string;
   localUnitTypeName: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
 }
 
 interface DistrictOption {
@@ -55,7 +55,7 @@ function mapApiToLocalUnit(raw: Record<string, unknown>): LocalUnit {
     districtName: district ? String(district.name ?? '') : '',
     localUnitTypeId: localUnitType ? String(localUnitType.id ?? '') : '',
     localUnitTypeName: localUnitType ? String(localUnitType.name ?? '') : '',
-    status: statusVal === 'ACTIVE' ? 'active' : 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
   };
 }
 
@@ -332,8 +332,10 @@ export default function LocalUnitSetup() {
                     <td><span style={{ color: '#64748b' }}>{item.localUnitTypeName || '—'}</span></td>
                     <td onClick={(e) => { e.stopPropagation(); handleChangeStatus(item); }} role="button" tabIndex={0} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') handleChangeStatus(item); }} title={`Set to ${item.status === 'active' ? 'Inactive' : 'Active'}`}>
                       <span className={`status-badge ${item.status}`}>
-                        {item.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{item.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {item.status === 'active' && <Check size={14} />}
+                        {item.status === 'inactive' && <X size={14} />}
+                        {item.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{item.status === 'active' ? 'Active' : item.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td style={{ width: 100 }} onClick={(e) => e.stopPropagation()}>
@@ -413,8 +415,10 @@ export default function LocalUnitSetup() {
                     <label className="form-label">Status</label>
                     <p style={{ margin: 0, padding: '8px 0' }}>
                       <span className={`status-badge ${detailItem.status}`}>
-                        {detailItem.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{detailItem.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {detailItem.status === 'active' && <Check size={14} />}
+                        {detailItem.status === 'inactive' && <X size={14} />}
+                        {detailItem.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{detailItem.status === 'active' ? 'Active' : detailItem.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </p>
                   </div>

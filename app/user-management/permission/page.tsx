@@ -30,7 +30,7 @@ function mapItem(raw: PermissionResponse) {
     name: String(raw.name ?? ''),
     code: String(raw.code ?? ''),
     description: String(raw.description ?? ''),
-    status: (statusVal === 'ACTIVE' ? 'active' : 'inactive') as 'active' | 'inactive',
+    status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
     permissionGroupId: raw.permissionGroupId ? String(raw.permissionGroupId) : undefined,
     permissionGroupName: raw.permissionGroupName,
   };
@@ -411,8 +411,10 @@ export default function PermissionPage() {
                     <td>{row.permissionGroupName || '—'}</td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
-                        {row.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{row.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {row.status === 'active' && <Check size={14} />}
+                        {row.status === 'inactive' && <X size={14} />}
+                        {row.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{row.status === 'active' ? 'Active' : row.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
@@ -577,8 +579,10 @@ export default function PermissionPage() {
                     <label className="form-label">Status</label>
                     <p className="permission-detail-value" style={{ margin: 0, padding: 0 }}>
                       <span className={`status-badge ${detailPermission.status}`}>
-                        {detailPermission.status === 'active' ? <Check size={14} /> : <X size={14} />}
-                        <span>{detailPermission.status === 'active' ? 'Active' : 'Inactive'}</span>
+                        {detailPermission.status === 'active' && <Check size={14} />}
+                        {detailPermission.status === 'inactive' && <X size={14} />}
+                        {detailPermission.status === 'deleted' && <Trash2 size={14} />}
+                        <span>{detailPermission.status === 'active' ? 'Active' : detailPermission.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                       </span>
                     </p>
                   </div>

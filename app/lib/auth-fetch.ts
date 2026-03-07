@@ -54,7 +54,16 @@ export async function fetchWithAuth(
     return res;
   }
 
-  const retryHeaders = new Headers(init?.headers);
+  // Use the new access token from refresh response body for the retry, so we don't rely on
+  // the cookie being updated before the retry (avoids retry still sending old token and getting 401 → logout).
+  let retryHeaders = new Headers(init?.headers);
+  try {
+    const refreshData = (await refreshRes.clone().json().catch(() => ({}))) as { access_token?: string; accessToken?: string };
+    const newToken = refreshData?.access_token ?? refreshData?.accessToken ?? '';
+    if (newToken) retryHeaders.set('Authorization', `Bearer ${newToken}`);
+  } catch {
+    // ignore; retry will use cookie
+  }
   if (xsrf) retryHeaders.set('X-XSRF-TOKEN', xsrf);
   if (!retryHeaders.has('Content-Type')) retryHeaders.set('Content-Type', 'application/json');
 
