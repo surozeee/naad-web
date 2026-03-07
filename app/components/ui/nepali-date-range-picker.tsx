@@ -60,8 +60,9 @@ function convertBSToAD(bsDateString: string): Date | null {
       const bs2ad = (window as any).bs2ad || (window as any).nepaliFunction?.bs2ad;
       if (typeof bs2ad !== 'function') return null;
       const adDate = bs2ad({ year, month, day });
-      if (adDate && typeof adDate === 'object' && 'year' in adDate && 'month' in adDate && 'day' in adDate)
+      if (adDate && typeof adDate === 'object' && 'year' in adDate && 'month' in adDate && 'day' in adDate) {
         return new Date(adDate.year, adDate.month - 1, adDate.day);
+      }
     } catch (_) {}
   }
   return null;

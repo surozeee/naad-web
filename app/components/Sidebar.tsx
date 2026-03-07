@@ -24,6 +24,7 @@ const HOVER_CLOSE_DELAY_MS = 200;
 /** Menus shown only to CUSTOMER role (Horoscope, Astrology, Puja, Music). */
 const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
   { id: 'horoscope', icon: '♈', label: 'Horoscope', href: '/horoscope', submenu: [
+    { label: 'Horoscope Scope', href: '/horoscope/horoscope-scope' }, { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
     { label: 'Daily Horoscope', href: '/horoscope/daily' }, { label: 'Weekly Horoscope', href: '/horoscope/weekly' },
     { label: 'Monthly Horoscope', href: '/horoscope/monthly' }, { label: 'Yearly Horoscope', href: '/horoscope/yearly' },
   ]},
@@ -96,6 +97,11 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/support/messaging-template': 'Message Template',
   '/support/bulk-message': 'Bulk Message',
   '/horoscope': 'Horoscope',
+  '/horoscope/horoscope-scope': 'Horoscope Scope',
+  '/horoscope/daily': 'Daily Horoscope',
+  '/horoscope/weekly': 'Weekly Horoscope',
+  '/horoscope/monthly': 'Monthly Horoscope',
+  '/horoscope/yearly': 'Yearly Horoscope',
   '/astrology': 'Astrology',
   '/astrology/zodiac-sign': 'Zodiac Sign',
   '/puja': 'Puja',
@@ -346,7 +352,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                         {getDisplayLabel(item.href, item.label)}
                       </Link>
                       <div className="pt-1 pb-0">
-                        {item.submenu.map((subItem, idx) => {
+                        {(item.submenu ?? []).map((subItem, idx) => {
                           const hasNested = 'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
                           const subHref = 'href' in subItem ? subItem.href : '#';
                           const subActive = isActive(subHref);
@@ -458,7 +464,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                         onMouseEnter={() => { clearCloseTimer(); setOpenSubmenuId(item.id); }}
                         onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
                       >
-                        {item.submenu.map((subItem, idx) => {
+                        {(item.submenu ?? []).map((subItem, idx) => {
                           const hasNestedSubmenu = 'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
                           const subItemActive = isActive(subItem.href);
                           

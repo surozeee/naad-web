@@ -12,6 +12,21 @@ export interface CrmListRequest {
   searchKey?: string;
 }
 
+// ---- Zodiac Sign (enum used by both Zodiac Sign and Horoscope Scope) ----
+export type ZodiacSignEnum =
+  | 'ARIES'
+  | 'TAURUS'
+  | 'GEMINI'
+  | 'CANCER'
+  | 'LEO'
+  | 'VIRGO'
+  | 'LIBRA'
+  | 'SCORPIO'
+  | 'SAGITTARIUS'
+  | 'CAPRICORN'
+  | 'AQUARIUS'
+  | 'PISCES';
+
 // ---- Horoscope Scope ----
 export type HoroscopeScopeEnum =
   | 'DAILY'
@@ -22,23 +37,32 @@ export type HoroscopeScopeEnum =
   | 'YEARLY';
 
 export interface HoroscopeScopeRequest {
+  zodiacSign: ZodiacSignEnum;
   scope: HoroscopeScopeEnum;
   description?: string;
 }
 
-export interface HoroscopeScopeListRequest extends CrmListRequest {}
+export interface HoroscopeScopeListRequest extends CrmListRequest {
+  zodiacSign?: ZodiacSignEnum;
+  scope?: HoroscopeScopeEnum;
+  status?: StatusEnum;
+}
 
 // ---- Zodiac Sign ----
 export interface ZodiacSignRequest {
   name: string;
+  zodiacSign: ZodiacSignEnum;
   description?: string;
+  /** Logo image URL (when not uploading a new image). */
   logoUrl?: string;
+  /** Optional base64 image from file select. When set, backend uploads and sets logoUrl. */
+  logoImageBase64?: string;
   startingName?: string;
-  horoscopeScopeId?: string;
+  daysRange?: string;
 }
 
 export interface ZodiacSignListRequest extends CrmListRequest {
-  horoscopeScopeId?: string;
+  zodiacSign?: ZodiacSignEnum;
 }
 
 // ---- Music Type ----

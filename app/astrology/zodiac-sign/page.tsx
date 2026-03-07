@@ -20,36 +20,45 @@ import DashboardLayout from '../../components/DashboardLayout';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
-import { zodiacSignApi, horoscopeScopeApi } from '@/app/lib/crm.service';
-import type { ZodiacSignRequest } from '@/app/lib/crm.types';
+import { zodiacSignApi } from '@/app/lib/crm.service';
+import type { ZodiacSignRequest, ZodiacSignEnum } from '@/app/lib/crm.types';
 
-interface ScopeOption {
-  id: string;
-  scope: string;
-}
+const ZODIAC_SIGN_OPTIONS: { value: ZodiacSignEnum; label: string }[] = [
+  { value: 'ARIES', label: 'Aries' },
+  { value: 'TAURUS', label: 'Taurus' },
+  { value: 'GEMINI', label: 'Gemini' },
+  { value: 'CANCER', label: 'Cancer' },
+  { value: 'LEO', label: 'Leo' },
+  { value: 'VIRGO', label: 'Virgo' },
+  { value: 'LIBRA', label: 'Libra' },
+  { value: 'SCORPIO', label: 'Scorpio' },
+  { value: 'SAGITTARIUS', label: 'Sagittarius' },
+  { value: 'CAPRICORN', label: 'Capricorn' },
+  { value: 'AQUARIUS', label: 'Aquarius' },
+  { value: 'PISCES', label: 'Pisces' },
+];
 
 interface ZodiacSignItem {
   id: string;
   name: string;
+  zodiacSign: string;
   description: string;
   logoUrl: string;
   startingName: string;
-  horoscopeScopeId: string;
-  scopeName?: string;
+  daysRange: string;
   status: 'active' | 'inactive' | 'deleted';
 }
 
 function mapApiToItem(raw: Record<string, unknown>): ZodiacSignItem {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
-  const scope = raw.horoscopeScope as Record<string, unknown> | undefined;
   return {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? ''),
+    zodiacSign: String(raw.zodiacSign ?? ''),
     description: String(raw.description ?? ''),
     logoUrl: String(raw.logoUrl ?? ''),
     startingName: String(raw.startingName ?? ''),
-    horoscopeScopeId: raw.horoscopeScopeId ? String(raw.horoscopeScopeId) : (scope?.id ? String(scope.id) : ''),
-    scopeName: scope?.scope ? String(scope.scope) : undefined,
+    daysRange: String(raw.daysRange ?? ''),
     status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
   };
 }
@@ -60,31 +69,25 @@ export default function ZodiacSignPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [items, setItems] = useState<ZodiacSignItem[]>([]);
-  const [scopes, setScopes] = useState<ScopeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ZodiacSignRequest>({
     name: '',
+    zodiacSign: 'ARIES',
     description: '',
     logoUrl: '',
     startingName: '',
-    horoscopeScopeId: '',
+    daysRange: '',
   });
+  /** Base64 of newly selected logo file (for API). When set, sent as logoImageBase64; backend uploads and sets logoUrl. */
+  const [logoImageBase64, setLogoImageBase64] = useState<string | null>(null);
+  /** Full data URL for selected file preview (e.g. data:image/jpeg;base64,...). */
+  const [logoPreviewDataUrl, setLogoPreviewDataUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [filterScopeId, setFilterScopeId] = useState<string>('');
-  const [sortKey, setSortKey] = useState<'name' | 'startingName' | 'scopeName' | 'status'>('name');
+  const [filterZodiacSign, setFilterZodiacSign] = useState<string>('');
+  const [sortKey, setSortKey] = useState<'name' | 'startingName' | 'daysRange' | 'zodiacSign' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-  const fetchScopes = useCallback(async () => {
-    try {
-      const res = await horoscopeScopeApi.listActive();
-      const list = (res.data ?? []) as Record<string, unknown>[];
-      setScopes(list.map((r) => ({ id: String(r.id ?? ''), scope: String(r.scope ?? '') })));
-    } catch {
-      setScopes([]);
-    }
-  }, []);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -94,7 +97,7 @@ export default function ZodiacSignPage() {
         pageNo: 0,
         pageSize: 500,
         searchKey: searchTerm || undefined,
-        horoscopeScopeId: filterScopeId || undefined,
+        zodiacSign: (filterZodiacSign || undefined) as ZodiacSignEnum | undefined,
         sortBy: 'name',
         sortDirection: 'asc',
       });
@@ -106,11 +109,7 @@ export default function ZodiacSignPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, filterScopeId]);
-
-  useEffect(() => {
-    fetchScopes();
-  }, [fetchScopes]);
+  }, [searchTerm, filterZodiacSign]);
 
   useEffect(() => {
     fetchItems();
@@ -122,9 +121,29 @@ export default function ZodiacSignPage() {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+      setLogoImageBase64(base64);
+      setLogoPreviewDataUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearLogoFile = () => {
+    setLogoImageBase64(null);
+    setLogoPreviewDataUrl(null);
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.zodiacSign) newErrors.zodiacSign = 'Zodiac sign is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -135,11 +154,16 @@ export default function ZodiacSignPage() {
     setError(null);
     const body: ZodiacSignRequest = {
       name: formData.name.trim(),
+      zodiacSign: formData.zodiacSign,
       description: formData.description?.trim() || undefined,
-      logoUrl: formData.logoUrl?.trim() || undefined,
       startingName: formData.startingName?.trim() || undefined,
-      horoscopeScopeId: formData.horoscopeScopeId?.trim() || undefined,
+      daysRange: formData.daysRange?.trim() || undefined,
     };
+    if (logoImageBase64) {
+      body.logoImageBase64 = logoImageBase64;
+    } else if (formData.logoUrl?.trim()) {
+      body.logoUrl = formData.logoUrl.trim();
+    }
     try {
       if (editingId) {
         await zodiacSignApi.update(editingId, body);
@@ -157,7 +181,9 @@ export default function ZodiacSignPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', logoUrl: '', startingName: '', horoscopeScopeId: '' });
+    setFormData({ name: '', zodiacSign: 'ARIES', description: '', logoUrl: '', startingName: '', daysRange: '' });
+    setLogoImageBase64(null);
+    setLogoPreviewDataUrl(null);
     setErrors({});
     setEditingId(null);
   };
@@ -165,10 +191,11 @@ export default function ZodiacSignPage() {
   const handleEdit = (row: ZodiacSignItem) => {
     setFormData({
       name: row.name,
+      zodiacSign: (row.zodiacSign || 'ARIES') as ZodiacSignEnum,
       description: row.description || '',
       logoUrl: row.logoUrl || '',
       startingName: row.startingName || '',
-      horoscopeScopeId: row.horoscopeScopeId || '',
+      daysRange: row.daysRange || '',
     });
     setEditingId(row.id);
     setShowAddModal(true);
@@ -219,11 +246,12 @@ export default function ZodiacSignPage() {
       i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (i.startingName && i.startingName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (i.scopeName && i.scopeName.toLowerCase().includes(searchTerm.toLowerCase()))
+      (i.daysRange && i.daysRange.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (i.zodiacSign && i.zodiacSign.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   const sorted = [...filtered].sort((a, b) => {
-    const aVal = String(sortKey === 'scopeName' ? a.scopeName : a[sortKey] ?? '').toLowerCase();
-    const bVal = String(sortKey === 'scopeName' ? b.scopeName : b[sortKey] ?? '').toLowerCase();
+    const aVal = String(a[sortKey] ?? '').toLowerCase();
+    const bVal = String(b[sortKey] ?? '').toLowerCase();
     const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
     return sortDirection === 'asc' ? cmp : -cmp;
   });
@@ -271,7 +299,7 @@ export default function ZodiacSignPage() {
         <Breadcrumb items={[{ label: 'Astrology', href: '/astrology' }, { label: 'Zodiac Sign' }]} />
         <PageHeaderWithInfo
           title="Zodiac Sign"
-          infoText="Manage zodiac signs. Set name, description, logo URL, starting name, and horoscope scope."
+          infoText="Manage zodiac signs. Set name, zodiac sign, description, logo, starting name, and days range."
         >
           <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} />
@@ -288,7 +316,7 @@ export default function ZodiacSignPage() {
             <Search size={20} />
             <input
               type="text"
-              placeholder="Search by name, description, scope..."
+              placeholder="Search by name, description, days range..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="search-input"
@@ -297,12 +325,12 @@ export default function ZodiacSignPage() {
           <select
             className="form-input"
             style={{ width: 200 }}
-            value={filterScopeId}
-            onChange={(e) => { setFilterScopeId(e.target.value); setCurrentPage(1); }}
+            value={filterZodiacSign}
+            onChange={(e) => { setFilterZodiacSign(e.target.value); setCurrentPage(1); }}
           >
-            <option value="">All scopes</option>
-            {scopes.map((s) => (
-              <option key={s.id} value={s.id}>{s.scope}</option>
+            <option value="">All zodiac signs</option>
+            {ZODIAC_SIGN_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
@@ -311,10 +339,11 @@ export default function ZodiacSignPage() {
             <thead>
               <tr>
                 <SortableTh columnKey="name">Name</SortableTh>
+                <SortableTh columnKey="zodiacSign">Zodiac Sign</SortableTh>
                 <th>Description</th>
                 <SortableTh columnKey="startingName">Starting Name</SortableTh>
-                <SortableTh columnKey="scopeName">Scope</SortableTh>
-                <th>Logo URL</th>
+                <SortableTh columnKey="daysRange">Days Range</SortableTh>
+                <th>Logo</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
               </tr>
@@ -322,11 +351,11 @@ export default function ZodiacSignPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={7} className="empty-state">
+                  <td colSpan={8} className="empty-state">
                     <p>{items.length === 0 ? 'No zodiac signs found' : 'No zodiac signs match your search'}</p>
                   </td>
                 </tr>
@@ -382,7 +411,7 @@ export default function ZodiacSignPage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={8}>
                     <div className="pagination-container">
                       <div className="pagination-left">
                         <label htmlFor="items-per-page-zs" className="pagination-label">Show:</label>
@@ -443,6 +472,15 @@ export default function ZodiacSignPage() {
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
                 <div className="form-group">
+                  <label htmlFor="zodiacSign" className="form-label">Zodiac Sign <span className="required">*</span></label>
+                  <select id="zodiacSign" name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className={`form-input ${errors.zodiacSign ? 'error' : ''}`}>
+                    {ZODIAC_SIGN_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  {errors.zodiacSign && <span className="form-error">{errors.zodiacSign}</span>}
+                </div>
+                <div className="form-group">
                   <label htmlFor="description" className="form-label">Description</label>
                   <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
                 </div>
@@ -451,17 +489,37 @@ export default function ZodiacSignPage() {
                   <input type="text" id="startingName" name="startingName" value={formData.startingName ?? ''} onChange={handleInputChange} className="form-input" placeholder="Optional" />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="logoUrl" className="form-label">Logo URL</label>
-                  <input type="url" id="logoUrl" name="logoUrl" value={formData.logoUrl ?? ''} onChange={handleInputChange} className="form-input" placeholder="https://..." />
+                  <label htmlFor="daysRange" className="form-label">Days Range</label>
+                  <input type="text" id="daysRange" name="daysRange" value={formData.daysRange ?? ''} onChange={handleInputChange} className="form-input" placeholder="e.g. Mar 21 - Apr 19" />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="horoscopeScopeId" className="form-label">Horoscope Scope</label>
-                  <select id="horoscopeScopeId" name="horoscopeScopeId" value={formData.horoscopeScopeId ?? ''} onChange={handleInputChange} className="form-input">
-                    <option value="">— Select scope —</option>
-                    {scopes.map((s) => (
-                      <option key={s.id} value={s.id}>{s.scope}</option>
-                    ))}
-                  </select>
+                  <label className="form-label">Logo (image)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <input
+                        type="file"
+                        id="logoFile"
+                        accept="image/*"
+                        onChange={handleLogoFileChange}
+                        className="form-input"
+                        style={{ maxWidth: 240 }}
+                      />
+                      {(logoImageBase64 !== null || formData.logoUrl) && (
+                        <button type="button" className="btn-secondary btn-small" onClick={clearLogoFile}>
+                          Clear image
+                        </button>
+                      )}
+                    </div>
+                    {(logoPreviewDataUrl || formData.logoUrl) && (
+                      <div style={{ marginTop: 4 }}>
+                        <img
+                          src={logoPreviewDataUrl || formData.logoUrl || ''}
+                          alt="Logo preview"
+                          style={{ maxWidth: 80, maxHeight: 80, objectFit: 'contain', border: '1px solid #e2e8f0', borderRadius: 6 }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
