@@ -3,18 +3,32 @@
 /**
  * Server Start Script
  * Starts Next.js server in production mode
+ * Loads .env so NEXTAUTH_XSRF_TOKEN and other vars are available (fixes 403 XSRF token missing).
  */
 
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// Load .env before spawning Next.js (ensures NEXTAUTH_XSRF_TOKEN etc. for production start)
+const projectRoot = process.cwd();
+const loadEnv = (file) => {
+  const p = path.join(projectRoot, file);
+  if (fs.existsSync(p)) {
+    require('dotenv').config({ path: p });
+  }
+};
+loadEnv('.env');
+loadEnv('.env.local');
+loadEnv('.env.production');
+loadEnv('.env.production.local');
+if (process.env.NEXTAUTH_XSRF_TOKEN) {
+  console.log('   NEXTAUTH_XSRF_TOKEN loaded for X-XSRF-TOKEN');
+}
+
 console.log('🚀 Starting Next.js server...');
 
-// Ensure we're in the correct directory
-const projectRoot = process.cwd();
-
-// Prepare environment
+// Prepare environment (now includes vars from .env)
 const env = {
   ...process.env,
   PORT: process.env.PORT || '4000',
