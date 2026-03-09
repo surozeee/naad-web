@@ -13,14 +13,28 @@ const fs = require('fs');
 // Project root = folder containing package.json (so .env loads even if started from another cwd)
 const projectRoot = path.resolve(__dirname, '..');
 
-// Load .env before spawning Next.js (ensures NEXTAUTH_XSRF_TOKEN for X-XSRF-TOKEN / avoid 403)
-const dotenv = require('dotenv');
+// Load .env files without external deps (works in production where dotenv may not be installed)
+function loadEnvFile(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.replace(/#.*$/, '').trim();
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2].trim();
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1).replace(/\\n/g, '\n');
+        }
+        if (!process.env[key]) process.env[key] = value;
+      }
+    }
+  } catch (_) { /* ignore */ }
+}
 const envFiles = ['.env', '.env.local', '.env.production', '.env.production.local'];
 for (const file of envFiles) {
   const p = path.join(projectRoot, file);
-  if (fs.existsSync(p)) {
-    dotenv.config({ path: p });
-  }
+  if (fs.existsSync(p)) loadEnvFile(p);
 }
 
 const hasXsrf = !!(process.env.NEXTAUTH_XSRF_TOKEN?.trim() || process.env.NEXT_AUTH_XSRF_TOKEN?.trim());
