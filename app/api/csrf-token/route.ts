@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
 /**
- * Returns the gateway's XSRF token from env and sets it in a cookie.
- * Set in .env: NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN=<encrypted_base64_value>
- * All API requests send it as X-XSRF-TOKEN header to avoid 403.
+ * Returns the XSRF token (from env or static fallback). Sets cookie and body so client can send X-XSRF-TOKEN.
+ * Token is always available; override with NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN in .env.
  */
 const COOKIE_OPTIONS = {
   path: '/',
@@ -15,9 +14,7 @@ const COOKIE_OPTIONS = {
 
 export async function GET() {
   const token = getServerXsrfToken();
-  const response = NextResponse.json({ ok: !!token });
-  if (token) {
-    response.cookies.set('XSRF-TOKEN', token, COOKIE_OPTIONS);
-  }
+  const response = NextResponse.json({ ok: true, token });
+  response.cookies.set('XSRF-TOKEN', token, COOKIE_OPTIONS);
   return response;
 }

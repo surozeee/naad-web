@@ -6,6 +6,7 @@ import Navigation from "./components/Navigation";
 import MainContent from "./components/MainContent";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AuthModalProvider } from "./components/AuthModalContext";
+import CsrfBootstrap from "./components/CsrfBootstrap";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthModalProvider>
+            <CsrfBootstrap />
             <Navigation />
             <MainContent>
               {children}
