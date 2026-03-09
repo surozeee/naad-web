@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/api\/?$/, '');
 const REGISTER_URL = `${API_BASE}/api/v2/public/user/register`;
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
         accept: '*/*',
         'Content-Type': 'application/json',
       };
-      const xsrf = process.env.NEXTAUTH_XSRF_TOKEN?.trim().replace(/[~\s]+$/, '') || undefined;
+      const xsrf = getServerXsrfToken() || undefined;
       if (xsrf) {
         headers['X-XSRF-TOKEN'] = xsrf;
         headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;

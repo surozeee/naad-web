@@ -5,12 +5,21 @@ function normalizeXsrfToken(value: string | null | undefined): string | null {
   return trimmed || null;
 }
 
+/** Server-side: get XSRF token from env. Supports NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN. */
+export function getServerXsrfToken(): string | null {
+  const v =
+    process.env.NEXTAUTH_XSRF_TOKEN ??
+    process.env.NEXT_AUTH_XSRF_TOKEN;
+  return normalizeXsrfToken(v ?? null);
+}
+
 /** Get XSRF token from env or cookie. Must be the gateway's AES-encrypted (Base64) value to avoid 403. */
 export function getXsrfToken(): string | null {
-  const fromEnv =
-    (typeof window !== 'undefined'
-      ? (process.env.NEXT_PUBLIC_XSRF_TOKEN ?? process.env.NEXTAUTH_XSRF_TOKEN) ?? null
-      : (process.env.NEXTAUTH_XSRF_TOKEN ?? process.env.NEXT_PUBLIC_XSRF_TOKEN) ?? null) as string | undefined;
+  const fromEnv = (
+    typeof window !== 'undefined'
+      ? (process.env.NEXT_PUBLIC_XSRF_TOKEN ?? process.env.NEXTAUTH_XSRF_TOKEN ?? process.env.NEXT_AUTH_XSRF_TOKEN) ?? null
+      : (process.env.NEXTAUTH_XSRF_TOKEN ?? process.env.NEXT_AUTH_XSRF_TOKEN ?? process.env.NEXT_PUBLIC_XSRF_TOKEN) ?? null
+  ) as string | undefined;
   const envToken = normalizeXsrfToken(fromEnv ?? null);
   if (envToken) return envToken;
   if (typeof window !== 'undefined') {

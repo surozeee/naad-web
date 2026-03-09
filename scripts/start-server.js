@@ -10,20 +10,25 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Load .env before spawning Next.js (ensures NEXTAUTH_XSRF_TOKEN etc. for production start)
-const projectRoot = process.cwd();
-const loadEnv = (file) => {
+// Project root = folder containing package.json (so .env loads even if started from another cwd)
+const projectRoot = path.resolve(__dirname, '..');
+
+// Load .env before spawning Next.js (ensures NEXTAUTH_XSRF_TOKEN for X-XSRF-TOKEN / avoid 403)
+const dotenv = require('dotenv');
+const envFiles = ['.env', '.env.local', '.env.production', '.env.production.local'];
+for (const file of envFiles) {
   const p = path.join(projectRoot, file);
   if (fs.existsSync(p)) {
-    require('dotenv').config({ path: p });
+    dotenv.config({ path: p });
   }
-};
-loadEnv('.env');
-loadEnv('.env.local');
-loadEnv('.env.production');
-loadEnv('.env.production.local');
-if (process.env.NEXTAUTH_XSRF_TOKEN) {
-  console.log('   NEXTAUTH_XSRF_TOKEN loaded for X-XSRF-TOKEN');
+}
+
+const hasXsrf = !!(process.env.NEXTAUTH_XSRF_TOKEN?.trim() || process.env.NEXT_AUTH_XSRF_TOKEN?.trim());
+if (hasXsrf) {
+  console.log('   XSRF token loaded (X-XSRF-TOKEN will be sent on each API request)');
+} else {
+  console.warn('   ⚠ XSRF token not set — add to .env: NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN=<value>');
+  console.warn('   See ENV.md to fix "XSRF Token Missing" / 403');
 }
 
 console.log('🚀 Starting Next.js server...');
