@@ -51,6 +51,11 @@ interface BsDateParts {
   day: number;
 }
 
+interface AdMonthParts {
+  year: number;
+  month: number;
+}
+
 interface CalendarCell {
   bsDate: string;
   bsDay: number;
@@ -72,6 +77,7 @@ const WEEK_DAYS = [
 
 const BS_MONTH_NAMES_NP = ['बैशाख', 'जेठ', 'असार', 'साउन', 'भदौ', 'असोज', 'कार्तिक', 'मंसिर', 'पुष', 'माघ', 'फागुन', 'चैत'];
 const BS_MONTH_NAMES_EN = ['Baisakh', 'Jestha', 'Asar', 'Shrawan', 'Bhadra', 'Ashwin', 'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra'];
+const AD_MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
@@ -140,7 +146,12 @@ function formatBsSelectedDateLabel(parts: BsDateParts | null): string {
 
 function formatAdDateLabel(date: Date | null): string {
   if (!date || Number.isNaN(date.getTime())) return 'English date not available';
-  return date.toLocaleDateString(undefined, { dateStyle: 'full' });
+  return date.toLocaleDateString('en-US', { dateStyle: 'full' });
+}
+
+function formatAdMonthYearLabel(parts: AdMonthParts | null): string {
+  if (!parts || !AD_MONTH_NAMES_EN[parts.month - 1]) return 'Loading...';
+  return `${AD_MONTH_NAMES_EN[parts.month - 1]} ${parts.year}`;
 }
 
 function adDateToBsString(date: Date): string {
@@ -206,6 +217,18 @@ function getPrevBsMonth(month: BsDateParts): BsDateParts {
     : { year: month.year, month: month.month - 1, day: 1 };
 }
 
+function getNextAdMonth(month: AdMonthParts): AdMonthParts {
+  return month.month === 12
+    ? { year: month.year + 1, month: 1 }
+    : { year: month.year, month: month.month + 1 };
+}
+
+function getPrevAdMonth(month: AdMonthParts): AdMonthParts {
+  return month.month === 1
+    ? { year: month.year - 1, month: 12 }
+    : { year: month.year, month: month.month - 1 };
+}
+
 function mapApiToItem(raw: Record<string, unknown>): EventCalendarItem {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
   const category = raw.category as Record<string, unknown> | undefined;
@@ -237,8 +260,10 @@ function createInitialForm(selectedBsDate: string): EventCalendarForm {
 
 export default function EventCalendarPage() {
   const [calendarReady, setCalendarReady] = useState(false);
+  const [calendarMode, setCalendarMode] = useState<'BS' | 'AD'>('BS');
   const [selectedBsDate, setSelectedBsDate] = useState('');
   const [currentBsMonth, setCurrentBsMonth] = useState<BsDateParts | null>(null);
+  const [currentAdMonth, setCurrentAdMonth] = useState<AdMonthParts | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -259,6 +284,7 @@ export default function EventCalendarPage() {
         const todayBsString = formatBsDate(todayBs);
         setCalendarReady(true);
         setCurrentBsMonth((prev) => prev || { year: todayBs.year, month: todayBs.month, day: 1 });
+        setCurrentAdMonth((prev) => prev || { year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
         setSelectedBsDate((prev) => prev || todayBsString);
       })
       .catch(() => {
@@ -267,6 +293,7 @@ export default function EventCalendarPage() {
         const fallback = { year: fallbackDate.getFullYear(), month: fallbackDate.getMonth() + 1, day: fallbackDate.getDate() };
         setCalendarReady(true);
         setCurrentBsMonth((prev) => prev || { year: fallback.year, month: fallback.month, day: 1 });
+        setCurrentAdMonth((prev) => prev || { year: fallback.year, month: fallback.month });
         setSelectedBsDate((prev) => prev || formatBsDate(fallback));
       });
 
@@ -331,42 +358,103 @@ export default function EventCalendarPage() {
   }, [currentBsMonth]);
 
   const calendarDays = useMemo(() => {
-    if (!currentBsMonth || !currentMonthMeta) return [] as CalendarCell[];
-    const prevMonth = getPrevBsMonth(currentBsMonth);
-    const nextMonth = getNextBsMonth(currentBsMonth);
-
-    const prevFirstAd = bsPartsToAdDate(prevMonth);
-    const currentFirstAd = bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 });
-    const nextFirstAd = bsPartsToAdDate(nextMonth);
-    if (!prevFirstAd || !currentFirstAd || !nextFirstAd) return [] as CalendarCell[];
-
-    const prevDaysInMonth = Math.round((currentFirstAd.getTime() - prevFirstAd.getTime()) / (1000 * 60 * 60 * 24));
     const cells: CalendarCell[] = [];
 
-    for (let i = currentMonthMeta.firstWeekDay - 1; i >= 0; i -= 1) {
+    if (calendarMode === 'BS') {
+      if (!currentBsMonth || !currentMonthMeta) return [] as CalendarCell[];
+      const prevMonth = getPrevBsMonth(currentBsMonth);
+      const nextMonth = getNextBsMonth(currentBsMonth);
+
+      const prevFirstAd = bsPartsToAdDate(prevMonth);
+      const currentFirstAd = bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 });
+      const nextFirstAd = bsPartsToAdDate(nextMonth);
+      if (!prevFirstAd || !currentFirstAd || !nextFirstAd) return [] as CalendarCell[];
+
+      const prevDaysInMonth = Math.round((currentFirstAd.getTime() - prevFirstAd.getTime()) / (1000 * 60 * 60 * 24));
+
+      for (let i = currentMonthMeta.firstWeekDay - 1; i >= 0; i -= 1) {
+        const day = prevDaysInMonth - i;
+        const bsDate = formatBsDate({ year: prevMonth.year, month: prevMonth.month, day });
+        const adDate = bsDateToAdDate(bsDate);
+        if (!adDate) continue;
+        cells.push({
+          bsDate,
+          bsDay: day,
+          adDate,
+          adDay: adDate.getDate(),
+          inCurrentMonth: false,
+          eventCount: eventCountByBsDate[bsDate] ?? 0,
+        });
+      }
+
+      for (let day = 1; day <= currentMonthMeta.daysInMonth; day += 1) {
+        const bsDate = formatBsDate({ year: currentBsMonth.year, month: currentBsMonth.month, day });
+        const adDate = bsDateToAdDate(bsDate);
+        if (!adDate) continue;
+        cells.push({
+          bsDate,
+          bsDay: day,
+          adDate,
+          adDay: adDate.getDate(),
+          inCurrentMonth: true,
+          eventCount: eventCountByBsDate[bsDate] ?? 0,
+        });
+      }
+
+      let nextDay = 1;
+      while (cells.length < 42) {
+        const bsDate = formatBsDate({ year: nextMonth.year, month: nextMonth.month, day: nextDay });
+        const adDate = bsDateToAdDate(bsDate);
+        if (!adDate) break;
+        cells.push({
+          bsDate,
+          bsDay: nextDay,
+          adDate,
+          adDay: adDate.getDate(),
+          inCurrentMonth: false,
+          eventCount: eventCountByBsDate[bsDate] ?? 0,
+        });
+        nextDay += 1;
+      }
+
+      return cells;
+    }
+
+    if (!currentAdMonth) return [] as CalendarCell[];
+
+    const firstDayAd = new Date(currentAdMonth.year, currentAdMonth.month - 1, 1);
+    const firstWeekDay = firstDayAd.getDay();
+    const daysInMonth = new Date(currentAdMonth.year, currentAdMonth.month, 0).getDate();
+    const prevMonth = getPrevAdMonth(currentAdMonth);
+    const nextMonth = getNextAdMonth(currentAdMonth);
+    const prevDaysInMonth = new Date(prevMonth.year, prevMonth.month, 0).getDate();
+
+    for (let i = firstWeekDay - 1; i >= 0; i -= 1) {
       const day = prevDaysInMonth - i;
-      const bsDate = formatBsDate({ year: prevMonth.year, month: prevMonth.month, day });
-      const adDate = bsDateToAdDate(bsDate);
-      if (!adDate) continue;
+      const adDate = new Date(prevMonth.year, prevMonth.month - 1, day);
+      const bsDate = adDateToBsString(adDate);
+      const bsParts = parseBsDate(bsDate);
+      if (!bsParts) continue;
       cells.push({
         bsDate,
-        bsDay: day,
+        bsDay: bsParts.day,
         adDate,
-        adDay: adDate.getDate(),
+        adDay: day,
         inCurrentMonth: false,
         eventCount: eventCountByBsDate[bsDate] ?? 0,
       });
     }
 
-    for (let day = 1; day <= currentMonthMeta.daysInMonth; day += 1) {
-      const bsDate = formatBsDate({ year: currentBsMonth.year, month: currentBsMonth.month, day });
-      const adDate = bsDateToAdDate(bsDate);
-      if (!adDate) continue;
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const adDate = new Date(currentAdMonth.year, currentAdMonth.month - 1, day);
+      const bsDate = adDateToBsString(adDate);
+      const bsParts = parseBsDate(bsDate);
+      if (!bsParts) continue;
       cells.push({
         bsDate,
-        bsDay: day,
+        bsDay: bsParts.day,
         adDate,
-        adDay: adDate.getDate(),
+        adDay: day,
         inCurrentMonth: true,
         eventCount: eventCountByBsDate[bsDate] ?? 0,
       });
@@ -374,14 +462,15 @@ export default function EventCalendarPage() {
 
     let nextDay = 1;
     while (cells.length < 42) {
-      const bsDate = formatBsDate({ year: nextMonth.year, month: nextMonth.month, day: nextDay });
-      const adDate = bsDateToAdDate(bsDate);
-      if (!adDate) break;
+      const adDate = new Date(nextMonth.year, nextMonth.month - 1, nextDay);
+      const bsDate = adDateToBsString(adDate);
+      const bsParts = parseBsDate(bsDate);
+      if (!bsParts) break;
       cells.push({
         bsDate,
-        bsDay: nextDay,
+        bsDay: bsParts.day,
         adDate,
-        adDay: adDate.getDate(),
+        adDay: nextDay,
         inCurrentMonth: false,
         eventCount: eventCountByBsDate[bsDate] ?? 0,
       });
@@ -389,7 +478,7 @@ export default function EventCalendarPage() {
     }
 
     return cells;
-  }, [currentBsMonth, currentMonthMeta, eventCountByBsDate]);
+  }, [calendarMode, currentBsMonth, currentMonthMeta, currentAdMonth, eventCountByBsDate]);
 
   const selectedDayEvents = useMemo(
     () =>
@@ -469,6 +558,7 @@ export default function EventCalendarPage() {
       if (adDate) {
         const bs = adDateToBsParts(adDate);
         setCurrentBsMonth({ year: bs.year, month: bs.month, day: 1 });
+        setCurrentAdMonth({ year: adDate.getFullYear(), month: adDate.getMonth() + 1 });
       }
       setShowAddModal(false);
       resetForm();
@@ -483,10 +573,29 @@ export default function EventCalendarPage() {
   const todayBs = calendarReady ? adDateToBsString(new Date()) : '';
   const selectedBsParts = parseBsDate(selectedBsDate);
   const selectedAdDate = selectedBsDate ? bsDateToAdDate(selectedBsDate) : null;
-  const monthTitle = formatBsMonthYearLabel(currentBsMonth ?? selectedBsParts);
-  const selectedMonthLabel = currentBsMonth ? `${toNepaliDigits(currentBsMonth.year)} ${BS_MONTH_NAMES_NP[currentBsMonth.month - 1]}` : '';
-  const selectedDateTitle = formatBsSelectedDateLabel(selectedBsParts);
-  const selectedAdDateTitle = formatAdDateLabel(selectedAdDate);
+  const monthTitle = calendarMode === 'BS'
+    ? formatBsMonthYearLabel(currentBsMonth ?? selectedBsParts)
+    : formatAdMonthYearLabel(currentAdMonth);
+  const selectedMonthLabel = calendarMode === 'BS'
+    ? currentBsMonth ? `${toNepaliDigits(currentBsMonth.year)} ${BS_MONTH_NAMES_NP[currentBsMonth.month - 1]}` : ''
+    : formatAdMonthYearLabel(currentAdMonth);
+  const selectedDateTitle = calendarMode === 'BS'
+    ? formatBsSelectedDateLabel(selectedBsParts)
+    : formatAdDateLabel(selectedAdDate);
+  const secondarySelectedDateTitle = calendarMode === 'BS'
+    ? formatAdDateLabel(selectedAdDate)
+    : formatBsSelectedDateLabel(selectedBsParts);
+  const weekdayLabels = calendarMode === 'BS'
+    ? WEEK_DAYS.map((day) => ({ primary: day.np, secondary: day.en }))
+    : WEEK_DAYS.map((day) => ({ primary: day.en, secondary: day.np }));
+  const monthOptions = calendarMode === 'BS'
+    ? BS_MONTH_NAMES_NP.map((label, index) => ({ value: index + 1, label: `${label} | ${BS_MONTH_NAMES_EN[index]}` }))
+    : AD_MONTH_NAMES_EN.map((label, index) => ({ value: index + 1, label }));
+  const yearOptions = calendarMode === 'BS'
+    ? Array.from({ length: 131 }, (_, index) => 1970 + index)
+    : Array.from({ length: 101 }, (_, index) => 1950 + index);
+  const selectedMonthValue = calendarMode === 'BS' ? currentBsMonth?.month ?? '' : currentAdMonth?.month ?? '';
+  const selectedYearValue = calendarMode === 'BS' ? currentBsMonth?.year ?? '' : currentAdMonth?.year ?? '';
 
   return (
     <DashboardLayout>
@@ -519,11 +628,68 @@ export default function EventCalendarPage() {
                     Selected: {selectedDateTitle}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400" style={{ marginTop: 2 }}>
-                    English: {selectedAdDateTitle}
+                    {calendarMode === 'BS' ? 'English' : 'Nepali'}: {secondarySelectedDateTitle}
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <select
+                  value={calendarMode}
+                  onChange={(e) => {
+                    const nextMode = e.target.value as 'BS' | 'AD';
+                    setCalendarMode(nextMode);
+                    if (nextMode === 'AD') {
+                      const adSource =
+                        currentBsMonth ? bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 }) : selectedAdDate;
+                      if (adSource) setCurrentAdMonth({ year: adSource.getFullYear(), month: adSource.getMonth() + 1 });
+                    } else if (selectedAdDate) {
+                      const bsSource = adDateToBsParts(selectedAdDate);
+                      setCurrentBsMonth({ year: bsSource.year, month: bsSource.month, day: 1 });
+                    }
+                  }}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                >
+                  <option value="BS">BS</option>
+                  <option value="AD">AD</option>
+                </select>
+                <select
+                  value={selectedMonthValue}
+                  onChange={(e) => {
+                    const month = Number(e.target.value);
+                    if (!month) return;
+                    if (calendarMode === 'BS') {
+                      setCurrentBsMonth((prev) => (prev ? { ...prev, month, day: 1 } : prev));
+                    } else {
+                      setCurrentAdMonth((prev) => (prev ? { ...prev, month } : prev));
+                    }
+                  }}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                >
+                  {monthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedYearValue}
+                  onChange={(e) => {
+                    const year = Number(e.target.value);
+                    if (!year) return;
+                    if (calendarMode === 'BS') {
+                      setCurrentBsMonth((prev) => (prev ? { ...prev, year, day: 1 } : prev));
+                    } else {
+                      setCurrentAdMonth((prev) => (prev ? { ...prev, year } : prev));
+                    }
+                  }}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {calendarMode === 'BS' ? toNepaliDigits(year) : year}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className={`btn-secondary btn-small ${viewMode === 'grid' ? 'active' : ''}`}
@@ -540,10 +706,24 @@ export default function EventCalendarPage() {
                 >
                   <List size={14} />
                 </button>
-                <button type="button" className="btn-secondary btn-small" onClick={() => currentBsMonth && setCurrentBsMonth(getPrevBsMonth(currentBsMonth))}>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  onClick={() => {
+                    if (calendarMode === 'BS' && currentBsMonth) setCurrentBsMonth(getPrevBsMonth(currentBsMonth));
+                    if (calendarMode === 'AD' && currentAdMonth) setCurrentAdMonth(getPrevAdMonth(currentAdMonth));
+                  }}
+                >
                   <ChevronLeft size={16} />
                 </button>
-                <button type="button" className="btn-secondary btn-small" onClick={() => currentBsMonth && setCurrentBsMonth(getNextBsMonth(currentBsMonth))}>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  onClick={() => {
+                    if (calendarMode === 'BS' && currentBsMonth) setCurrentBsMonth(getNextBsMonth(currentBsMonth));
+                    if (calendarMode === 'AD' && currentAdMonth) setCurrentAdMonth(getNextAdMonth(currentAdMonth));
+                  }}
+                >
                   <ChevronRight size={16} />
                 </button>
               </div>
@@ -552,9 +732,9 @@ export default function EventCalendarPage() {
             {viewMode === 'grid' ? (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: '1px solid #e2e8f0' }}>
-                  {WEEK_DAYS.map((day) => (
+                  {weekdayLabels.map((day, idx) => (
                     <div
-                      key={day.en}
+                      key={`${day.primary}-${idx}`}
                       style={{
                         padding: '12px 10px',
                         borderRight: '1px solid #e2e8f0',
@@ -562,8 +742,8 @@ export default function EventCalendarPage() {
                         textAlign: 'center',
                       }}
                     >
-                      <div className="text-xs font-semibold text-slate-700">{day.np}</div>
-                      <div className="text-[11px] text-slate-400">{day.en}</div>
+                      <div className="text-xs font-semibold text-slate-700">{day.primary}</div>
+                      <div className="text-[11px] text-slate-400">{day.secondary}</div>
                     </div>
                   ))}
                 </div>
@@ -573,14 +753,18 @@ export default function EventCalendarPage() {
                     const isToday = day.bsDate === todayBs;
                     const isOutsideMonth = !day.inCurrentMonth;
                     const dayEvents = events.filter((event) => adDateToBsString(new Date(event.startDate)) === day.bsDate).slice(0, 2);
-                    const nepaliDateColor = isSelected ? '#ffffff' : isOutsideMonth ? '#94a3b8' : '#475569';
-                    const englishDateColor = isSelected ? 'rgba(255,255,255,0.82)' : isOutsideMonth ? '#cbd5e1' : '#94a3b8';
+                    const primaryDateColor = isSelected ? '#ffffff' : isOutsideMonth ? '#94a3b8' : '#475569';
+                    const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.82)' : isOutsideMonth ? '#cbd5e1' : '#94a3b8';
                     const eventTextColor = isSelected ? '#ffffff' : isOutsideMonth ? '#cbd5e1' : '#dc2626';
                     return (
                       <button
                         key={`${day.bsDate}-${index}`}
                         type="button"
-                        onClick={() => setSelectedBsDate(day.bsDate)}
+                        onClick={() => {
+                          setSelectedBsDate(day.bsDate);
+                          setCurrentBsMonth((prev) => (prev && calendarMode === 'BS' ? { ...prev, year: parseBsDate(day.bsDate)?.year ?? prev.year, month: parseBsDate(day.bsDate)?.month ?? prev.month, day: 1 } : prev));
+                          setCurrentAdMonth((prev) => (calendarMode === 'AD' ? { year: day.adDate.getFullYear(), month: day.adDate.getMonth() + 1 } : prev));
+                        }}
                         style={{
                           minHeight: 126,
                           padding: 10,
@@ -622,11 +806,11 @@ export default function EventCalendarPage() {
                               fontSize: 18,
                               fontWeight: 700,
                               lineHeight: 1,
-                              color: nepaliDateColor,
+                              color: primaryDateColor,
                               textAlign: 'center',
                             }}
                           >
-                            {toNepaliDigits(day.bsDay)}
+                            {calendarMode === 'BS' ? toNepaliDigits(day.bsDay) : day.adDay}
                           </div>
                         </div>
 
@@ -663,11 +847,11 @@ export default function EventCalendarPage() {
                             bottom: 8,
                             fontSize: 11,
                             lineHeight: 1,
-                            color: englishDateColor,
+                            color: secondaryDateColor,
                             textAlign: 'right',
                           }}
                         >
-                          {day.adDay}
+                          {calendarMode === 'BS' ? day.adDay : toNepaliDigits(day.bsDay)}
                         </div>
                       </button>
                     );
@@ -691,9 +875,13 @@ export default function EventCalendarPage() {
                         background: '#fff',
                       }}
                     >
-                      <div className="text-sm font-semibold text-slate-800">{day.bsDate}</div>
+                      <div className="text-sm font-semibold text-slate-800">
+                        {calendarMode === 'BS' ? day.bsDate : day.adDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}
+                      </div>
                       <div className="text-xs text-slate-500" style={{ marginTop: 4 }}>
-                        {day.adDate.toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                        {calendarMode === 'BS'
+                          ? day.adDate.toLocaleDateString('en-US', { dateStyle: 'medium' })
+                          : day.bsDate}
                       </div>
                       <div className="text-sm text-blue-600" style={{ marginTop: 8 }}>
                         {day.eventCount} event{day.eventCount > 1 ? 's' : ''}
@@ -750,10 +938,12 @@ export default function EventCalendarPage() {
             </div>
 
             <div style={{ borderRadius: 12, background: '#f8fafc', padding: 14, marginBottom: 16 }}>
-              <div className="text-sm text-slate-500">Current BS Month</div>
+              <div className="text-sm text-slate-500">{calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}</div>
               <div className="text-lg font-bold text-slate-800">{selectedMonthLabel || 'Loading...'}</div>
-              <div className="text-sm text-slate-500" style={{ marginTop: 8 }}>Selected date: {selectedBsDate || 'Loading...'}</div>
-              <div className="text-sm text-slate-500" style={{ marginTop: 6 }}>English date: {selectedAdDateTitle}</div>
+              <div className="text-sm text-slate-500" style={{ marginTop: 8 }}>Selected date: {selectedDateTitle}</div>
+              <div className="text-sm text-slate-500" style={{ marginTop: 6 }}>
+                {calendarMode === 'BS' ? 'English date' : 'Nepali date'}: {secondarySelectedDateTitle}
+              </div>
               <div className="text-sm text-slate-500" style={{ marginTop: 6 }}>
                 {selectedDayEvents.length} event{selectedDayEvents.length === 1 ? '' : 's'} scheduled
               </div>
