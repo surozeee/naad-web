@@ -61,9 +61,8 @@ const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
     { label: 'Menu', href: '/user-management/menu' }, { label: 'Customers', href: '/user-management/customers' },
   ]},
   { id: 'event-management', icon: '📅', label: 'Event Management', href: '/event-management', submenu: [
-    { label: 'Event Category', href: '/event-management/event-category' }, { label: 'Event', href: '/event-management/event' },
-    { label: 'Ticketing', href: '/event-management/ticketing' }, { label: 'Chat', href: '/event-management/chat' },
-    { label: 'Puja', href: '/event-management/puja' }, { label: 'Concert', href: '/event-management/concert' },
+    { label: 'Event Category', href: '/event-management/event-category' },
+    { label: 'Event', href: '/event-management/event' },
   ]},
   { id: 'message-management', icon: '💬', label: 'Message Management', href: '/support', submenu: [
     { label: 'Support Message', href: '/support/support-message' }, { label: 'Ticket', href: '/support/ticket' },
