@@ -1,3 +1,5 @@
+import { getServerXsrfToken } from '@/app/lib/get-xsrf';
+
 /**
  * Shared backend API base (same as auth routes / erp-web).
  * Use for user, role, permission, permission-group proxies.
@@ -52,8 +54,8 @@ export function backendHeaders(request: Request): Record<string, string> {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
   if (cookie) headers['Cookie'] = cookie;
-  // XSRF: gateway expects AES-encrypted (Base64). Prefer server env so proxy always has token when set.
-  const serverXsrf = process.env.NEXTAUTH_XSRF_TOKEN?.trim();
+  // XSRF: gateway expects X-XSRF-TOKEN header. Use NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN from env.
+  const serverXsrf = getServerXsrfToken();
   const xsrfHeader = request.headers.get('X-XSRF-TOKEN')?.trim();
   const xsrfFromCookie = getXsrfCookieRaw(cookie) ?? getCookieFromHeader(cookie, XSRF_COOKIE);
   const xsrf = (serverXsrf || xsrfHeader || xsrfFromCookie || '').trim();

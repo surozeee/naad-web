@@ -3,18 +3,51 @@
 /**
  * Server Start Script
  * Starts Next.js server in production mode
+ * Loads .env so NEXTAUTH_XSRF_TOKEN and other vars are available (fixes 403 XSRF token missing).
  */
 
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// Project root = folder containing package.json (so .env loads even if started from another cwd)
+const projectRoot = path.resolve(__dirname, '..');
+
+// Load .env files without external deps (works in production where dotenv may not be installed)
+function loadEnvFile(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.replace(/#.*$/, '').trim();
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2].trim();
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1).replace(/\\n/g, '\n');
+        }
+        if (!process.env[key]) process.env[key] = value;
+      }
+    }
+  } catch (_) { /* ignore */ }
+}
+const envFiles = ['.env', '.env.local', '.env.production', '.env.production.local'];
+for (const file of envFiles) {
+  const p = path.join(projectRoot, file);
+  if (fs.existsSync(p)) loadEnvFile(p);
+}
+
+const hasXsrf = !!(process.env.NEXTAUTH_XSRF_TOKEN?.trim() || process.env.NEXT_AUTH_XSRF_TOKEN?.trim());
+if (hasXsrf) {
+  console.log('   XSRF token loaded (X-XSRF-TOKEN will be sent on each API request)');
+} else {
+  console.warn('   ⚠ XSRF token not set — add to .env: NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN=<value>');
+  console.warn('   See ENV.md to fix "XSRF Token Missing" / 403');
+}
+
 console.log('🚀 Starting Next.js server...');
 
-// Ensure we're in the correct directory
-const projectRoot = process.cwd();
-
-// Prepare environment
+// Prepare environment (now includes vars from .env)
 const env = {
   ...process.env,
   PORT: process.env.PORT || '4000',

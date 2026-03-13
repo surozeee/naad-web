@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
 // API base from .env; fallback so app works without .env
 const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       'Content-Type': 'application/json',
     };
     const xsrfFromRequest = request.headers.get('X-XSRF-TOKEN')?.trim();
-    const xsrf = xsrfFromRequest || process.env.NEXTAUTH_XSRF_TOKEN?.trim().replace(/[~\s]+$/, '') || undefined;
+    const xsrf = xsrfFromRequest || getServerXsrfToken() || undefined;
     if (xsrf) {
       headers['X-XSRF-TOKEN'] = xsrf;
       headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;

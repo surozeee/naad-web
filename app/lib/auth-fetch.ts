@@ -24,7 +24,19 @@ export async function fetchWithAuth(
   let xsrf = getXsrfToken();
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   if (!xsrf && url.startsWith('/api/') && !url.startsWith(CSRF_TOKEN_API)) {
-    await fetch(CSRF_TOKEN_API, { credentials: 'same-origin' });
+    const csrfRes = await fetch(CSRF_TOKEN_API, { credentials: 'same-origin' });
+    try {
+      const data = (await csrfRes.json().catch(() => ({}))) as { token?: string };
+      if (data?.token && typeof data.token === 'string') {
+        try {
+          sessionStorage.setItem('xsrf_token', data.token.trim());
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch {
+      /* ignore */
+    }
     xsrf = getXsrfToken();
   }
   const headers = new Headers(init?.headers);
