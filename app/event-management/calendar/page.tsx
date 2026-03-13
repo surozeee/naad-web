@@ -488,6 +488,18 @@ export default function EventCalendarPage() {
     [events, selectedBsDate]
   );
 
+  useEffect(() => {
+    if (calendarMode !== 'AD') return;
+    const adDate = selectedBsDate ? bsDateToAdDate(selectedBsDate) : null;
+    if (!adDate) return;
+
+    setCurrentAdMonth((prev) => {
+      const next = { year: adDate.getFullYear(), month: adDate.getMonth() + 1 };
+      if (prev && prev.year === next.year && prev.month === next.month) return prev;
+      return next;
+    });
+  }, [calendarMode, selectedBsDate]);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -640,11 +652,14 @@ export default function EventCalendarPage() {
                     setCalendarMode(nextMode);
                     if (nextMode === 'AD') {
                       const adSource =
-                        currentBsMonth ? bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 }) : selectedAdDate;
+                        selectedAdDate ??
+                        (currentBsMonth ? bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 }) : null);
                       if (adSource) setCurrentAdMonth({ year: adSource.getFullYear(), month: adSource.getMonth() + 1 });
-                    } else if (selectedAdDate) {
-                      const bsSource = adDateToBsParts(selectedAdDate);
-                      setCurrentBsMonth({ year: bsSource.year, month: bsSource.month, day: 1 });
+                    } else {
+                      const today = new Date();
+                      const bsToday = adDateToBsParts(today);
+                      setCurrentBsMonth({ year: bsToday.year, month: bsToday.month, day: 1 });
+                      setSelectedBsDate(formatBsDate(bsToday));
                     }
                   }}
                   className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
@@ -732,7 +747,9 @@ export default function EventCalendarPage() {
             {viewMode === 'grid' ? (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: '1px solid #e2e8f0' }}>
-                  {weekdayLabels.map((day, idx) => (
+                  {weekdayLabels.map((day, idx) => {
+                    const isSaturdayColumn = idx === 6;
+                    return (
                     <div
                       key={`${day.primary}-${idx}`}
                       style={{
@@ -742,20 +759,46 @@ export default function EventCalendarPage() {
                         textAlign: 'center',
                       }}
                     >
-                      <div className="text-xs font-semibold text-slate-700">{day.primary}</div>
-                      <div className="text-[11px] text-slate-400">{day.secondary}</div>
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: isSaturdayColumn ? '#dc2626' : '#334155' }}
+                      >
+                        {day.primary}
+                      </div>
+                      <div
+                        className="text-[11px]"
+                        style={{ color: isSaturdayColumn ? '#f87171' : '#94a3b8' }}
+                      >
+                        {day.secondary}
+                      </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
                   {calendarDays.map((day, index) => {
                     const isSelected = day.bsDate === selectedBsDate;
                     const isToday = day.bsDate === todayBs;
                     const isOutsideMonth = !day.inCurrentMonth;
+                    const isSaturdayColumn = index % 7 === 6;
                     const dayEvents = events.filter((event) => adDateToBsString(new Date(event.startDate)) === day.bsDate).slice(0, 2);
-                    const primaryDateColor = isSelected ? '#ffffff' : isOutsideMonth ? '#94a3b8' : '#475569';
+                    const primaryDateColor = isSelected
+                      ? '#ffffff'
+                      : isSaturdayColumn
+                        ? isOutsideMonth
+                          ? '#fca5a5'
+                          : '#dc2626'
+                        : isOutsideMonth
+                          ? '#94a3b8'
+                          : '#475569';
                     const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.82)' : isOutsideMonth ? '#cbd5e1' : '#94a3b8';
-                    const eventTextColor = isSelected ? '#ffffff' : isOutsideMonth ? '#cbd5e1' : '#dc2626';
+                    const eventTextColor = isSelected
+                      ? '#ffffff'
+                      : isOutsideMonth
+                        ? '#cbd5e1'
+                        : isSaturdayColumn
+                          ? '#dc2626'
+                          : '#dc2626';
                     return (
                       <button
                         key={`${day.bsDate}-${index}`}
