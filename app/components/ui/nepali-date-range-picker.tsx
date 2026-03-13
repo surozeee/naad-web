@@ -17,56 +17,81 @@ export interface NepaliDateRangePickerProps {
   modal?: boolean;
 }
 
-function convertADToBS(date: Date): string | null {
+const convertADToBS = (date: Date): string | null => {
   if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
+
   if (typeof window !== 'undefined') {
     try {
       const ad2bs = (window as any).adtobs || (window as any).nepaliFunction?.ad2bs;
       if (typeof ad2bs !== 'function') return null;
+
       const bsDate = ad2bs({
         year: date.getFullYear(),
         month: date.getMonth() + 1,
         day: date.getDate(),
       });
+
       if (bsDate && typeof bsDate.year === 'number' && typeof bsDate.month === 'number' && typeof bsDate.day === 'number') {
-        return `${String(bsDate.year).padStart(4, '0')}-${String(bsDate.month).padStart(2, '0')}-${String(bsDate.day).padStart(2, '0')}`;
+        const year = String(bsDate.year).padStart(4, '0');
+        const month = String(bsDate.month).padStart(2, '0');
+        const day = String(bsDate.day).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       }
-    } catch (_) {}
+    } catch (error) {
+      console.warn('Error converting AD to BS:', error);
+    }
   }
+
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
-}
+};
 
 const convertNepaliToEnglish = (value: string): string => {
   const map: Record<string, string> = {
-    '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
-    '५': '5', '६': '6', '७': '7', '८': '8', '९': '9',
+    '०': '0',
+    '१': '1',
+    '२': '2',
+    '३': '3',
+    '४': '4',
+    '५': '5',
+    '६': '6',
+    '७': '7',
+    '८': '8',
+    '९': '9',
   };
   return value.replace(/[०-९]/g, (match) => map[match] ?? match);
 };
 
-function convertBSToAD(bsDateString: string): Date | null {
+const convertBSToAD = (bsDateString: string): Date | null => {
   if (!bsDateString || typeof bsDateString !== 'string') return null;
+
   const normalized = convertNepaliToEnglish(bsDateString.trim());
-  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const match = normalized.match(dateRegex);
   if (!match) return null;
+
   const year = parseInt(match[1] || '0', 10);
   const month = parseInt(match[2] || '0', 10);
   const day = parseInt(match[3] || '0', 10);
+
   if (typeof window !== 'undefined') {
     try {
       const bs2ad = (window as any).bs2ad || (window as any).nepaliFunction?.bs2ad;
       if (typeof bs2ad !== 'function') return null;
+
       const adDate = bs2ad({ year, month, day });
       if (adDate && typeof adDate === 'object' && 'year' in adDate && 'month' in adDate && 'day' in adDate) {
         return new Date(adDate.year, adDate.month - 1, adDate.day);
       }
-    } catch (_) {}
+    } catch (error) {
+      console.warn('Error converting BS to AD:', error);
+    }
   }
+
   return null;
-}
+};
 
 export function NepaliDateRangePicker({
   value,
@@ -86,17 +111,21 @@ export function NepaliDateRangePicker({
   const rangeSeparator = ' - ';
 
   useEffect(() => {
-    let retryTimer: ReturnType<typeof setInterval> | undefined;
+    let retryTimer: NodeJS.Timeout | undefined;
+
     const applyConversion = () => {
       const bsFrom = value?.from ? convertADToBS(value.from) : '';
       const bsTo = value?.to ? convertADToBS(value.to) : '';
       setFromBSDate(bsFrom || '');
       setToBSDate(bsTo || '');
+
       if (bsFrom && bsTo) setRangeValue(`${bsFrom}${rangeSeparator}${bsTo}`);
       else if (bsFrom) setRangeValue(bsFrom);
       else setRangeValue('');
     };
+
     applyConversion();
+
     if (typeof window !== 'undefined' && !(window as any).adtobs) {
       retryTimer = setInterval(() => {
         if ((window as any).adtobs) {
@@ -105,17 +134,26 @@ export function NepaliDateRangePicker({
         }
       }, 250);
     }
-    return () => { if (retryTimer) clearInterval(retryTimer); };
+
+    return () => {
+      if (retryTimer) clearInterval(retryTimer);
+    };
   }, [value]);
 
   const handleRangeChange = useCallback((valueString: string) => {
     setRangeValue(valueString || '');
     const normalizedValue = convertNepaliToEnglish(valueString || '');
-    const parts = normalizedValue.split(rangeSeparator).map(part => part.trim()).filter(Boolean);
+    const parts = normalizedValue
+      .split(rangeSeparator)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
     const nextFrom = parts[0] || '';
     const nextTo = parts[1] || '';
+
     setFromBSDate(nextFrom);
     setToBSDate(nextTo);
+
     const fromAD = nextFrom ? convertBSToAD(nextFrom) : undefined;
     const toAD = nextTo ? convertBSToAD(nextTo) : undefined;
     onChange({ from: fromAD ?? undefined, to: toAD ?? undefined });
@@ -127,14 +165,17 @@ export function NepaliDateRangePicker({
     setToBSDate('');
     setRangeValue('');
     onChange({ from: undefined, to: undefined });
-    datepickerRef.current?.clear();
+    if (datepickerRef.current) datepickerRef.current.clear();
   };
 
   const getSizeClasses = () => {
     switch (size) {
-      case 'sm': return 'h-8 text-xs';
-      case 'lg': return 'h-12 text-base';
-      default: return 'h-10 text-sm';
+      case 'sm':
+        return 'h-8 text-xs';
+      case 'lg':
+        return 'h-12 text-base';
+      default:
+        return 'h-10 text-sm';
     }
   };
 
@@ -145,7 +186,7 @@ export function NepaliDateRangePicker({
       <div className="relative flex items-center gap-2">
         <div className="flex-1 relative">
           <NepaliDatepicker
-            key="nepali-range-picker"
+            key="dashboard-range-picker"
             ref={datepickerRef}
             id={inputId}
             name="dateRange"
@@ -183,6 +224,7 @@ export function NepaliDateRangePicker({
           </button>
         )}
       </div>
+
       {hasValue && (
         <span
           className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"

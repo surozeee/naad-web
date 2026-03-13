@@ -624,3 +624,37 @@ body {
   height: 8px;
   border-radius: 9999px;
 }
+
+/* Official NepaliDatePicker v5 */
+.ndp-container {
+  z-index: 1000002 !important;
+}
+
+.nepali-datepicker-inline-host .ndp-container.ndp-inline {
+  width: 100%;
+  max-width: 100%;
+  box-shadow: none;
+  border: none;
+}
+
+.nepali-datepicker-inline-host .ndp-table th {
+  text-align: center;
+}
+
+.nepali-datepicker-inline-host .ndp-table td {
+  position: relative;
+  text-align: center;
+  vertical-align: middle;
+  padding: 14px 8px 24px;
+}
+
+.nepali-datepicker-inline-host .ndp-table td .ndp-mini-english-date {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  display: block;
+  margin: 0;
+  font-size: 10px;
+  line-height: 1;
+  text-align: right;
+}

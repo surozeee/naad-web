@@ -63,6 +63,7 @@ const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
   { id: 'event-management', icon: '📅', label: 'Event Management', href: '/event-management', submenu: [
     { label: 'Event Category', href: '/event-management/event-category' },
     { label: 'Event', href: '/event-management/event' },
+    { label: 'Calendar', href: '/event-management/calendar' },
   ]},
   { id: 'message-management', icon: '💬', label: 'Message Management', href: '/support', submenu: [
     { label: 'Support Message', href: '/support/support-message' }, { label: 'Ticket', href: '/support/ticket' },
@@ -87,6 +88,7 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/event-management': 'Event Management',
   '/event-management/event-category': 'Event Category',
   '/event-management/event': 'Event',
+  '/event-management/calendar': 'Calendar',
   '/event-management/puja': 'Puja',
   '/support': 'Message Management',
   '/support/support-message': 'Support Message',

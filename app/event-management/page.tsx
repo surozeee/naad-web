@@ -14,28 +14,22 @@ export default function EventManagementPage() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <a href="/event-management/ticketing" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
-            <div className="text-5xl mb-4">🎫</div>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Ticketing</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Manage tickets</p>
+          <a href="/event-management/event-category" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🏷️</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Event Category</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Manage event categories</p>
           </a>
 
-          <a href="/event-management/chat" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
-            <div className="text-5xl mb-4">💬</div>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Chat</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Chat management</p>
+          <a href="/event-management/event" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">📌</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Event</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Create and manage events</p>
           </a>
 
-          <a href="/event-management/puja" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
-            <div className="text-5xl mb-4">🕉️</div>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Puja Events</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Puja events</p>
-          </a>
-
-          <a href="/event-management/concert" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
-            <div className="text-5xl mb-4">🎵</div>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Concert</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Concert events</p>
+          <a href="/event-management/calendar" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🗓️</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Calendar</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">View events by Nepali date</p>
           </a>
         </div>
       </div>

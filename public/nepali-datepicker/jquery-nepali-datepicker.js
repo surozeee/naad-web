@@ -642,6 +642,13 @@ function open(){
   if (settings.modal && state.$overlay){
     state.$overlay.css('display', 'flex');
     state.$overlay.css('z-index', '1000001');
+    state.$dp.addClass('modal').css({
+      display: 'block',
+      position: 'relative',
+      top: 'auto',
+      left: 'auto',
+      zIndex: 1000002
+    });
   } else {
     position();
     state.$dp.show();

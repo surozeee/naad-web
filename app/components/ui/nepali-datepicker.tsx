@@ -1,16 +1,25 @@
 'use client';
 
-import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { cn } from '@/app/lib/utils';
 
 declare global {
   interface Window {
-    $: any;
-    jQuery: any;
+    NepaliDatePicker?: new (element: HTMLElement, options?: Record<string, unknown> | string) => any;
+    NepaliFunctions?: {
+      AD2BS: (date: { year: number; month: number; day: number } | string, inputFormat?: string, outputFormat?: string) => any;
+      BS2AD: (date: { year: number; month: number; day: number } | string, inputFormat?: string, outputFormat?: string) => any;
+    };
     ad2bs?: (date: { year: number; month: number; day: number } | string) => { year: number; month: number; day: number };
     bs2ad?: (date: { year: number; month: number; day: number } | string) => { year: number; month: number; day: number };
+    adtobs?: (date: { year: number; month: number; day: number } | string) => { year: number; month: number; day: number };
   }
 }
+
+const OFFICIAL_JS_URL =
+  'https://nepalidatepicker.sajanmaharjan.com.np/v5/nepali.datepicker/js/nepali.datepicker.v5.0.6.min.js';
+const OFFICIAL_CSS_URL =
+  'https://nepalidatepicker.sajanmaharjan.com.np/v5/nepali.datepicker/css/nepali.datepicker.v5.0.6.min.css';
 
 export interface NepaliDatepickerOptions {
   theme?: 'light' | 'dark' | 'blue' | 'red' | 'purple' | 'orange' | 'green';
@@ -31,10 +40,13 @@ export interface NepaliDatepickerOptions {
   defaultDate?: string | { year: number; month: number; day: number } | null;
   dateType?: 'AD' | 'BS' | null;
   showEnglishDateSubscript?: boolean;
+  miniEnglishDates?: boolean;
   useEnglishNumbers?: boolean;
   range?: boolean;
   rangeSeparator?: string;
-  onSelect?: (date: { year: number; month: number; day: number }, formatted: string) => void;
+  inline?: boolean;
+  container?: string;
+  onSelect?: (date: { year: number; month: number; day: number } | any[], formatted?: string) => void;
   onOpen?: () => void;
   onClose?: () => void;
 }
@@ -42,7 +54,7 @@ export interface NepaliDatepickerOptions {
 export interface NepaliDatepickerProps {
   value?: string;
   onChange?: (value: string) => void;
-  onDateSelect?: (date: { year: number; month: number; day: number }, formatted: string) => void;
+  onDateSelect?: (date: { year: number; month: number; day: number } | any[], formatted: string) => void;
   options?: NepaliDatepickerOptions;
   className?: string;
   placeholder?: string;
@@ -60,336 +72,235 @@ export interface NepaliDatepickerRef {
   destroy: () => void;
 }
 
-const convertNepaliToEnglish = (nepaliStr: string): string => {
-  if (!nepaliStr || typeof nepaliStr !== 'string') return nepaliStr || '';
-  const nepaliToEnglish: { [key: string]: string } = {
-    '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
-    '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+const convertNepaliToEnglish = (value: string): string => {
+  const map: Record<string, string> = {
+    '०': '0',
+    '१': '1',
+    '२': '2',
+    '३': '3',
+    '४': '4',
+    '५': '5',
+    '६': '6',
+    '७': '7',
+    '८': '8',
+    '९': '9',
   };
-  return nepaliStr.split('').map(char => nepaliToEnglish[char] ?? char).join('');
+  return value.replace(/[०-९]/g, (match) => map[match] ?? match);
 };
 
-const convertEnglishToNepali = (englishStr: string): string => {
-  if (!englishStr || typeof englishStr !== 'string') return englishStr || '';
-  const englishToNepali: { [key: string]: string } = {
-    '0': '०', '1': '१', '2': '२', '3': '३', '4': '४',
-    '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'
-  };
-  return englishStr.split('').map(char => englishToNepali[char] ?? char).join('');
-};
+let loaderPromise: Promise<void> | null = null;
 
-const NepaliDatepicker = forwardRef<NepaliDatepickerRef, NepaliDatepickerProps>(
-  (
-    {
-      value,
-      onChange,
-      onDateSelect,
-      options = {},
-      className,
-      placeholder = 'Select Date',
-      disabled = false,
-      id,
-      name,
-    },
-    ref
-  ) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const datepickerInstanceRef = useRef<any>(null);
-    const isInitializedRef = useRef(false);
-    const optionsRef = useRef(options);
+function toDateParts(value: { year: number; month: number; day: number } | string): { year: number; month: number; day: number } | null {
+  if (typeof value === 'object' && value && typeof value.year === 'number' && typeof value.month === 'number' && typeof value.day === 'number') {
+    return value;
+  }
 
-    useEffect(() => {
-      optionsRef.current = options;
-    }, [options]);
+  if (typeof value === 'string') {
+    const match = /^(\d{4})[-/.](\d{2})[-/.](\d{2})$/.exec(value.trim());
+    if (!match) return null;
+    return {
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+    };
+  }
 
-    useEffect(() => {
-      let cssLoaded = false;
-      const loadCSS = () => {
-        if (cssLoaded) return;
-        if (document.querySelector('link[href="/nepali-datepicker/nepali-datepicker.css"]')) {
-          cssLoaded = true;
-          return;
-        }
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/nepali-datepicker/nepali-datepicker.css';
-        document.head.appendChild(link);
-        cssLoaded = true;
-      };
+  return null;
+}
 
-      const loadDatepickerScript = () => {
-        if (document.querySelector('script[src="/nepali-datepicker/jquery-nepali-datepicker.js"]')) {
-          setTimeout(() => {
-            if (typeof (window.$ || window.jQuery)?.fn?.nepaliDatepicker !== 'undefined') {
-              initializeDatepicker();
-            } else {
-              setTimeout(() => initializeDatepicker(), 200);
-            }
-          }, 100);
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = '/nepali-datepicker/jquery-nepali-datepicker.js';
-        script.async = true;
-        script.onload = () => setTimeout(() => initializeDatepicker(), 100);
-        script.onerror = () => console.error('Failed to load Nepali datepicker script');
-        document.body.appendChild(script);
-      };
+function ensureOfficialLibrary(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.NepaliDatePicker) return Promise.resolve();
+  if (loaderPromise) return loaderPromise;
 
-      const loadScripts = () => {
-        if (window.$ || window.jQuery) {
-          if (typeof (window.$ || window.jQuery).fn.nepaliDatepicker !== 'undefined') {
-            initializeDatepicker();
-            return;
-          }
-          loadDatepickerScript();
-          return;
-        }
-        if (document.querySelector('script[src*="jquery"]')) {
-          const check = setInterval(() => {
-            if (window.$ || window.jQuery) {
-              clearInterval(check);
-              loadDatepickerScript();
-            }
-          }, 100);
-          return;
-        }
-        const jqueryScript = document.createElement('script');
-        jqueryScript.src = '/nepali-datepicker/jquery-3.6.0.min.js';
-        jqueryScript.async = true;
-        jqueryScript.onerror = () => {
-          jqueryScript.src = '/jquery-3.6.0.min.js';
-          jqueryScript.onerror = () => {
-            jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-            jqueryScript.onerror = () => console.error('Failed to load jQuery');
+  loaderPromise = new Promise((resolve, reject) => {
+    const existingCss = document.querySelector(`link[href="${OFFICIAL_CSS_URL}"]`);
+    if (!existingCss) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = OFFICIAL_CSS_URL;
+      document.head.appendChild(link);
+    }
+
+    const attachShims = () => {
+      if (window.NepaliFunctions) {
+        if (!window.ad2bs) {
+          window.ad2bs = (date) => {
+            const parts = toDateParts(date);
+            if (!parts) return { year: NaN, month: NaN, day: NaN };
+            return window.NepaliFunctions!.AD2BS(parts);
           };
-        };
-        jqueryScript.onload = () => loadDatepickerScript();
-        document.body.appendChild(jqueryScript);
-      };
-
-      const initializeDatepicker = () => {
-        if (!inputRef.current) return;
-        const $ = window.$ || window.jQuery;
-        if (!$ || typeof $.fn.nepaliDatepicker === 'undefined') {
-          setTimeout(() => initializeDatepicker(), 500);
-          return;
         }
-        if (isInitializedRef.current && datepickerInstanceRef.current) {
-          try {
-            $(inputRef.current).nepaliDatepicker('destroy');
-          } catch (_) {}
+        if (!window.adtobs) window.adtobs = window.ad2bs;
+        if (!window.bs2ad) {
+          window.bs2ad = (date) => {
+            const parts = toDateParts(date);
+            if (!parts) return { year: NaN, month: NaN, day: NaN };
+            return window.NepaliFunctions!.BS2AD(parts);
+          };
         }
-        const currentOptions = optionsRef.current;
-        const defaultOptions: NepaliDatepickerOptions = {
-          theme: 'light',
-          language: 'nepali',
-          dateFormat: 'YYYY-MM-DD',
-          placeholder,
-          showToday: true,
-          autoClose: true,
-          readonly: false,
-          showEnglishDateSubscript: true,
-          useEnglishNumbers: true,
-          range: false,
-          rangeSeparator: ' - ',
-          ...currentOptions,
-        };
-        const processedValue = value ? convertNepaliToEnglish(value.trim()) : '';
-        const rangeSep = (optionsRef.current as NepaliDatepickerOptions | undefined)?.rangeSeparator ?? ' - ';
-        const isRangeValue = (optionsRef.current as NepaliDatepickerOptions | undefined)?.range && processedValue.includes(rangeSep);
-        if (processedValue && processedValue.trim() !== '' && !isRangeValue && /^\d{4}-\d{2}-\d{2}$/.test(processedValue)) {
-          const [y, m, d] = processedValue.split('-');
-          defaultOptions.defaultDate = { year: parseInt(y || '0', 10), month: parseInt(m || '0', 10), day: parseInt(d || '0', 10) };
-        }
-        const originalOnSelect = defaultOptions.onSelect;
-        defaultOptions.onSelect = (date: { year: number; month: number; day: number } | any[], formatted?: string) => {
-          const rangeSeparator = (optionsRef.current as NepaliDatepickerOptions | undefined)?.rangeSeparator ?? ' - ';
-          let nextValue = formatted;
-          if (Array.isArray(date)) {
-            const payload = date as Array<{ value?: string }>;
-            if (payload.length >= 2) nextValue = `${payload[0]?.value || ''}${rangeSeparator}${payload[1]?.value || ''}`.trim();
-            else if (payload.length === 1) nextValue = payload[0]?.value || '';
-            else nextValue = inputRef.current?.value ?? '';
-            if (inputRef.current && nextValue) inputRef.current.value = nextValue;
-          }
-          onChange?.(nextValue ?? '');
-          onDateSelect?.(date as any, nextValue ?? '');
-          originalOnSelect?.(date as any, nextValue ?? '');
-        };
-        try {
-          if (!inputRef.current || !document.body.contains(inputRef.current)) {
-            setTimeout(() => initializeDatepicker(), 100);
-            return;
-          }
-          inputRef.current.setAttribute('readonly', 'readonly');
-          $(inputRef.current).nepaliDatepicker(defaultOptions);
-          datepickerInstanceRef.current = $(inputRef.current).data('nepaliDatepicker');
-          isInitializedRef.current = true;
-          if (processedValue && datepickerInstanceRef.current && processedValue.trim() !== '' && /^\d{4}-\d{2}-\d{2}$/.test(processedValue)) {
-            setTimeout(() => {
-              if (datepickerInstanceRef.current && inputRef.current) {
-                try {
-                  const [y, m, d] = processedValue.split('-');
-                  datepickerInstanceRef.current.setDate({ year: parseInt(y || '0', 10), month: parseInt(m || '0', 10), day: parseInt(d || '0', 10) });
-                  inputRef.current.value = (optionsRef.current as NepaliDatepickerOptions | undefined)?.useEnglishNumbers !== false ? processedValue : convertEnglishToNepali(processedValue);
-                } catch (_) {
-                  inputRef.current.value = processedValue;
-                }
-              }
-            }, 100);
-          }
-        } catch (error) {
-          console.error('Error initializing Nepali datepicker:', error);
-          setTimeout(() => { if (!isInitializedRef.current && inputRef.current) initializeDatepicker(); }, 500);
-        }
-      };
-
-      loadCSS();
-      loadScripts();
-
-      return () => {
-        if (datepickerInstanceRef.current && window.$ && inputRef.current) {
-          try {
-            window.$(inputRef.current).nepaliDatepicker('destroy');
-            datepickerInstanceRef.current = null;
-            isInitializedRef.current = false;
-          } catch (_) {}
-        }
-      };
-    }, []);
-
-    useEffect(() => {
-      if (!isInitializedRef.current || !inputRef.current || !window.$) return;
-      const $ = window.$ || window.jQuery;
-      if (typeof $.fn.nepaliDatepicker === 'undefined') return;
-      try {
-        $(inputRef.current).nepaliDatepicker('destroy');
-        datepickerInstanceRef.current = null;
-        isInitializedRef.current = false;
-        setTimeout(() => initializeDatepicker(), 100);
-      } catch (_) {}
-    }, [JSON.stringify(options)]);
-
-    const initializeDatepicker = () => {
-      if (!inputRef.current) return;
-      const $ = window.$ || window.jQuery;
-      if (!$ || typeof $.fn.nepaliDatepicker === 'undefined') return;
-      if (isInitializedRef.current && datepickerInstanceRef.current) {
-        try {
-          $(inputRef.current).nepaliDatepicker('destroy');
-        } catch (_) {}
-      }
-      const currentOptions = optionsRef.current;
-      const defaultOptions: NepaliDatepickerOptions = {
-        theme: 'light',
-        language: 'nepali',
-        dateFormat: 'YYYY-MM-DD',
-        placeholder,
-        showToday: true,
-        autoClose: true,
-        readonly: false,
-        showEnglishDateSubscript: true,
-        useEnglishNumbers: true,
-        range: false,
-        rangeSeparator: ' - ',
-        ...currentOptions,
-      };
-      const processedValue = value ? convertNepaliToEnglish(value.trim()) : '';
-      const rangeSep = (optionsRef.current as NepaliDatepickerOptions | undefined)?.rangeSeparator ?? ' - ';
-      const isRangeValue = (optionsRef.current as NepaliDatepickerOptions | undefined)?.range && processedValue.includes(rangeSep);
-      if (processedValue && processedValue.trim() !== '' && !isRangeValue && /^\d{4}-\d{2}-\d{2}$/.test(processedValue)) {
-        const [y, m, d] = processedValue.split('-');
-        defaultOptions.defaultDate = { year: parseInt(y || '0', 10), month: parseInt(m || '0', 10), day: parseInt(d || '0', 10) };
-      }
-      const originalOnSelect = defaultOptions.onSelect;
-      defaultOptions.onSelect = (date: { year: number; month: number; day: number } | any[], formatted?: string) => {
-        const rangeSeparator = (optionsRef.current as NepaliDatepickerOptions | undefined)?.rangeSeparator ?? ' - ';
-        let nextValue = formatted;
-        if (Array.isArray(date)) {
-          const payload = date as Array<{ value?: string }>;
-          if (payload.length >= 2) nextValue = `${payload[0]?.value || ''}${rangeSeparator}${payload[1]?.value || ''}`.trim();
-          else if (payload.length === 1) nextValue = payload[0]?.value || '';
-          else nextValue = inputRef.current?.value ?? '';
-          if (inputRef.current && nextValue) inputRef.current.value = nextValue;
-        }
-        onChange?.(nextValue ?? '');
-        onDateSelect?.(date as any, nextValue ?? '');
-        originalOnSelect?.(date as any, nextValue ?? '');
-      };
-      try {
-        if (!inputRef.current || !document.body.contains(inputRef.current)) return;
-        inputRef.current.setAttribute('readonly', 'readonly');
-        $(inputRef.current).nepaliDatepicker(defaultOptions);
-        datepickerInstanceRef.current = $(inputRef.current).data('nepaliDatepicker');
-        isInitializedRef.current = true;
-        if (processedValue && datepickerInstanceRef.current && processedValue.trim() !== '' && /^\d{4}-\d{2}-\d{2}$/.test(processedValue)) {
-          setTimeout(() => {
-            if (datepickerInstanceRef.current && inputRef.current) {
-              try {
-                const [y, m, d] = processedValue.split('-');
-                datepickerInstanceRef.current.setDate({ year: parseInt(y || '0', 10), month: parseInt(m || '0', 10), day: parseInt(d || '0', 10) });
-                inputRef.current.value = (optionsRef.current as NepaliDatepickerOptions | undefined)?.useEnglishNumbers !== false ? processedValue : convertEnglishToNepali(processedValue);
-              } catch (_) {
-                inputRef.current.value = processedValue;
-              }
-            }
-          }, 100);
-        }
-      } catch (error) {
-        console.error('Error initializing Nepali datepicker:', error);
       }
     };
 
+    const existingScript = document.querySelector(`script[src="${OFFICIAL_JS_URL}"]`) as HTMLScriptElement | null;
+    if (existingScript) {
+      const checkReady = () => {
+        if (window.NepaliDatePicker) {
+          attachShims();
+          resolve();
+        } else {
+          setTimeout(checkReady, 100);
+        }
+      };
+      checkReady();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = OFFICIAL_JS_URL;
+    script.async = true;
+    script.onload = () => {
+      attachShims();
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load official Nepali DatePicker library'));
+    document.body.appendChild(script);
+  });
+
+  return loaderPromise;
+}
+
+const NepaliDatepicker = forwardRef<NepaliDatepickerRef, NepaliDatepickerProps>(
+  ({ value, onChange, onDateSelect, options = {}, className, placeholder = 'Select Date', disabled = false, id, name }, ref) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const inlineHostRef = useRef<HTMLDivElement>(null);
+    const instanceRef = useRef<any>(null);
+    const latestValueRef = useRef(value);
+    const latestOptionsRef = useRef(options);
+
     useEffect(() => {
-      const rangeSep = (optionsRef.current as NepaliDatepickerOptions | undefined)?.rangeSeparator ?? ' - ';
-      const isRangeString = value && value.includes(rangeSep);
-      if (value && value.trim() !== '') {
-        if (isRangeString && inputRef.current) {
-          inputRef.current.value = value;
-          return;
-        }
-        const englishValue = convertNepaliToEnglish(value.trim());
-        if (datepickerInstanceRef.current && isInitializedRef.current && /^\d{4}-\d{2}-\d{2}$/.test(englishValue)) {
-          try {
-            const [yearStr, monthStr, dayStr] = englishValue.split('-');
-            const bsDate = { year: Number(yearStr), month: Number(monthStr), day: Number(dayStr) };
-            const dateType = (optionsRef.current as NepaliDatepickerOptions | undefined)?.dateType;
-            datepickerInstanceRef.current.setDate(dateType === 'BS' ? bsDate : englishValue);
-            if (!(optionsRef.current as NepaliDatepickerOptions | undefined)?.useEnglishNumbers && inputRef.current) {
-              inputRef.current.value = convertEnglishToNepali(englishValue);
-            }
-          } catch (_) {}
-        }
-      } else {
-        if (inputRef.current) inputRef.current.value = '';
-        if (datepickerInstanceRef.current && isInitializedRef.current) try { datepickerInstanceRef.current.setDate(''); } catch (_) {}
-      }
+      latestValueRef.current = value;
+      latestOptionsRef.current = options;
+    }, [value, options]);
+
+    const isInline = options.inline === true;
+
+    const normalizedValue = useMemo(() => {
+      if (!value) return '';
+      return convertNepaliToEnglish(value.trim());
     }, [value]);
 
     useEffect(() => {
-      if (inputRef.current && isInitializedRef.current) {
-        if (disabled) inputRef.current.setAttribute('readonly', 'readonly');
-        else inputRef.current.removeAttribute('readonly');
-      }
-    }, [disabled]);
+      let cancelled = false;
+
+      const init = async () => {
+        await ensureOfficialLibrary();
+        if (cancelled) return;
+
+        const hostElement = (isInline ? inlineHostRef.current : inputRef.current) as HTMLElement | null;
+        if (!hostElement) return;
+
+        try {
+          instanceRef.current?.destroy?.();
+        } catch (_) {}
+
+        if (isInline) hostElement.innerHTML = '';
+
+        const effectiveOptions = latestOptionsRef.current;
+        const pickerValue = normalizedValue || '';
+        const pickerOptions: Record<string, unknown> = {
+          dateFormat: effectiveOptions.dateFormat ?? 'YYYY-MM-DD',
+          minDate: effectiveOptions.minDate ?? undefined,
+          maxDate: effectiveOptions.maxDate ?? undefined,
+          onSelect: (payload: any) => {
+            const rangeSeparator = effectiveOptions.rangeSeparator ?? ' - ';
+            let nextValue = '';
+
+            if (Array.isArray(payload)) {
+              nextValue = payload.map((item) => item?.value ?? '').filter(Boolean).join(rangeSeparator);
+            } else if (payload?.value) {
+              nextValue = String(payload.value);
+            }
+
+            onChange?.(nextValue);
+            onDateSelect?.(payload as any, nextValue);
+            effectiveOptions.onSelect?.(payload as any, nextValue);
+          },
+          onClose: () => effectiveOptions.onClose?.(),
+          inline: isInline,
+          container: effectiveOptions.container ?? 'body',
+          range: effectiveOptions.range ?? false,
+          multiple: false,
+          value: pickerValue || undefined,
+          language: effectiveOptions.language ?? 'nepali',
+          mode: effectiveOptions.theme === 'dark' ? 'dark' : 'light',
+          unicodeDate: !(effectiveOptions.useEnglishNumbers ?? true),
+          miniEnglishDates: effectiveOptions.miniEnglishDates ?? effectiveOptions.showEnglishDateSubscript ?? true,
+        };
+
+        if (disabled) {
+          hostElement.setAttribute('aria-disabled', 'true');
+        } else {
+          hostElement.removeAttribute('aria-disabled');
+        }
+
+        if (window.NepaliDatePicker) {
+          instanceRef.current = new window.NepaliDatePicker(hostElement, pickerOptions);
+        }
+
+        if (!isInline && inputRef.current) {
+          inputRef.current.value = pickerValue;
+        }
+      };
+
+      init().catch((error) => console.error('Failed to initialize official NepaliDatepicker:', error));
+
+      return () => {
+        cancelled = true;
+        try {
+          instanceRef.current?.destroy?.();
+        } catch (_) {}
+      };
+    }, [isInline, normalizedValue, disabled, options, onChange, onDateSelect]);
 
     useImperativeHandle(ref, () => ({
-      getDate: () => datepickerInstanceRef.current?.getDate() ?? null,
-      setDate: (date) => datepickerInstanceRef.current?.setDate(date),
-      clear: () => { datepickerInstanceRef.current?.clear(); onChange?.(''); },
-      show: () => datepickerInstanceRef.current?.show(),
-      hide: () => datepickerInstanceRef.current?.hide(),
+      getDate: () => null,
+      setDate: (date) => {
+        const hostElement = (isInline ? inlineHostRef.current : inputRef.current) as HTMLInputElement | HTMLDivElement | null;
+        const nextValue = typeof date === 'string' ? date : `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
+        if (hostElement instanceof HTMLInputElement) hostElement.value = nextValue;
+        onChange?.(nextValue);
+      },
+      clear: () => {
+        if (inputRef.current) inputRef.current.value = '';
+        onChange?.('');
+      },
+      show: () => {
+        try {
+          instanceRef.current?.showDatePicker?.();
+        } catch (_) {}
+      },
+      hide: () => {
+        try {
+          instanceRef.current?.hideDatePicker?.();
+        } catch (_) {}
+      },
       destroy: () => {
-        if (inputRef.current && window.$) {
-          try {
-            window.$(inputRef.current).nepaliDatepicker('destroy');
-            datepickerInstanceRef.current = null;
-            isInitializedRef.current = false;
-          } catch (_) {}
-        }
+        try {
+          instanceRef.current?.destroy?.();
+        } catch (_) {}
       },
     }));
+
+    if (isInline) {
+      return (
+        <div
+          ref={inlineHostRef}
+          id={id}
+          className={cn('nepali-datepicker-inline-host w-full', className)}
+        />
+      );
+    }
 
     return (
       <input
@@ -398,41 +309,24 @@ const NepaliDatepicker = forwardRef<NepaliDatepickerRef, NepaliDatepickerProps>(
         id={id}
         name={name}
         className={cn(
-          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
         placeholder={placeholder}
         readOnly
         disabled={disabled}
         style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
-        onFocus={(e) => {
-          if (disabled) return;
-          e.preventDefault();
-          if (datepickerInstanceRef.current) {
-            try { datepickerInstanceRef.current.show(); } catch (_) {}
-          } else {
-            setTimeout(() => {
-              if (inputRef.current && (window.$ || window.jQuery) && typeof (window.$ || window.jQuery).fn?.nepaliDatepicker !== 'undefined') {
-                initializeDatepicker();
-                setTimeout(() => datepickerInstanceRef.current?.show(), 100);
-              }
-            }, 100);
-          }
+        onFocus={() => {
+          try {
+            instanceRef.current?.showDatePicker?.();
+          } catch (_) {}
         }}
         onClick={(e) => {
-          if (disabled) return;
           e.preventDefault();
           e.stopPropagation();
-          if (datepickerInstanceRef.current) {
-            try { datepickerInstanceRef.current.show(); } catch (_) {}
-          } else {
-            setTimeout(() => {
-              if (inputRef.current && (window.$ || window.jQuery) && typeof (window.$ || window.jQuery).fn?.nepaliDatepicker !== 'undefined') {
-                initializeDatepicker();
-                setTimeout(() => datepickerInstanceRef.current?.show(), 100);
-              }
-            }, 100);
-          }
+          try {
+            instanceRef.current?.showDatePicker?.();
+          } catch (_) {}
         }}
       />
     );
@@ -440,4 +334,6 @@ const NepaliDatepicker = forwardRef<NepaliDatepickerRef, NepaliDatepickerProps>(
 );
 
 NepaliDatepicker.displayName = 'NepaliDatepicker';
+
 export { NepaliDatepicker };
+export { ensureOfficialLibrary };
