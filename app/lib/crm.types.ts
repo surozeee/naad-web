@@ -40,6 +40,8 @@ export interface HoroscopeScopeRequest {
   zodiacSign: ZodiacSignEnum;
   scope: HoroscopeScopeEnum;
   description?: string;
+  imageUrl?: string;
+  imageBase64?: string;
 }
 
 export interface HoroscopeScopeListRequest extends CrmListRequest {
@@ -155,6 +157,7 @@ export interface EventRequest {
 
 export interface EventListRequest extends CrmListRequest {
   categoryId?: string;
+  status?: StatusEnum;
 }
 
 // ---- Event Image ----

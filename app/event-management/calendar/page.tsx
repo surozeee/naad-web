@@ -321,9 +321,10 @@ export default function EventCalendarPage() {
         pageSize: 500,
         sortBy: 'startDate',
         sortDirection: 'asc',
+        status: 'ACTIVE',
       });
       const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
-      setEvents(list.map(mapApiToItem));
+      setEvents(list.map(mapApiToItem).filter((event) => event.status === 'active'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load calendar events');
       setEvents([]);
@@ -635,11 +636,11 @@ export default function EventCalendarPage() {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <CalendarDays size={20} color="#2563eb" />
                 <div>
-                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{monthTitle}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400" style={{ marginTop: 4 }}>
+                  <div className="text-sm font-semibold text-black dark:text-slate-200">{monthTitle}</div>
+                  <div className="text-xs text-black dark:text-slate-400" style={{ marginTop: 4 }}>
                     Selected: {selectedDateTitle}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400" style={{ marginTop: 2 }}>
+                  <div className="text-xs text-black dark:text-slate-400" style={{ marginTop: 2 }}>
                     {calendarMode === 'BS' ? 'English' : 'Nepali'}: {secondarySelectedDateTitle}
                   </div>
                 </div>
@@ -662,7 +663,7 @@ export default function EventCalendarPage() {
                       setSelectedBsDate(formatBsDate(bsToday));
                     }
                   }}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-black"
                 >
                   <option value="BS">BS</option>
                   <option value="AD">AD</option>
@@ -678,7 +679,7 @@ export default function EventCalendarPage() {
                       setCurrentAdMonth((prev) => (prev ? { ...prev, month } : prev));
                     }
                   }}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-black"
                 >
                   {monthOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -697,7 +698,7 @@ export default function EventCalendarPage() {
                       setCurrentAdMonth((prev) => (prev ? { ...prev, year } : prev));
                     }
                   }}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-black"
                 >
                   {yearOptions.map((year) => (
                     <option key={year} value={year}>
@@ -761,13 +762,13 @@ export default function EventCalendarPage() {
                     >
                       <div
                         className="text-xs font-semibold"
-                        style={{ color: isSaturdayColumn ? '#dc2626' : '#334155' }}
+                        style={{ color: isSaturdayColumn ? '#dc2626' : '#000000' }}
                       >
                         {day.primary}
                       </div>
                       <div
                         className="text-[11px]"
-                        style={{ color: isSaturdayColumn ? '#f87171' : '#94a3b8' }}
+                        style={{ color: isSaturdayColumn ? '#f87171' : '#000000' }}
                       >
                         {day.secondary}
                       </div>
@@ -782,7 +783,7 @@ export default function EventCalendarPage() {
                     const isOutsideMonth = !day.inCurrentMonth;
                     const isSaturdayColumn = index % 7 === 6;
                     const dayEvents = events.filter((event) => adDateToBsString(new Date(event.startDate)) === day.bsDate);
-                    const dayEventLabel = dayEvents.map((event) => event.name).join(', ');
+                    const visibleDayEvents = dayEvents.slice(0, 2);
                     const primaryDateColor = isSelected
                       ? '#ffffff'
                       : isSaturdayColumn
@@ -791,15 +792,15 @@ export default function EventCalendarPage() {
                           : '#dc2626'
                         : isOutsideMonth
                           ? '#94a3b8'
-                          : '#475569';
-                    const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.82)' : isOutsideMonth ? '#cbd5e1' : '#94a3b8';
+                          : '#000000';
+                    const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.9)' : isOutsideMonth ? '#94a3b8' : '#000000';
                     const eventTextColor = isSelected
                       ? '#ffffff'
                       : isOutsideMonth
-                        ? '#cbd5e1'
+                        ? '#64748b'
                         : isSaturdayColumn
-                          ? '#dc2626'
-                          : '#dc2626';
+                          ? '#7f1d1d'
+                          : '#000000';
                     return (
                       <button
                         key={`${day.bsDate}-${index}`}
@@ -810,7 +811,7 @@ export default function EventCalendarPage() {
                           setCurrentAdMonth((prev) => (calendarMode === 'AD' ? { year: day.adDate.getFullYear(), month: day.adDate.getMonth() + 1 } : prev));
                         }}
                         style={{
-                          minHeight: 126,
+                          minHeight: 132,
                           padding: 10,
                           borderRight: index % 7 !== 6 ? '1px solid #e2e8f0' : 'none',
                           borderBottom: '1px solid #e2e8f0',
@@ -858,24 +859,59 @@ export default function EventCalendarPage() {
                           </div>
                         </div>
 
-                        {dayEventLabel ? (
+                        {visibleDayEvents.length > 0 ? (
                           <div
                             style={{
                               position: 'absolute',
                               top: 8,
                               left: 8,
                               right: 28,
-                              fontSize: 11,
-                              lineHeight: 1.2,
-                              color: eventTextColor,
-                              fontWeight: 600,
-                              overflow: 'hidden',
-                              whiteSpace: 'nowrap',
-                              textOverflow: 'ellipsis',
-                              textAlign: 'left',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 4,
+                              alignItems: 'flex-start',
                             }}
                           >
-                            {dayEventLabel}
+                            {visibleDayEvents.map((event) => (
+                              <div
+                                key={event.id}
+                                style={{
+                                  maxWidth: '100%',
+                                  padding: '3px 8px',
+                                  borderRadius: 999,
+                                  fontSize: 10,
+                                  lineHeight: 1.2,
+                                  color: eventTextColor,
+                                  fontWeight: 700,
+                                  overflow: 'hidden',
+                                  whiteSpace: 'nowrap',
+                                  textOverflow: 'ellipsis',
+                                  textAlign: 'left',
+                                  background: isSelected
+                                    ? 'rgba(255,255,255,0.16)'
+                                    : isOutsideMonth
+                                      ? '#e2e8f0'
+                                      : '#eff6ff',
+                                  border: isSelected
+                                    ? '1px solid rgba(255,255,255,0.18)'
+                                    : '1px solid #bfdbfe',
+                                }}
+                              >
+                                {event.name}
+                              </div>
+                            ))}
+                            {dayEvents.length > visibleDayEvents.length ? (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  lineHeight: 1,
+                                  fontWeight: 700,
+                                  color: isSelected ? 'rgba(255,255,255,0.92)' : '#1d4ed8',
+                                }}
+                              >
+                                +{dayEvents.length - visibleDayEvents.length} more
+                              </span>
+                            ) : null}
                           </div>
                         ) : null}
 
@@ -914,20 +950,20 @@ export default function EventCalendarPage() {
                         background: '#fff',
                       }}
                     >
-                      <div className="text-sm font-semibold text-slate-800">
+                      <div className="text-sm font-semibold text-black">
                         {calendarMode === 'BS' ? day.bsDate : day.adDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}
                       </div>
-                      <div className="text-xs text-slate-500" style={{ marginTop: 4 }}>
+                      <div className="text-xs text-black" style={{ marginTop: 4 }}>
                         {calendarMode === 'BS'
                           ? day.adDate.toLocaleDateString('en-US', { dateStyle: 'medium' })
                           : day.bsDate}
                       </div>
-                      <div className="text-sm text-blue-600" style={{ marginTop: 8 }}>
+                      <div className="text-sm text-black" style={{ marginTop: 8 }}>
                         {day.eventCount} event{day.eventCount > 1 ? 's' : ''}
                       </div>
                     </button>
                   ))}
-                {calendarDays.every((day) => day.eventCount === 0) && <div className="text-sm text-slate-500">No event dates in this month.</div>}
+                {calendarDays.every((day) => day.eventCount === 0) && <div className="text-sm text-black">No event dates in this month.</div>}
               </div>
             )}
           </div>
@@ -935,8 +971,8 @@ export default function EventCalendarPage() {
           <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-200 dark:border-slate-700">
             <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
               <div>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Selected Date</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Pick a Nepali date, review events, and add one directly on that day.</p>
+                <h2 className="text-xl font-bold text-black dark:text-slate-100">Selected Date</h2>
+                <p className="text-sm text-black dark:text-slate-400">Pick a Nepali date, review events, and add one directly on that day.</p>
               </div>
               <button type="button" className="btn-primary btn-small" onClick={() => openAddModal(selectedBsDate)}>
                 <Plus size={16} />
@@ -945,52 +981,51 @@ export default function EventCalendarPage() {
             </div>
 
             <div style={{ borderRadius: 12, background: '#f8fafc', padding: 14, marginBottom: 16 }}>
-              <div className="text-sm text-slate-500">{calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}</div>
-              <div className="text-lg font-bold text-slate-800">{selectedMonthLabel || 'Loading...'}</div>
-              <div className="text-sm text-slate-500" style={{ marginTop: 8 }}>Selected date: {selectedDateTitle}</div>
-              <div className="text-sm text-slate-500" style={{ marginTop: 6 }}>
+              <div className="text-sm text-black">{calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}</div>
+              <div className="text-lg font-bold text-black">{selectedMonthLabel || 'Loading...'}</div>
+              <div className="text-sm text-black" style={{ marginTop: 8 }}>Selected date: {selectedDateTitle}</div>
+              <div className="text-sm text-black" style={{ marginTop: 6 }}>
                 {calendarMode === 'BS' ? 'English date' : 'Nepali date'}: {secondarySelectedDateTitle}
               </div>
-              <div className="text-sm text-slate-500" style={{ marginTop: 6 }}>
+              <div className="text-sm text-black" style={{ marginTop: 6 }}>
                 {selectedDayEvents.length} event{selectedDayEvents.length === 1 ? '' : 's'} scheduled
               </div>
             </div>
 
             {loading ? (
-              <div className="text-sm text-slate-500">Loading events...</div>
+              <div className="text-sm text-black">Loading events...</div>
             ) : selectedDayEvents.length === 0 ? (
-              <div className="text-sm text-slate-500">No events found for this date.</div>
+              <div className="text-sm text-black">No events found for this date.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {selectedDayEvents.map((event) => (
                   <div key={event.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 8 }}>
                       <div>
-                        <div className="text-base font-semibold text-slate-800">{event.name}</div>
-                        <div className="text-xs text-slate-500" style={{ marginTop: 4 }}>
+                        <div className="text-base font-semibold text-black">{event.name}</div>
+                        <div className="text-xs text-black" style={{ marginTop: 4 }}>
                           {formatDisplayDateTime(event.startDate)} to {formatDisplayDateTime(event.endDate)}
                         </div>
                       </div>
-                      <span className={`status-badge ${event.status}`}>{event.status === 'active' ? 'Active' : event.status === 'deleted' ? 'Deleted' : 'Inactive'}</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
-                      <div className="text-sm text-slate-600" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="text-sm text-black" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Clock3 size={14} />
                         <span>{formatTime(event.startDate)} - {formatTime(event.endDate)}</span>
                       </div>
                       {event.categoryName && (
-                        <div className="text-sm text-slate-600" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="text-sm text-black" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Tag size={14} />
                           <span>{event.categoryName}</span>
                         </div>
                       )}
                       {event.address && (
-                        <div className="text-sm text-slate-600" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="text-sm text-black" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <MapPin size={14} />
                           <span>{event.address}</span>
                         </div>
                       )}
-                      {event.description && <p className="text-sm text-slate-600" style={{ marginTop: 4 }}>{event.description}</p>}
+                      {event.description && <p className="text-sm text-black" style={{ marginTop: 4 }}>{event.description}</p>}
                     </div>
                   </div>
                 ))}

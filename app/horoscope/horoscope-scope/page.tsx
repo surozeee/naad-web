@@ -52,6 +52,7 @@ interface HoroscopeScopeItem {
   zodiacSign: string;
   scope: string;
   description: string;
+  imageUrl: string;
   status: 'active' | 'inactive' | 'deleted';
 }
 
@@ -64,6 +65,7 @@ function mapApiToItem(raw: Record<string, unknown>): HoroscopeScopeItem {
     zodiacSign: String(raw.zodiacSign ?? ''),
     scope: String(raw.scope ?? ''),
     description: String(raw.description ?? ''),
+    imageUrl: String(raw.imageUrl ?? ''),
     status,
   };
 }
@@ -77,7 +79,9 @@ export default function HoroscopeScopePage() {
   const [items, setItems] = useState<HoroscopeScopeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<HoroscopeScopeRequest>({ zodiacSign: 'ARIES', scope: 'DAILY', description: '' });
+  const [formData, setFormData] = useState<HoroscopeScopeRequest>({ zodiacSign: 'ARIES', scope: 'DAILY', description: '', imageUrl: '' });
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imagePreviewDataUrl, setImagePreviewDataUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<'zodiacSign' | 'scope' | 'description' | 'status'>('scope');
@@ -114,7 +118,33 @@ export default function HoroscopeScopePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'imageUrl') {
+      setImageBase64(null);
+      setImagePreviewDataUrl(null);
+    }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+      setImageBase64(base64);
+      setImagePreviewDataUrl(dataUrl);
+      setFormData((prev) => ({ ...prev, imageUrl: '' }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImageSelection = () => {
+    setImageBase64(null);
+    setImagePreviewDataUrl(null);
+    setFormData((prev) => ({ ...prev, imageUrl: '' }));
   };
 
   const validateForm = () => {
@@ -130,12 +160,24 @@ export default function HoroscopeScopePage() {
     if (!validateForm()) return;
     setError(null);
     setSubmitting(true);
+    const body: HoroscopeScopeRequest = {
+      zodiacSign: formData.zodiacSign,
+      scope: formData.scope,
+      description: formData.description?.trim() || undefined,
+    };
+
+    if (imageBase64) {
+      body.imageBase64 = imageBase64;
+    } else if (formData.imageUrl?.trim()) {
+      body.imageUrl = formData.imageUrl.trim();
+    }
+
     try {
       if (editingId) {
-        await horoscopeScopeApi.update(editingId, formData);
+        await horoscopeScopeApi.update(editingId, body);
         await Swal.fire({ title: 'Updated', text: 'Horoscope scope updated.', icon: 'success', timer: 1500, showConfirmButton: false });
       } else {
-        await horoscopeScopeApi.create(formData);
+        await horoscopeScopeApi.create(body);
         await Swal.fire({ title: 'Created', text: 'Horoscope scope created.', icon: 'success', timer: 1500, showConfirmButton: false });
       }
       await fetchItems();
@@ -149,7 +191,9 @@ export default function HoroscopeScopePage() {
   };
 
   const resetForm = () => {
-    setFormData({ zodiacSign: 'ARIES', scope: 'DAILY', description: '' });
+    setFormData({ zodiacSign: 'ARIES', scope: 'DAILY', description: '', imageUrl: '' });
+    setImageBase64(null);
+    setImagePreviewDataUrl(null);
     setErrors({});
     setEditingId(null);
   };
@@ -159,7 +203,10 @@ export default function HoroscopeScopePage() {
       zodiacSign: (row.zodiacSign || 'ARIES') as ZodiacSignEnum,
       scope: row.scope as HoroscopeScopeEnum,
       description: row.description || '',
+      imageUrl: row.imageUrl || '',
     });
+    setImageBase64(null);
+    setImagePreviewDataUrl(null);
     setEditingId(row.id);
     setShowAddModal(true);
   };
@@ -278,6 +325,7 @@ export default function HoroscopeScopePage() {
                 <SortableTh columnKey="zodiacSign">Zodiac Sign</SortableTh>
                 <SortableTh columnKey="scope">Scope</SortableTh>
                 <SortableTh columnKey="description">Description</SortableTh>
+                <th>Image</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
               </tr>
@@ -285,11 +333,11 @@ export default function HoroscopeScopePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={5} className="empty-state">
+                  <td colSpan={6} className="empty-state">
                     <p>{items.length === 0 ? 'No horoscope scopes found' : 'No scopes match your search'}</p>
                   </td>
                 </tr>
@@ -303,6 +351,17 @@ export default function HoroscopeScopePage() {
                       </div>
                     </td>
                     <td>{row.description || '—'}</td>
+                    <td>
+                      {row.imageUrl ? (
+                        <img
+                          src={row.imageUrl}
+                          alt={`${row.scope} preview`}
+                          style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
+                        />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
                         {row.status === 'active' && <Check size={14} />}
@@ -337,7 +396,7 @@ export default function HoroscopeScopePage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <div className="pagination-container">
                       <div className="pagination-left">
                         <span className="pagination-label">{PAGE_SIZE} per page</span>
@@ -393,14 +452,12 @@ export default function HoroscopeScopePage() {
                     value={formData.zodiacSign}
                     onChange={handleInputChange}
                     className={`form-input ${errors.zodiacSign ? 'error' : ''}`}
-                    disabled={!!editingId}
                   >
                     {ZODIAC_SIGN_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                   {errors.zodiacSign && <span className="form-error">{errors.zodiacSign}</span>}
-                  {editingId && <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Zodiac sign cannot be changed when editing.</p>}
                 </div>
                 <div className="form-group">
                   <label htmlFor="scope" className="form-label">Scope <span className="required">*</span></label>
@@ -410,18 +467,47 @@ export default function HoroscopeScopePage() {
                     value={formData.scope}
                     onChange={handleInputChange}
                     className={`form-input ${errors.scope ? 'error' : ''}`}
-                    disabled={!!editingId}
                   >
                     {SCOPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                   {errors.scope && <span className="form-error">{errors.scope}</span>}
-                  {editingId && <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Scope cannot be changed when editing.</p>}
                 </div>
                 <div className="form-group">
                   <label htmlFor="description" className="form-label">Description</label>
                   <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="form-input"
+                    style={{ padding: '8px 12px' }}
+                  />
+                  <input
+                    id="imageUrl"
+                    name="imageUrl"
+                    type="text"
+                    value={formData.imageUrl ?? ''}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    placeholder="Or paste image URL"
+                  />
+                  {(imagePreviewDataUrl || formData.imageUrl) ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                      <img
+                        src={imagePreviewDataUrl ?? formData.imageUrl}
+                        alt="Horoscope scope preview"
+                        style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 10, border: '1px solid #e2e8f0' }}
+                      />
+                      <button type="button" className="btn-secondary btn-small" onClick={clearImageSelection}>
+                        Clear image
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }} disabled={submitting}>Cancel</button>

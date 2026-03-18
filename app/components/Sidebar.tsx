@@ -289,7 +289,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   if (collapsed) {
     return (
       <aside 
-        className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg border-r border-slate-200 dark:border-slate-700 hidden md:flex overflow-visible"
+        className="bg-white dark:bg-slate-800 text-black dark:text-slate-200 w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg border-r border-slate-200 dark:border-slate-700 hidden md:flex overflow-visible"
         onClick={(e) => {
           // Prevent clicks inside sidebar from closing it
           e.stopPropagation();
@@ -328,7 +328,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                     className={`w-full flex items-center justify-center p-3 rounded-lg mb-1 transition-all ${
                       itemActive
                         ? 'bg-blue-500 dark:bg-blue-600 text-white'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-black dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-black dark:hover:text-white'
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
@@ -347,7 +347,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                         href={item.href}
                         prefetch={true}
                         className={`block px-4 py-2.5 text-sm font-bold border-b border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                          itemActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50' : 'text-slate-800 dark:text-slate-200'
+                          itemActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50' : 'text-black dark:text-slate-200'
                         }`}
                       >
                         {getDisplayLabel(item.href, item.label)}
@@ -363,7 +363,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                 href={subHref}
                                 prefetch={true}
                                 className={`block px-4 py-2 text-sm font-bold rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 border-l-2 border-transparent hover:border-blue-500 ${
-                                  subActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-slate-700 dark:text-slate-300'
+                                  subActive ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-black dark:text-slate-300'
                                 }`}
                               >
                                 {getDisplayLabel(subItem.href, subItem.label)}
@@ -374,7 +374,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                   href={nested.href}
                                   prefetch={true}
                                   className={`block px-4 pl-6 py-1.5 text-sm font-bold rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 border-l-2 border-transparent hover:border-blue-500 ${
-                                    isActive(nested.href) ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-slate-600 dark:text-slate-400'
+                                    isActive(nested.href) ? 'text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-700/50 border-blue-500' : 'text-black dark:text-slate-400'
                                   }`}
                                 >
                                   {nested.label}
@@ -397,7 +397,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
   return (
     <aside 
-      className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg border-r border-slate-200 dark:border-slate-700"
+      className="bg-white dark:bg-slate-800 text-black dark:text-slate-200 w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg border-r border-slate-200 dark:border-slate-700"
       onClick={(e) => {
         // Prevent clicks inside sidebar from closing it
         e.stopPropagation();
@@ -411,7 +411,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
         <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-700">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-black dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -420,7 +420,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
               placeholder="Search menu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 rounded-lg border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 text-black dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-500 rounded-lg border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
             />
           </div>
         </div>
@@ -428,7 +428,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
         <div className="relative">
           
           {filteredMenuItems.length === 0 && searchQuery.trim() !== '' ? (
-            <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+            <div className="text-center py-8 text-black dark:text-slate-400 text-sm">
               No results found
             </div>
           ) : (
@@ -456,7 +456,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
                       <span className="flex-1 text-sm">{getDisplayLabel(item.href, item.label)}</span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">▶</span>
+                      <span className="text-[10px] text-black dark:text-slate-500">▶</span>
                       
                       {/* Submenu – same alignment (padding) as menu, delay before close */}
                       <div 
@@ -485,7 +485,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                                   }}
                                 >
                                   {getDisplayLabel(subItem.href, subItem.label)}
-                                  <span className="text-slate-400 dark:text-slate-500 absolute right-3">›</span>
+                                  <span className="text-black dark:text-slate-500 absolute right-3">›</span>
                                   
                                   {/* Nested Submenu */}
                                   <div className="nested-submenu">
@@ -543,7 +543,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             align-items: center;
             transition: all 0.2s ease;
             position: relative;
-            color: #334155;
+            color: #000000;
             font-size: 14px;
             font-weight: bold;
           }
@@ -591,7 +591,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            color: #334155;
+            color: #000000;
             font-size: 14px;
             font-weight: bold;
             border-left: 3px solid transparent;
@@ -601,7 +601,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
           .sidebar-submenu-item:hover {
             background: #f1f5f9;
-            color: #0f172a;
+            color: #000000;
             border-left: 3px solid #3b82f6;
           }
 
@@ -654,7 +654,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            color: #334155;
+            color: #000000;
             font-size: 14px;
             font-weight: bold;
             border-left: 3px solid transparent;
@@ -664,7 +664,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
           .nested-submenu-item:hover {
             background: #f1f5f9;
-            color: #0f172a;
+            color: #000000;
             border-left: 3px solid #3b82f6;
           }
 
