@@ -322,7 +322,6 @@ export default function HoroscopeScopePage() {
           <table className="data-table">
             <thead>
               <tr>
-                <SortableTh columnKey="zodiacSign">Zodiac Sign</SortableTh>
                 <SortableTh columnKey="scope">Scope</SortableTh>
                 <SortableTh columnKey="description">Description</SortableTh>
                 <th>Image</th>
@@ -333,18 +332,17 @@ export default function HoroscopeScopePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={6} className="empty-state">
+                  <td colSpan={5} className="empty-state">
                     <p>{items.length === 0 ? 'No horoscope scopes found' : 'No scopes match your search'}</p>
                   </td>
                 </tr>
               ) : (
                 items.map((row) => (
                   <tr key={row.id}>
-                    <td>{ZODIAC_SIGN_OPTIONS.find((o) => o.value === row.zodiacSign)?.label ?? row.zodiacSign ?? '—'}</td>
                     <td>
                       <div className="org-name-cell">
                         <span className="org-name">{SCOPE_OPTIONS.find((o) => o.value === row.scope)?.label ?? row.scope}</span>
@@ -396,7 +394,7 @@ export default function HoroscopeScopePage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={5}>
                     <div className="pagination-container">
                       <div className="pagination-left">
                         <span className="pagination-label">{PAGE_SIZE} per page</span>
@@ -444,21 +442,6 @@ export default function HoroscopeScopePage() {
               </div>
               <form onSubmit={handleSubmit} className="organization-form">
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
-                <div className="form-group">
-                  <label htmlFor="zodiacSign" className="form-label">Zodiac Sign <span className="required">*</span></label>
-                  <select
-                    id="zodiacSign"
-                    name="zodiacSign"
-                    value={formData.zodiacSign}
-                    onChange={handleInputChange}
-                    className={`form-input ${errors.zodiacSign ? 'error' : ''}`}
-                  >
-                    {ZODIAC_SIGN_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  {errors.zodiacSign && <span className="form-error">{errors.zodiacSign}</span>}
-                </div>
                 <div className="form-group">
                   <label htmlFor="scope" className="form-label">Scope <span className="required">*</span></label>
                   <select

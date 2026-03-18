@@ -373,7 +373,11 @@ export default function ZodiacSignPage() {
                     <td>{row.daysRange || '—'}</td>
                     <td>
                       {row.logoUrl ? (
-                        <a href={row.logoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>Link</a>
+                        <img
+                          src={row.logoUrl}
+                          alt={`${row.name} logo`}
+                          style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
+                        />
                       ) : (
                         '—'
                       )}
