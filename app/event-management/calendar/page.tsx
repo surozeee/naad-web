@@ -781,7 +781,8 @@ export default function EventCalendarPage() {
                     const isToday = day.bsDate === todayBs;
                     const isOutsideMonth = !day.inCurrentMonth;
                     const isSaturdayColumn = index % 7 === 6;
-                    const dayEvents = events.filter((event) => adDateToBsString(new Date(event.startDate)) === day.bsDate).slice(0, 2);
+                    const dayEvents = events.filter((event) => adDateToBsString(new Date(event.startDate)) === day.bsDate);
+                    const dayEventLabel = dayEvents.map((event) => event.name).join(', ');
                     const primaryDateColor = isSelected
                       ? '#ffffff'
                       : isSaturdayColumn
@@ -857,31 +858,26 @@ export default function EventCalendarPage() {
                           </div>
                         </div>
 
-                        <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 24 }}>
-                          {dayEvents.map((event) => (
-                            <div
-                              key={event.id}
-                              style={{
-                                fontSize: 11,
-                                lineHeight: 1.2,
-                                color: eventTextColor,
-                                fontWeight: 600,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                              }}
-                            >
-                              {event.name}
-                            </div>
-                          ))}
-                          {day.eventCount > 2 && (
-                            <span style={{ fontSize: 11, color: isSelected ? '#ffffff' : isOutsideMonth ? '#94a3b8' : '#2563eb', fontWeight: 600 }}>
-                              +{day.eventCount - 2} more
-                            </span>
-                          )}
-                        </div>
+                        {dayEventLabel ? (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: 8,
+                              left: 8,
+                              right: 28,
+                              fontSize: 11,
+                              lineHeight: 1.2,
+                              color: eventTextColor,
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              whiteSpace: 'nowrap',
+                              textOverflow: 'ellipsis',
+                              textAlign: 'left',
+                            }}
+                          >
+                            {dayEventLabel}
+                          </div>
+                        ) : null}
 
                         <div
                           style={{
@@ -1022,13 +1018,13 @@ export default function EventCalendarPage() {
                   {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
+                <div className="event-calendar-modal-row">
                   <div className="form-group">
                     <label className="form-label">Start Nepali Date <span className="required">*</span></label>
                     <NepaliDatepicker
                       value={formData.startBsDate}
                       onChange={(value) => setFormData((prev) => ({ ...prev, startBsDate: value }))}
-                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true }}
+                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true, modal: true }}
                       className={`form-input ${errors.startBsDate ? 'error' : ''}`}
                       placeholder="Start date"
                     />
@@ -1041,13 +1037,13 @@ export default function EventCalendarPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
+                <div className="event-calendar-modal-row">
                   <div className="form-group">
                     <label className="form-label">End Nepali Date <span className="required">*</span></label>
                     <NepaliDatepicker
                       value={formData.endBsDate}
                       onChange={(value) => setFormData((prev) => ({ ...prev, endBsDate: value }))}
-                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true }}
+                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true, modal: true }}
                       className={`form-input ${errors.endBsDate ? 'error' : ''}`}
                       placeholder="End date"
                     />

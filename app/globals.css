@@ -664,14 +664,49 @@ body {
   overflow: visible;
   display: flex;
   flex-direction: column;
+  width: min(560px, 92vw);
 }
 
 #event-calendar-create-modal .organization-form {
   max-height: calc(95vh - 88px);
   overflow-y: auto;
-  padding: 0 2px 2px;
+  padding: 18px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#event-calendar-create-modal .form-group {
+  gap: 8px;
+}
+
+#event-calendar-create-modal .form-input {
+  min-height: 48px;
+}
+
+#event-calendar-create-modal .event-calendar-modal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 16px;
+  align-items: start;
+}
+
+#event-calendar-create-modal .form-actions {
+  margin-top: 4px;
 }
 
 #event-calendar-create-modal .ndp-container {
   z-index: 1000003 !important;
+}
+
+@media (max-width: 640px) {
+  #event-calendar-create-modal .organization-form {
+    padding: 16px 16px 20px;
+    gap: 14px;
+  }
+
+  #event-calendar-create-modal .event-calendar-modal-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 }
