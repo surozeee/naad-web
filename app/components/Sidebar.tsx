@@ -24,6 +24,8 @@ const HOVER_CLOSE_DELAY_MS = 200;
 /** Menus shown only to CUSTOMER role (Horoscope, Astrology, Puja, Music). */
 const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
   { id: 'horoscope', icon: '♈', label: 'Horoscope', href: '/horoscope', submenu: [
+    { label: 'Add Horoscope', href: '/horoscope/add' },
+    { label: 'Add Horoscope CSV', href: '/horoscope/add-csv' },
     { label: 'Horoscope Scope', href: '/horoscope/horoscope-scope' }, { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
     { label: 'Daily Horoscope', href: '/horoscope/daily' }, { label: 'Weekly Horoscope', href: '/horoscope/weekly' },
     { label: 'Monthly Horoscope', href: '/horoscope/monthly' }, { label: 'Yearly Horoscope', href: '/horoscope/yearly' },
@@ -98,6 +100,8 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/support/messaging-template': 'Message Template',
   '/support/bulk-message': 'Bulk Message',
   '/horoscope': 'Horoscope',
+  '/horoscope/add': 'Add Horoscope',
+  '/horoscope/add-csv': 'Add Horoscope CSV',
   '/horoscope/horoscope-scope': 'Horoscope Scope',
   '/horoscope/daily': 'Daily Horoscope',
   '/horoscope/weekly': 'Weekly Horoscope',
