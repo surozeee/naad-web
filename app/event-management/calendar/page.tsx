@@ -948,38 +948,6 @@ export default function EventCalendarPage() {
               </button>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 16 }}>
-              <label className="form-label">Nepali Datepicker</label>
-              <div
-                style={{
-                  minHeight: 420,
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  background: '#fff',
-                  padding: 8,
-                }}
-              >
-                <NepaliDatepicker
-                  value={selectedBsDate}
-                  onChange={(nextValue) => {
-                    setSelectedBsDate(nextValue);
-                    const parts = parseBsDate(nextValue);
-                    if (parts) setCurrentBsMonth({ year: parts.year, month: parts.month, day: 1 });
-                  }}
-                  options={{
-                    inline: true,
-                    language: 'nepali',
-                    dateFormat: 'YYYY-MM-DD',
-                    useEnglishNumbers: true,
-                    showEnglishDateSubscript: true,
-                    theme: 'light',
-                  }}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
             <div style={{ borderRadius: 12, background: '#f8fafc', padding: 14, marginBottom: 16 }}>
               <div className="text-sm text-slate-500">{calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}</div>
               <div className="text-lg font-bold text-slate-800">{selectedMonthLabel || 'Loading...'}</div>
@@ -1037,7 +1005,7 @@ export default function EventCalendarPage() {
 
         {showAddModal && (
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
-            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
+            <div id="event-calendar-create-modal" className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
               <div className="modal-header">
                 <h2>Add Event</h2>
                 <button type="button" className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
@@ -1060,7 +1028,7 @@ export default function EventCalendarPage() {
                     <NepaliDatepicker
                       value={formData.startBsDate}
                       onChange={(value) => setFormData((prev) => ({ ...prev, startBsDate: value }))}
-                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true, modal: true }}
+                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true }}
                       className={`form-input ${errors.startBsDate ? 'error' : ''}`}
                       placeholder="Start date"
                     />
@@ -1079,7 +1047,7 @@ export default function EventCalendarPage() {
                     <NepaliDatepicker
                       value={formData.endBsDate}
                       onChange={(value) => setFormData((prev) => ({ ...prev, endBsDate: value }))}
-                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true, modal: true }}
+                      options={{ dateFormat: 'YYYY-MM-DD', dateType: 'BS', useEnglishNumbers: true }}
                       className={`form-input ${errors.endBsDate ? 'error' : ''}`}
                       placeholder="End date"
                     />

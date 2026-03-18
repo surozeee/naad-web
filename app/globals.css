@@ -658,3 +658,20 @@ body {
   line-height: 1;
   text-align: right;
 }
+
+/* Event calendar modal datepicker visibility */
+#event-calendar-create-modal {
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+#event-calendar-create-modal .organization-form {
+  max-height: calc(95vh - 88px);
+  overflow-y: auto;
+  padding: 0 2px 2px;
+}
+
+#event-calendar-create-modal .ndp-container {
+  z-index: 1000003 !important;
+}
