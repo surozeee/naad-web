@@ -66,16 +66,34 @@ if (fs.existsSync(setupGlobalsPath)) {
 const nextBin = path.join(projectRoot, 'node_modules', '.bin', 'next');
 const nextCommand = fs.existsSync(nextBin) ? nextBin : 'next';
 
-console.log(`📦 Using Next.js binary: ${nextCommand}`);
+const nextCliJs = path.join(projectRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
+const useNodeCli = fs.existsSync(nextCliJs);
+
+console.log(`📦 Using Next.js: ${useNodeCli ? nextCliJs : nextCommand}`);
 console.log(`🌐 Server will start on port: ${env.PORT}`);
 console.log(`📁 Working directory: ${projectRoot}`);
 
-const nextStart = spawn(nextCommand, ['start'], {
-  stdio: 'inherit',
-  env,
-  shell: true,
-  cwd: projectRoot, // Explicitly set working directory
-});
+const buildIdPath = path.join(projectRoot, '.next', 'BUILD_ID');
+if (!fs.existsSync(buildIdPath)) {
+  console.error('❌ No production build found (.next/BUILD_ID missing).');
+  console.error('   On the server, from the app directory run: npm run build');
+  console.error('   Then start again: npm start   (or: pm2 restart naad-web)');
+  process.exit(1);
+}
+
+// Avoid shell:true + args (Node DEP0190); invoke Next CLI via node when available
+const nextStart = useNodeCli
+  ? spawn(process.execPath, [nextCliJs, 'start'], {
+      stdio: 'inherit',
+      env,
+      cwd: projectRoot,
+    })
+  : spawn(nextCommand, ['start'], {
+      stdio: 'inherit',
+      env,
+      cwd: projectRoot,
+      shell: process.platform === 'win32',
+    });
 
 nextStart.on('error', (error) => {
   console.error('❌ Failed to start server:', error);
