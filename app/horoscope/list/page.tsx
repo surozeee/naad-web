@@ -1,5 +1,5 @@
 import HoroscopePage from '../page';
 
-export default function AddHoroscopePage() {
+export default function HoroscopeListPage() {
   return <HoroscopePage />;
 }

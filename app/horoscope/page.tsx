@@ -45,10 +45,18 @@ const predictions = {
 export default function HoroscopePage() {
   const [selectedSign, setSelectedSign] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const selectedSignData = zodiacSigns.find((s) => s.name === selectedSign);
 
-  const getRandomPrediction = (period: 'daily' | 'weekly' | 'monthly') => {
+  const getPredictionBySign = (signName: string, period: 'daily' | 'weekly' | 'monthly') => {
     const periodPredictions = predictions[period];
-    return periodPredictions[Math.floor(Math.random() * periodPredictions.length)];
+    const signIndex = zodiacSigns.findIndex((sign) => sign.name === signName);
+    const safeIndex = signIndex >= 0 ? signIndex : 0;
+    return periodPredictions[safeIndex % periodPredictions.length];
+  };
+
+  const getShortPrediction = (signName: string, period: 'daily' | 'weekly' | 'monthly') => {
+    const fullText = getPredictionBySign(signName, period);
+    return fullText.length > 88 ? `${fullText.slice(0, 88)}...` : fullText;
   };
 
   return (
@@ -96,47 +104,57 @@ export default function HoroscopePage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-          {zodiacSigns.map((sign) => (
-            <button
-              key={sign.name}
-              onClick={() => setSelectedSign(sign.name)}
-              className={`p-6 rounded-xl transition-all transform hover:scale-105 ${
-                selectedSign === sign.name
-                  ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-2xl'
-                  : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-lg hover:shadow-xl'
-              }`}
-            >
-              <div className="text-4xl mb-2">{sign.symbol}</div>
-              <div className="font-bold text-lg mb-1">{sign.name}</div>
-              <div className={`text-sm ${selectedSign === sign.name ? 'text-purple-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                {sign.dates}
-              </div>
-              <div className={`text-xs mt-1 ${selectedSign === sign.name ? 'text-purple-200' : 'text-gray-400 dark:text-gray-500'}`}>
-                {sign.element}
-              </div>
-            </button>
-          ))}
-        </div>
+        {!selectedSign && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
+            {zodiacSigns.map((sign) => (
+              <button
+                key={sign.name}
+                onClick={() => setSelectedSign(sign.name)}
+                className="p-6 rounded-xl transition-all transform hover:scale-105 bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-lg hover:shadow-xl"
+              >
+                <div className="text-4xl mb-2">{sign.symbol}</div>
+                <div className="font-bold text-lg mb-1">{sign.name}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {sign.dates}
+                </div>
+                <div className="text-xs mt-1 text-gray-400 dark:text-gray-500">
+                  {sign.element}
+                </div>
+                <p className="mt-3 text-xs text-left text-gray-600 dark:text-gray-300">
+                  {getShortPrediction(sign.name, selectedPeriod)}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
 
         {selectedSign && (
           <div className="max-w-3xl mx-auto">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl border border-purple-100 dark:border-purple-900">
+              <div className="mb-6">
+                <button
+                  onClick={() => setSelectedSign(null)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  ← Back to select zodiac sign
+                </button>
+              </div>
+
               <div className="text-center mb-6">
                 <div className="text-6xl mb-4">
-                  {zodiacSigns.find(s => s.name === selectedSign)?.symbol}
+                  {selectedSignData?.symbol}
                 </div>
                 <h2 className="text-3xl font-bold mb-2 text-gray-800 dark:text-white">
                   {selectedSign} {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} Horoscope
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400">
-                  {zodiacSigns.find(s => s.name === selectedSign)?.dates}
+                  {selectedSignData?.dates}
                 </p>
               </div>
               
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-6 mb-6">
                 <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">
-                  {getRandomPrediction(selectedPeriod)}
+                  {selectedSign ? getPredictionBySign(selectedSign, selectedPeriod) : ''}
                 </p>
               </div>
 
