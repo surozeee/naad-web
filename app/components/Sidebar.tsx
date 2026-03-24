@@ -26,6 +26,7 @@ const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
   { id: 'horoscope', icon: '♈', label: 'Horoscope', href: '/horoscope', submenu: [
     { label: 'View Horoscope', href: '/horoscope/list' },
     { label: 'Add Horoscope CSV', href: '/horoscope/add-csv' },
+    { label: 'Manage Horoscope', href: '/horoscope/manage' },
     { label: 'Horoscope Scope', href: '/horoscope/horoscope-scope' }, { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
   ]},
   { id: 'astrology', icon: '⭐', label: 'Astrology', href: '/astrology', submenu: [
@@ -100,6 +101,7 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/horoscope': 'Horoscope',
   '/horoscope/list': 'Horoscope List',
   '/horoscope/add-csv': 'Add Horoscope CSV',
+  '/horoscope/manage': 'Manage Horoscope',
   '/horoscope/horoscope-scope': 'Horoscope Scope',
   '/astrology': 'Astrology',
   '/astrology/zodiac-sign': 'Zodiac Sign',

@@ -50,6 +50,22 @@ export interface HoroscopeScopeListRequest extends CrmListRequest {
   status?: StatusEnum;
 }
 
+/** Backend LanguageEnum code (subset commonly used in admin UI). */
+export type LanguageEnumCode = 'EN' | 'NE' | string;
+
+export interface ZodiacSignLocaleRequest {
+  language: LanguageEnumCode;
+  name: string;
+  startingName?: string;
+}
+
+export interface ZodiacSignLocaleResponse {
+  id?: string;
+  language: LanguageEnumCode;
+  name: string;
+  startingName?: string;
+}
+
 // ---- Zodiac Sign ----
 export interface ZodiacSignRequest {
   name: string;
@@ -61,10 +77,81 @@ export interface ZodiacSignRequest {
   logoImageBase64?: string;
   startingName?: string;
   daysRange?: string;
+  /** Per-language display fields (stored in zodiac_sign_language). */
+  locales?: ZodiacSignLocaleRequest[];
+}
+
+export interface ZodiacSignResponse {
+  id: string;
+  name: string;
+  zodiacSign: ZodiacSignEnum;
+  description?: string;
+  logoUrl?: string;
+  startingName?: string;
+  daysRange?: string;
+  status?: StatusEnum;
+  createdAt?: string;
+  lastModifiedAt?: string;
+  locales?: ZodiacSignLocaleResponse[];
 }
 
 export interface ZodiacSignListRequest extends CrmListRequest {
   zodiacSign?: ZodiacSignEnum;
+}
+
+// ---- Horoscope (Event-Service) ----
+export type HoroscopePeriodEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'YEARLY';
+export type LanguageEnumCode = 'EN' | 'NE' | string;
+
+export interface HoroscopeLocaleRequest {
+  language: LanguageEnumCode;
+  prediction: string;
+  luckyNumber: string;
+  color: string;
+  education: string;
+  expense: string;
+}
+
+export interface HoroscopeRequest {
+  zodiacSign: ZodiacSignEnum;
+  periodId: string;
+  prediction: string;
+  luckyNumber: string;
+  color: string;
+  education: string;
+  expense: string;
+  locales?: HoroscopeLocaleRequest[];
+}
+
+export interface HoroscopeResponse extends HoroscopeRequest {
+  id: string;
+  period?: HoroscopePeriodEnum;
+  periodName?: string;
+  status?: StatusEnum;
+  createdAt?: string;
+  lastModifiedAt?: string;
+}
+
+export interface HoroscopeListRequest extends CrmListRequest {
+  zodiacSign?: ZodiacSignEnum;
+  periodId?: string;
+  status?: StatusEnum;
+}
+
+export interface HoroscopePeriodRequest {
+  name: string;
+  horoscope: HoroscopePeriodEnum;
+  description?: string;
+}
+
+export interface HoroscopePeriodResponse extends HoroscopePeriodRequest {
+  id: string;
+  status?: StatusEnum;
+}
+
+export interface HoroscopePeriodListRequest extends CrmListRequest {
+  horoscope?: HoroscopePeriodEnum;
+  status?: StatusEnum;
 }
 
 // ---- Music Type ----

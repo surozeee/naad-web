@@ -21,7 +21,19 @@ import Breadcrumb from '../../components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '../../components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '../../components/common/ActionTooltip';
 import { zodiacSignApi } from '@/app/lib/crm.service';
-import type { ZodiacSignRequest, ZodiacSignEnum } from '@/app/lib/crm.types';
+import type {
+  ZodiacSignRequest,
+  ZodiacSignEnum,
+  ZodiacSignLocaleRequest,
+  ZodiacSignLocaleResponse,
+  ZodiacSignResponse,
+  LanguageEnumCode,
+} from '@/app/lib/crm.types';
+
+const LANGUAGE_OPTIONS: { value: LanguageEnumCode; label: string }[] = [
+  { value: 'EN', label: 'English' },
+  { value: 'NE', label: 'Nepali' },
+];
 
 const ZODIAC_SIGN_OPTIONS: { value: ZodiacSignEnum; label: string }[] = [
   { value: 'ARIES', label: 'Aries' },
@@ -47,6 +59,43 @@ interface ZodiacSignItem {
   startingName: string;
   daysRange: string;
   status: 'active' | 'inactive' | 'deleted';
+  locales: ZodiacSignLocaleResponse[];
+}
+
+interface LocaleFormRow {
+  key: string;
+  language: LanguageEnumCode;
+  name: string;
+  startingName: string;
+}
+
+function createLocaleRow(language: LanguageEnumCode = 'EN'): LocaleFormRow {
+  return { key: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, language, name: '', startingName: '' };
+}
+
+function defaultLocaleRows(): LocaleFormRow[] {
+  return [createLocaleRow('EN'), createLocaleRow('NE')];
+}
+
+function mapApiLocales(raw: unknown): ZodiacSignLocaleResponse[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((x) => {
+    const o = x as Record<string, unknown>;
+    return {
+      id: o.id != null ? String(o.id) : undefined,
+      language: String(o.language ?? 'EN') as LanguageEnumCode,
+      name: String(o.name ?? ''),
+      startingName: o.startingName != null ? String(o.startingName) : undefined,
+    };
+  });
+}
+
+function localesSummary(locales: ZodiacSignLocaleResponse[]): string {
+  if (!locales.length) return '—';
+  return locales
+    .filter((l) => l.name?.trim())
+    .map((l) => `${l.language}: ${l.name}`)
+    .join(' · ') || '—';
 }
 
 function mapApiToItem(raw: Record<string, unknown>): ZodiacSignItem {
@@ -60,7 +109,18 @@ function mapApiToItem(raw: Record<string, unknown>): ZodiacSignItem {
     startingName: String(raw.startingName ?? ''),
     daysRange: String(raw.daysRange ?? ''),
     status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
+    locales: mapApiLocales(raw.locales),
   };
+}
+
+function buildLocalesPayload(rows: LocaleFormRow[]): ZodiacSignLocaleRequest[] {
+  return rows
+    .filter((r) => r.language && r.name.trim())
+    .map((r) => ({
+      language: r.language,
+      name: r.name.trim(),
+      startingName: r.startingName.trim() || undefined,
+    }));
 }
 
 export default function ZodiacSignPage() {
@@ -85,6 +145,8 @@ export default function ZodiacSignPage() {
   const [logoPreviewDataUrl, setLogoPreviewDataUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [localeRows, setLocaleRows] = useState<LocaleFormRow[]>(() => defaultLocaleRows());
+  const [fetchingDetail, setFetchingDetail] = useState(false);
   const [filterZodiacSign, setFilterZodiacSign] = useState<string>('');
   const [sortKey, setSortKey] = useState<'name' | 'startingName' | 'daysRange' | 'zodiacSign' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -158,6 +220,7 @@ export default function ZodiacSignPage() {
       description: formData.description?.trim() || undefined,
       startingName: formData.startingName?.trim() || undefined,
       daysRange: formData.daysRange?.trim() || undefined,
+      locales: buildLocalesPayload(localeRows),
     };
     if (logoImageBase64) {
       body.logoImageBase64 = logoImageBase64;
@@ -182,23 +245,59 @@ export default function ZodiacSignPage() {
 
   const resetForm = () => {
     setFormData({ name: '', zodiacSign: 'ARIES', description: '', logoUrl: '', startingName: '', daysRange: '' });
+    setLocaleRows(defaultLocaleRows());
     setLogoImageBase64(null);
     setLogoPreviewDataUrl(null);
     setErrors({});
     setEditingId(null);
+    setFetchingDetail(false);
   };
 
-  const handleEdit = (row: ZodiacSignItem) => {
-    setFormData({
-      name: row.name,
-      zodiacSign: (row.zodiacSign || 'ARIES') as ZodiacSignEnum,
-      description: row.description || '',
-      logoUrl: row.logoUrl || '',
-      startingName: row.startingName || '',
-      daysRange: row.daysRange || '',
-    });
-    setEditingId(row.id);
+  const handleEdit = async (row: ZodiacSignItem) => {
+    setErrors({});
+    setFetchingDetail(true);
     setShowAddModal(true);
+    setEditingId(row.id);
+    try {
+      const res = await zodiacSignApi.getById(row.id);
+      const d = res.data;
+      if (!d || typeof d !== 'object') {
+        throw new Error('Could not load zodiac sign');
+      }
+      const detail = d as ZodiacSignResponse;
+      setFormData({
+        name: detail.name ?? row.name,
+        zodiacSign: (detail.zodiacSign || row.zodiacSign || 'ARIES') as ZodiacSignEnum,
+        description: detail.description ?? row.description ?? '',
+        logoUrl: detail.logoUrl ?? row.logoUrl ?? '',
+        startingName: detail.startingName ?? row.startingName ?? '',
+        daysRange: detail.daysRange ?? row.daysRange ?? '',
+      });
+      if (detail.locales?.length) {
+        setLocaleRows(
+          detail.locales.map((l, i) => ({
+            key: `edit-${i}-${l.language}`,
+            language: l.language,
+            name: l.name ?? '',
+            startingName: l.startingName ?? '',
+          }))
+        );
+      } else {
+        setLocaleRows(defaultLocaleRows());
+      }
+      setLogoImageBase64(null);
+      setLogoPreviewDataUrl(null);
+    } catch (err) {
+      setShowAddModal(false);
+      setEditingId(null);
+      await Swal.fire({
+        title: 'Error',
+        text: err instanceof Error ? err.message : 'Failed to load zodiac sign',
+        icon: 'error',
+      });
+    } finally {
+      setFetchingDetail(false);
+    }
   };
 
   const handleChangeStatus = async (row: ZodiacSignItem) => {
@@ -247,7 +346,8 @@ export default function ZodiacSignPage() {
       (i.description && i.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (i.startingName && i.startingName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (i.daysRange && i.daysRange.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (i.zodiacSign && i.zodiacSign.toLowerCase().includes(searchTerm.toLowerCase()))
+      (i.zodiacSign && i.zodiacSign.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      localesSummary(i.locales).toLowerCase().includes(searchTerm.toLowerCase())
   );
   const sorted = [...filtered].sort((a, b) => {
     const aVal = String(a[sortKey] ?? '').toLowerCase();
@@ -299,7 +399,7 @@ export default function ZodiacSignPage() {
         <Breadcrumb items={[{ label: 'Astrology', href: '/astrology' }, { label: 'Zodiac Sign' }]} />
         <PageHeaderWithInfo
           title="Zodiac Sign"
-          infoText="Manage zodiac signs. Set name, zodiac sign, description, logo, starting name, and days range."
+          infoText="Manage zodiac signs: default fields plus per-language name and starting name (English, Nepali, etc.)."
         >
           <button className="btn-primary btn-small" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} />
@@ -316,7 +416,7 @@ export default function ZodiacSignPage() {
             <Search size={20} />
             <input
               type="text"
-              placeholder="Search by name, description, days range..."
+              placeholder="Search by name, locales, description..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="search-input"
@@ -343,6 +443,7 @@ export default function ZodiacSignPage() {
                 <th>Description</th>
                 <SortableTh columnKey="startingName">Starting Name</SortableTh>
                 <SortableTh columnKey="daysRange">Days Range</SortableTh>
+                <th>Locales</th>
                 <th>Logo</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
@@ -351,11 +452,11 @@ export default function ZodiacSignPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={8} className="empty-state">
+                  <td colSpan={9} className="empty-state">
                     <p>{items.length === 0 ? 'No zodiac signs found' : 'No zodiac signs match your search'}</p>
                   </td>
                 </tr>
@@ -371,6 +472,9 @@ export default function ZodiacSignPage() {
                     <td style={{ maxWidth: 180 }}>{row.description ? (row.description.length > 50 ? row.description.slice(0, 50) + '…' : row.description) : '—'}</td>
                     <td>{row.startingName || '—'}</td>
                     <td>{row.daysRange || '—'}</td>
+                    <td style={{ maxWidth: 220, fontSize: 12 }} title={localesSummary(row.locales)}>
+                      {localesSummary(row.locales)}
+                    </td>
                     <td>
                       {row.logoUrl ? (
                         <img
@@ -416,7 +520,7 @@ export default function ZodiacSignPage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <div className="pagination-container">
                       <div className="pagination-left">
                         <label htmlFor="items-per-page-zs" className="pagination-label">Show:</label>
@@ -462,7 +566,7 @@ export default function ZodiacSignPage() {
 
         {showAddModal && (
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
-            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
               <div className="modal-header">
                 <h2>{editingId ? 'Edit Zodiac Sign' : 'Add Zodiac Sign'}</h2>
                 <button className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }}>
@@ -470,6 +574,11 @@ export default function ZodiacSignPage() {
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="organization-form">
+                {fetchingDetail && (
+                  <div style={{ marginBottom: 12, padding: 10, background: '#f1f5f9', borderRadius: 8, fontSize: 14 }}>
+                    Loading details…
+                  </div>
+                )}
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                 <div className="form-group">
                   <label htmlFor="name" className="form-label">Name <span className="required">*</span></label>
@@ -496,6 +605,94 @@ export default function ZodiacSignPage() {
                 <div className="form-group">
                   <label htmlFor="daysRange" className="form-label">Days Range</label>
                   <input type="text" id="daysRange" name="daysRange" value={formData.daysRange ?? ''} onChange={handleInputChange} className="form-input" placeholder="e.g. Mar 21 - Apr 19" />
+                </div>
+                <div className="form-group">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Localized labels</label>
+                    <button
+                      type="button"
+                      className="btn-secondary btn-small"
+                      onClick={() => setLocaleRows((prev) => [...prev, createLocaleRow('EN')])}
+                      disabled={fetchingDetail}
+                    >
+                      <Plus size={14} />
+                      <span>Add language</span>
+                    </button>
+                  </div>
+                  <p style={{ marginBottom: 12, fontSize: 13, color: '#64748b' }}>
+                    One row per language (e.g. EN / NE). Empty rows are ignored on save. Saving replaces all locale rows for this sign.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {localeRows.map((row) => (
+                      <div
+                        key={row.key}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '100px 1fr 1fr auto',
+                          gap: 8,
+                          alignItems: 'end',
+                          padding: 12,
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 8,
+                          background: '#fafafa',
+                        }}
+                      >
+                        <div>
+                          <label className="form-label" style={{ fontSize: 12 }}>Language</label>
+                          <select
+                            className="form-input"
+                            value={row.language}
+                            onChange={(e) => {
+                              const v = e.target.value as LanguageEnumCode;
+                              setLocaleRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, language: v } : r)));
+                            }}
+                            disabled={fetchingDetail}
+                          >
+                            {LANGUAGE_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: 12 }}>Name</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={row.name}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setLocaleRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, name: v } : r)));
+                            }}
+                            placeholder="Localized name"
+                            disabled={fetchingDetail}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: 12 }}>Starting name</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={row.startingName}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setLocaleRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, startingName: v } : r)));
+                            }}
+                            placeholder="Optional"
+                            disabled={fetchingDetail}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-icon-delete"
+                          title="Remove row"
+                          disabled={fetchingDetail || localeRows.length <= 1}
+                          onClick={() => setLocaleRows((prev) => prev.filter((r) => r.key !== row.key))}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Logo (image)</label>
@@ -528,7 +725,7 @@ export default function ZodiacSignPage() {
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
-                  <button type="submit" className="btn-primary btn-small">
+                  <button type="submit" className="btn-primary btn-small" disabled={fetchingDetail}>
                     <Save size={16} /><span>{editingId ? 'Update' : 'Create'}</span>
                   </button>
                 </div>

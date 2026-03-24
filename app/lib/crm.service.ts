@@ -12,6 +12,7 @@ import type {
   HoroscopeScopeListRequest,
   ZodiacSignRequest,
   ZodiacSignListRequest,
+  ZodiacSignResponse,
   MusicTypeRequest,
   MusicTypeListRequest,
   MusicRequest,
@@ -28,6 +29,12 @@ import type {
   EventListRequest,
   EventImageRequest,
   EventImageListRequest,
+  HoroscopeRequest,
+  HoroscopeListRequest,
+  HoroscopeResponse,
+  HoroscopePeriodRequest,
+  HoroscopePeriodListRequest,
+  HoroscopePeriodResponse,
 } from '@/app/lib/crm.types';
 
 const BASE = '/api/crm';
@@ -123,7 +130,14 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
 
 /** Event-Service: /api/v2/event/horoscope-scope/* and /api/v2/event/zodiac-sign/* */
 export const horoscopeScopeApi = crud<unknown, HoroscopeScopeRequest, HoroscopeScopeRequest, HoroscopeScopeListRequest>('horoscope-scope', EVENT_BASE);
-export const zodiacSignApi = crud<unknown, ZodiacSignRequest, ZodiacSignRequest, ZodiacSignListRequest>('zodiac-sign', EVENT_BASE);
+export const zodiacSignApi = crud<
+  ZodiacSignResponse,
+  ZodiacSignRequest,
+  ZodiacSignRequest,
+  ZodiacSignListRequest
+>('zodiac-sign', EVENT_BASE);
+export const horoscopeApi = crud<HoroscopeResponse, HoroscopeRequest, HoroscopeRequest, HoroscopeListRequest>('horoscope', EVENT_BASE);
+export const horoscopePeriodApi = crud<HoroscopePeriodResponse, HoroscopePeriodRequest, HoroscopePeriodRequest, HoroscopePeriodListRequest>('horoscope-period', EVENT_BASE);
 /** Music type enum item from GET /music-type/enum */
 export interface MusicTypeEnumItem {
   name: string;
