@@ -40,21 +40,28 @@ const predictions = {
     "Love and relationships flourish. Deep connections form and strengthen.",
     "Spiritual growth deepens. You gain clarity about your life's purpose.",
   ],
+  yearly: [
+    "This year opens a powerful chapter of growth. Long-term goals gain momentum through steady effort.",
+    "Your relationships mature this year. Honest communication and patience bring lasting harmony.",
+    "Career and finances improve with discipline. Focus on consistency and avoid rushed decisions.",
+    "A year of inner transformation awaits. Trust your instincts and commit to meaningful change.",
+    "Opportunity arrives through new networks. Collaborations and learning bring visible progress.",
+  ],
 };
 
 export default function HoroscopePage() {
   const [selectedSign, setSelectedSign] = useState<string | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const selectedSignData = zodiacSigns.find((s) => s.name === selectedSign);
 
-  const getPredictionBySign = (signName: string, period: 'daily' | 'weekly' | 'monthly') => {
+  const getPredictionBySign = (signName: string, period: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
     const periodPredictions = predictions[period];
     const signIndex = zodiacSigns.findIndex((sign) => sign.name === signName);
     const safeIndex = signIndex >= 0 ? signIndex : 0;
     return periodPredictions[safeIndex % periodPredictions.length];
   };
 
-  const getShortPrediction = (signName: string, period: 'daily' | 'weekly' | 'monthly') => {
+  const getShortPrediction = (signName: string, period: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
     const fullText = getPredictionBySign(signName, period);
     return fullText.length > 88 ? `${fullText.slice(0, 88)}...` : fullText;
   };
@@ -71,7 +78,15 @@ export default function HoroscopePage() {
           </p>
         </div>
 
-        <div className="mb-8 flex justify-center gap-4">
+        <div className={`mb-8 flex flex-wrap items-center gap-4 ${selectedSign ? 'justify-start' : 'justify-center'}`}>
+          {selectedSign && (
+            <button
+              onClick={() => setSelectedSign(null)}
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              ← Back to Zodiac Sign
+            </button>
+          )}
           <button
             onClick={() => setSelectedPeriod('daily')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
@@ -102,6 +117,16 @@ export default function HoroscopePage() {
           >
             Monthly
           </button>
+          <button
+            onClick={() => setSelectedPeriod('yearly')}
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              selectedPeriod === 'yearly'
+                ? 'bg-purple-600 text-white shadow-lg'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            Yearly
+          </button>
         </div>
 
         {!selectedSign && (
@@ -129,17 +154,8 @@ export default function HoroscopePage() {
         )}
 
         {selectedSign && (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl border border-purple-100 dark:border-purple-900">
-              <div className="mb-6">
-                <button
-                  onClick={() => setSelectedSign(null)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  ← Back to select zodiac sign
-                </button>
-              </div>
-
               <div className="text-center mb-6">
                 <div className="text-6xl mb-4">
                   {selectedSignData?.symbol}
