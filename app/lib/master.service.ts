@@ -25,6 +25,9 @@ import type {
   LocalUnitTypeListRequest,
   LanguageRequest,
   LanguageListRequest,
+  NepaliCalendarRequest,
+  NepaliCalendarListRequest,
+  NepaliCalendarResponse,
 } from '@/app/lib/master.types';
 
 const BASE = '/api/master';
@@ -119,6 +122,7 @@ export const districtApi = crud<unknown, DistrictRequest, DistrictRequest, Distr
 export const localUnitApi = crud<unknown, LocalUnitRequest, LocalUnitRequest, LocalUnitListRequest>('local-unit');
 export const localUnitTypeApi = crud<unknown, LocalUnitTypeRequest, LocalUnitTypeRequest, LocalUnitTypeListRequest>('local-unit-type');
 export const languageApi = crud<unknown, LanguageRequest, LanguageRequest, LanguageListRequest>('language');
+export const nepaliCalendarApi = crud<NepaliCalendarResponse, NepaliCalendarRequest, NepaliCalendarRequest, NepaliCalendarListRequest>('nepali-calendar');
 
 export const masterService = {
   country: countryApi,
@@ -129,6 +133,7 @@ export const masterService = {
   localUnit: localUnitApi,
   localUnitType: localUnitTypeApi,
   language: languageApi,
+  nepaliCalendar: nepaliCalendarApi,
 };
 
 export default masterService;

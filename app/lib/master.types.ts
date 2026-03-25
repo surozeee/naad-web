@@ -107,3 +107,29 @@ export interface LanguageRequest {
   status?: StatusEnum;
 }
 export type LanguageListRequest = MasterListRequest;
+
+// ---- Nepali Calendar ----
+export interface NepaliCalendarRequest {
+  year: number;
+  baishakhDay: number;
+  jesthaDay: number;
+  asarDay: number;
+  shrawanDay: number;
+  bhadraDay: number;
+  ashojDay: number;
+  kartikDay: number;
+  mangsirDay: number;
+  poushDay: number;
+  maghDay: number;
+  falgunDay: number;
+  chaitraDay: number;
+}
+
+export type NepaliCalendarListRequest = MasterListRequest;
+
+export interface NepaliCalendarResponse extends NepaliCalendarRequest {
+  id: string;
+  status?: StatusEnum;
+  createdAt?: string;
+  lastModifiedAt?: string;
+}

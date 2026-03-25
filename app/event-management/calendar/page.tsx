@@ -8,7 +8,9 @@ import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '@/app/components/common/PageHeaderWithInfo';
 import { NepaliDatepicker, ensureOfficialLibrary } from '@/app/components/ui/nepali-datepicker';
 import { eventApi, eventCategoryApi } from '@/app/lib/crm.service';
+import { nepaliCalendarApi } from '@/app/lib/master.service';
 import type { EventRequest } from '@/app/lib/crm.types';
+import type { NepaliCalendarResponse } from '@/app/lib/master.types';
 
 declare global {
   interface Window {
@@ -78,6 +80,20 @@ const WEEK_DAYS = [
 const BS_MONTH_NAMES_NP = ['बैशाख', 'जेठ', 'असार', 'साउन', 'भदौ', 'असोज', 'कार्तिक', 'मंसिर', 'पुष', 'माघ', 'फागुन', 'चैत'];
 const BS_MONTH_NAMES_EN = ['Baisakh', 'Jestha', 'Asar', 'Shrawan', 'Bhadra', 'Ashwin', 'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra'];
 const AD_MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const BS_MONTH_DAY_KEYS = [
+  'baishakhDay',
+  'jesthaDay',
+  'asarDay',
+  'shrawanDay',
+  'bhadraDay',
+  'ashojDay',
+  'kartikDay',
+  'mangsirDay',
+  'poushDay',
+  'maghDay',
+  'falgunDay',
+  'chaitraDay',
+] as const;
 
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
@@ -205,6 +221,13 @@ function formatTime(iso: string): string {
   return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+function getBsMonthDayCount(calendar: NepaliCalendarResponse | null | undefined, month: number): number | null {
+  const key = BS_MONTH_DAY_KEYS[month - 1];
+  if (!key) return null;
+  const value = calendar?.[key];
+  return typeof value === 'number' ? value : null;
+}
+
 function getNextBsMonth(month: BsDateParts): BsDateParts {
   return month.month === 12
     ? { year: month.year + 1, month: 1, day: 1 }
@@ -267,6 +290,7 @@ export default function EventCalendarPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [nepaliCalendars, setNepaliCalendars] = useState<NepaliCalendarResponse[]>([]);
   const [events, setEvents] = useState<EventCalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -333,10 +357,34 @@ export default function EventCalendarPage() {
     }
   }, []);
 
+  const fetchNepaliCalendars = useCallback(async () => {
+    try {
+      const res = await nepaliCalendarApi.listActive();
+      const list = (res.data ?? []) as NepaliCalendarResponse[];
+      setNepaliCalendars(
+        [...list]
+          .filter((item) => typeof item?.year === 'number')
+          .sort((a, b) => a.year - b.year)
+      );
+    } catch {
+      setNepaliCalendars([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
     fetchEvents();
-  }, [fetchCategories, fetchEvents]);
+    fetchNepaliCalendars();
+  }, [fetchCategories, fetchEvents, fetchNepaliCalendars]);
+
+  const nepaliCalendarByYear = useMemo(
+    () =>
+      nepaliCalendars.reduce<Record<number, NepaliCalendarResponse>>((acc, item) => {
+        acc[item.year] = item;
+        return acc;
+      }, {}),
+    [nepaliCalendars]
+  );
 
   const eventCountByBsDate = useMemo(
     () =>
@@ -351,12 +399,19 @@ export default function EventCalendarPage() {
   const currentMonthMeta = useMemo(() => {
     if (!currentBsMonth) return null;
     const firstDayAd = bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 });
+    if (!firstDayAd) return null;
+
+    const daysFromMaster = getBsMonthDayCount(nepaliCalendarByYear[currentBsMonth.year], currentBsMonth.month);
+    if (daysFromMaster != null) {
+      return { firstWeekDay: firstDayAd.getDay(), daysInMonth: daysFromMaster };
+    }
+
     const nextMonthAd = bsPartsToAdDate(getNextBsMonth(currentBsMonth));
-    if (!firstDayAd || !nextMonthAd) return null;
+    if (!nextMonthAd) return null;
     const firstWeekDay = firstDayAd.getDay();
     const daysInMonth = Math.round((nextMonthAd.getTime() - firstDayAd.getTime()) / (1000 * 60 * 60 * 24));
     return { firstWeekDay, daysInMonth };
-  }, [currentBsMonth]);
+  }, [currentBsMonth, nepaliCalendarByYear]);
 
   const calendarDays = useMemo(() => {
     const cells: CalendarCell[] = [];
@@ -366,12 +421,15 @@ export default function EventCalendarPage() {
       const prevMonth = getPrevBsMonth(currentBsMonth);
       const nextMonth = getNextBsMonth(currentBsMonth);
 
-      const prevFirstAd = bsPartsToAdDate(prevMonth);
       const currentFirstAd = bsPartsToAdDate({ year: currentBsMonth.year, month: currentBsMonth.month, day: 1 });
-      const nextFirstAd = bsPartsToAdDate(nextMonth);
-      if (!prevFirstAd || !currentFirstAd || !nextFirstAd) return [] as CalendarCell[];
+      if (!currentFirstAd) return [] as CalendarCell[];
 
-      const prevDaysInMonth = Math.round((currentFirstAd.getTime() - prevFirstAd.getTime()) / (1000 * 60 * 60 * 24));
+      let prevDaysInMonth = getBsMonthDayCount(nepaliCalendarByYear[prevMonth.year], prevMonth.month);
+      if (prevDaysInMonth == null) {
+        const prevFirstAd = bsPartsToAdDate(prevMonth);
+        if (!prevFirstAd) return [] as CalendarCell[];
+        prevDaysInMonth = Math.round((currentFirstAd.getTime() - prevFirstAd.getTime()) / (1000 * 60 * 60 * 24));
+      }
 
       for (let i = currentMonthMeta.firstWeekDay - 1; i >= 0; i -= 1) {
         const day = prevDaysInMonth - i;
@@ -479,7 +537,7 @@ export default function EventCalendarPage() {
     }
 
     return cells;
-  }, [calendarMode, currentBsMonth, currentMonthMeta, currentAdMonth, eventCountByBsDate]);
+  }, [calendarMode, currentBsMonth, currentMonthMeta, currentAdMonth, eventCountByBsDate, nepaliCalendarByYear]);
 
   const selectedDayEvents = useMemo(
     () =>
@@ -605,7 +663,7 @@ export default function EventCalendarPage() {
     ? BS_MONTH_NAMES_NP.map((label, index) => ({ value: index + 1, label: `${label} | ${BS_MONTH_NAMES_EN[index]}` }))
     : AD_MONTH_NAMES_EN.map((label, index) => ({ value: index + 1, label }));
   const yearOptions = calendarMode === 'BS'
-    ? Array.from({ length: 131 }, (_, index) => 1970 + index)
+    ? (nepaliCalendars.length > 0 ? nepaliCalendars.map((item) => item.year) : Array.from({ length: 131 }, (_, index) => 1970 + index))
     : Array.from({ length: 101 }, (_, index) => 1950 + index);
   const selectedMonthValue = calendarMode === 'BS' ? currentBsMonth?.month ?? '' : currentAdMonth?.month ?? '';
   const selectedYearValue = calendarMode === 'BS' ? currentBsMonth?.year ?? '' : currentAdMonth?.year ?? '';

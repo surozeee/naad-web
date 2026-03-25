@@ -14,6 +14,16 @@ export default function MasterSettingPage() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <a href="/master-setting/general/nepali-calendar" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all">
+            <div className="text-5xl mb-4 text-center">📅</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 text-center">
+              Nepali Calendar Days
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm text-center">
+              BS years and days per month (CRUD)
+            </p>
+          </a>
+
           <a href="/master-setting/general" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all">
             <div className="text-5xl mb-4 text-center">⚙️</div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 text-center">

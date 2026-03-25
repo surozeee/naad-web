@@ -47,6 +47,7 @@ const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
 const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
   ...CUSTOMER_MENU_ITEMS,
   { id: 'master-setting', icon: '⚙️', label: 'Master Setting', href: '/master-setting', submenu: [
+    { label: 'Nepali Calendar Days', href: '/master-setting/general/nepali-calendar' },
     { label: 'General', href: '/master-setting/general', submenu: [
       { label: 'Country', href: '/master-setting/general/country' }, { label: 'State', href: '/master-setting/general/state' },
       { label: 'District', href: '/master-setting/general/district' }, { label: 'Local Unit Type', href: '/master-setting/general/local-unit-type' },
@@ -115,6 +116,7 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/master-setting/general/district': 'District',
   '/master-setting/general/local-unit-type': 'Local Unit Type',
   '/master-setting/general/local-unit': 'Local Unit',
+  '/master-setting/general/nepali-calendar': 'Nepali Calendar Days',
 };
 
 function normalizeHref(href: string): string {
