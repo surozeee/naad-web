@@ -9,6 +9,7 @@ import {
   X,
   Check,
   Save,
+  Languages,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
@@ -21,7 +22,7 @@ import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '@/app/components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '@/app/components/common/ActionTooltip';
 import { horoscopeScopeApi } from '@/app/lib/crm.service';
-import type { HoroscopeScopeRequest, HoroscopeScopeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
+import type { HoroscopeScopeLocaleRequest, HoroscopeScopeRequest, HoroscopeScopeEnum, LanguageEnumCode, ZodiacSignEnum } from '@/app/lib/crm.types';
 
 const ZODIAC_SIGN_OPTIONS: { value: ZodiacSignEnum; label: string }[] = [
   { value: 'ARIES', label: 'Aries' },
@@ -51,9 +52,32 @@ interface HoroscopeScopeItem {
   id: string;
   zodiacSign: string;
   scope: string;
+  name: string;
   description: string;
-  imageUrl: string;
+  locales: HoroscopeScopeLocaleRequest[];
   status: 'active' | 'inactive' | 'deleted';
+}
+
+function mapApiLocales(raw: unknown): HoroscopeScopeLocaleRequest[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((x) => {
+    const o = x as Record<string, unknown>;
+    return {
+      language: String(o.language ?? 'EN') as LanguageEnumCode,
+      name: String(o.name ?? ''),
+      description: String(o.description ?? ''),
+    };
+  });
+}
+
+function localesSummary(locales: HoroscopeScopeLocaleRequest[]): string {
+  if (!locales?.length) return '—';
+  return (
+    locales
+      .filter((l) => (l.name ?? '').trim())
+      .map((l) => `${l.language}: ${l.name}`)
+      .join(' · ') || '—'
+  );
 }
 
 function mapApiToItem(raw: Record<string, unknown>): HoroscopeScopeItem {
@@ -64,10 +88,37 @@ function mapApiToItem(raw: Record<string, unknown>): HoroscopeScopeItem {
     id: String(raw.id ?? ''),
     zodiacSign: String(raw.zodiacSign ?? ''),
     scope: String(raw.scope ?? ''),
+    name: String(raw.name ?? ''),
     description: String(raw.description ?? ''),
-    imageUrl: String(raw.imageUrl ?? ''),
+    locales: mapApiLocales(raw.locales),
     status,
   };
+}
+
+const LANGUAGE_OPTIONS: { value: LanguageEnumCode; label: string }[] = [
+  { value: 'EN', label: 'English' },
+  { value: 'NE', label: 'Nepali' },
+];
+
+interface LocaleFormRow {
+  key: string;
+  language: LanguageEnumCode;
+  name: string;
+  description: string;
+}
+
+function createLocaleRow(language: LanguageEnumCode = 'EN'): LocaleFormRow {
+  return { key: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, language, name: '', description: '' };
+}
+
+function defaultLocaleRows(): LocaleFormRow[] {
+  return [createLocaleRow('EN'), createLocaleRow('NE')];
+}
+
+function buildLocalesPayload(rows: LocaleFormRow[]): HoroscopeScopeLocaleRequest[] {
+  return rows
+    .filter((r) => r.language && r.name.trim())
+    .map((r) => ({ language: r.language, name: r.name.trim(), description: r.description.trim() }));
 }
 
 export default function HoroscopeScopePage() {
@@ -79,14 +130,81 @@ export default function HoroscopeScopePage() {
   const [items, setItems] = useState<HoroscopeScopeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<HoroscopeScopeRequest>({ zodiacSign: 'ARIES', scope: 'DAILY', description: '', imageUrl: '' });
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [imagePreviewDataUrl, setImagePreviewDataUrl] = useState<string | null>(null);
+  const [formData, setFormData] = useState<HoroscopeScopeRequest>({ zodiacSign: 'ARIES', scope: 'DAILY', name: '', description: undefined });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<'zodiacSign' | 'scope' | 'description' | 'status'>('scope');
+  const [localeRows, setLocaleRows] = useState<LocaleFormRow[]>(() => defaultLocaleRows());
+  const [fetchingDetail, setFetchingDetail] = useState(false);
+  const [sortKey, setSortKey] = useState<'scope' | 'description' | 'status'>('scope');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [submitting, setSubmitting] = useState(false);
+
+  // UI state: multi-language editor form (menu-like UX)
+  const [showLocaleForm, setShowLocaleForm] = useState(true);
+  const [showMultiLocaleSection, setShowMultiLocaleSection] = useState(true);
+  const [editingLocaleKey, setEditingLocaleKey] = useState<string | null>(null);
+  const [localeForm, setLocaleForm] = useState<{ language: LanguageEnumCode; name: string; description: string }>({
+    language: 'EN',
+    name: '',
+    description: '',
+  });
+
+  const getMissingLanguages = (rows: LocaleFormRow[]): LanguageEnumCode[] => {
+    const existing = new Set(rows.map((r) => r.language));
+    return LANGUAGE_OPTIONS.map((o) => o.value).filter((code) => !existing.has(code));
+  };
+
+  const openAddLocaleForm = () => {
+    const missing = getMissingLanguages(localeRows);
+    if (!missing.length) return;
+    setEditingLocaleKey(null);
+    setLocaleForm({ language: missing[0], name: '', description: '' });
+    setShowLocaleForm(true);
+    setShowMultiLocaleSection(true);
+  };
+
+  const openEditLocaleForm = (row: LocaleFormRow) => {
+    setEditingLocaleKey(row.key);
+    setLocaleForm({ language: row.language, name: row.name ?? '', description: row.description ?? '' });
+    setShowLocaleForm(true);
+    setShowMultiLocaleSection(true);
+  };
+
+  // Language dropdown shows all supported languages.
+  // Save will merge into the existing locale row by language (no duplicates).
+
+  const saveLocaleForm = () => {
+    const name = localeForm.name.trim();
+    if (!name) {
+      setErrors((prev) => ({ ...prev, submit: 'Localized name is required' }));
+      return;
+    }
+    const description = localeForm.description.trim();
+    const language = localeForm.language;
+
+    setLocaleRows((prev) => {
+      // Prevent duplicate language: merge into existing row if needed.
+      const existingForLang = prev.find((r) => r.language === language);
+      if (editingLocaleKey) {
+        const duplicateOther = prev.find((r) => r.language === language && r.key !== editingLocaleKey);
+        const cleaned = duplicateOther ? prev.filter((r) => r.key !== duplicateOther.key) : prev;
+        return cleaned.map((r) => (r.key === editingLocaleKey ? { ...r, language, name, description } : r));
+      }
+      if (existingForLang) {
+        return prev.map((r) => (r.key === existingForLang.key ? { ...r, language, name, description } : r));
+      }
+      return [...prev, { ...createLocaleRow(language), name, description }];
+    });
+
+    // Keep the editor open; the main scope modal still controls the save/update.
+  };
+
+  const removeLocaleRow = (key: string) => {
+    setLocaleRows((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((r) => r.key !== key);
+    });
+  };
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -115,42 +233,32 @@ export default function HoroscopeScopePage() {
     fetchItems();
   }, [fetchItems]);
 
+  // In edit mode, keep root name/description in sync with EN locale row.
+  useEffect(() => {
+    if (!editingId) return;
+    const enRow = localeRows.find((r) => r.language === 'EN');
+    if (!enRow) return;
+    setFormData((prev) => ({
+      ...prev,
+      name: enRow.name,
+      description: enRow.description?.trim() || undefined,
+    }));
+  }, [editingId, localeRows]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (name === 'imageUrl') {
-      setImageBase64(null);
-      setImagePreviewDataUrl(null);
-    }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
-
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file || !file.type.startsWith('image/')) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-      setImageBase64(base64);
-      setImagePreviewDataUrl(dataUrl);
-      setFormData((prev) => ({ ...prev, imageUrl: '' }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const clearImageSelection = () => {
-    setImageBase64(null);
-    setImagePreviewDataUrl(null);
-    setFormData((prev) => ({ ...prev, imageUrl: '' }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.zodiacSign) newErrors.zodiacSign = 'Zodiac sign is required';
     if (!formData.scope?.trim()) newErrors.scope = 'Scope is required';
+    if (editingId) {
+      if (!localeRows.some((r) => r.name.trim())) newErrors.submit = 'Enter at least one localized name (e.g. EN)';
+    } else {
+      if (!formData.name?.trim()) newErrors.name = 'Name is required';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -160,17 +268,24 @@ export default function HoroscopeScopePage() {
     if (!validateForm()) return;
     setError(null);
     setSubmitting(true);
-    const body: HoroscopeScopeRequest = {
-      zodiacSign: formData.zodiacSign,
-      scope: formData.scope,
-      description: formData.description?.trim() || undefined,
-    };
-
-    if (imageBase64) {
-      body.imageBase64 = imageBase64;
-    } else if (formData.imageUrl?.trim()) {
-      body.imageUrl = formData.imageUrl.trim();
-    }
+    const enRow = localeRows.find((r) => r.language === 'EN');
+    const firstNamedRow = localeRows.find((r) => r.name.trim());
+    const localesPayload = buildLocalesPayload(localeRows);
+    const body: HoroscopeScopeRequest = editingId
+      ? {
+          zodiacSign: formData.zodiacSign,
+          scope: formData.scope,
+          name: firstNamedRow?.name?.trim() || formData.name.trim(),
+          description: enRow?.description?.trim() || undefined,
+          locales: localesPayload,
+        }
+      : {
+          zodiacSign: formData.zodiacSign,
+          scope: formData.scope,
+          name: formData.name.trim(),
+          description: formData.description?.trim() || undefined,
+          locales: undefined,
+        };
 
     try {
       if (editingId) {
@@ -191,24 +306,58 @@ export default function HoroscopeScopePage() {
   };
 
   const resetForm = () => {
-    setFormData({ zodiacSign: 'ARIES', scope: 'DAILY', description: '', imageUrl: '' });
-    setImageBase64(null);
-    setImagePreviewDataUrl(null);
+    setFormData({ zodiacSign: 'ARIES', scope: 'DAILY', name: '', description: undefined });
+    setLocaleRows(defaultLocaleRows());
     setErrors({});
     setEditingId(null);
+    setFetchingDetail(false);
+    setShowLocaleForm(true);
+    setEditingLocaleKey(null);
+    setLocaleForm({ language: 'EN', name: '', description: '' });
+    setShowMultiLocaleSection(true);
   };
 
-  const handleEdit = (row: HoroscopeScopeItem) => {
-    setFormData({
-      zodiacSign: (row.zodiacSign || 'ARIES') as ZodiacSignEnum,
-      scope: row.scope as HoroscopeScopeEnum,
-      description: row.description || '',
-      imageUrl: row.imageUrl || '',
-    });
-    setImageBase64(null);
-    setImagePreviewDataUrl(null);
-    setEditingId(row.id);
+  const handleEdit = async (row: HoroscopeScopeItem) => {
+    setErrors({});
+    setFetchingDetail(true);
     setShowAddModal(true);
+    setEditingId(row.id);
+    try {
+      const res = await horoscopeScopeApi.getById(row.id);
+      const d = (res.data ?? {}) as Record<string, unknown>;
+
+      setFormData({
+        zodiacSign: String(d.zodiacSign ?? row.zodiacSign ?? 'ARIES') as ZodiacSignEnum,
+        scope: String(d.scope ?? row.scope ?? 'DAILY') as HoroscopeScopeEnum,
+        name: String(d.name ?? row.name ?? ''),
+        description: String(d.description ?? row.description ?? ''),
+      });
+
+      const apiLocales = (d.locales as unknown as HoroscopeScopeLocaleRequest[] | undefined) ?? row.locales ?? [];
+      const localeNameMap = new Map(apiLocales.map((l) => [l.language, l.name ?? '']));
+      const localeDescMap = new Map(apiLocales.map((l) => [l.language, l.description ?? '']));
+
+      const fallback = defaultLocaleRows();
+      fallback.forEach((r) => {
+        const n = localeNameMap.get(r.language);
+        const desc = localeDescMap.get(r.language);
+        if (n != null) r.name = n;
+        if (desc != null) r.description = desc;
+      });
+
+      setLocaleRows(fallback);
+    } catch {
+      // Fallback to existing row snapshot if backend fetch fails.
+      setFormData({
+        zodiacSign: (row.zodiacSign || 'ARIES') as ZodiacSignEnum,
+        scope: row.scope as HoroscopeScopeEnum,
+        name: row.name ?? '',
+        description: row.description || '',
+      });
+      setLocaleRows(defaultLocaleRows());
+    } finally {
+      setFetchingDetail(false);
+    }
   };
 
   const handleChangeStatus = async (row: HoroscopeScopeItem) => {
@@ -324,7 +473,7 @@ export default function HoroscopeScopePage() {
               <tr>
                 <SortableTh columnKey="scope">Scope</SortableTh>
                 <SortableTh columnKey="description">Description</SortableTh>
-                <th>Image</th>
+                <th>Locales</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
               </tr>
@@ -350,15 +499,9 @@ export default function HoroscopeScopePage() {
                     </td>
                     <td>{row.description || '—'}</td>
                     <td>
-                      {row.imageUrl ? (
-                        <img
-                          src={row.imageUrl}
-                          alt={`${row.scope} preview`}
-                          style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
-                        />
-                      ) : (
-                        '—'
-                      )}
+                      <span style={{ display: 'inline-block', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={localesSummary(row.locales)}>
+                        {localesSummary(row.locales)}
+                      </span>
                     </td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
@@ -375,6 +518,16 @@ export default function HoroscopeScopePage() {
                             <Edit size={18} />
                           </button>
                         </ActionTooltip>
+                <ActionTooltip text="Multi-language labels">
+                  <button
+                    type="button"
+                    className="btn-icon-edit"
+                    onClick={() => handleEdit(row)}
+                    disabled={fetchingDetail}
+                  >
+                    <Languages size={18} />
+                  </button>
+                </ActionTooltip>
                         <ActionTooltip text="Delete">
                           <button type="button" className="btn-icon-delete" onClick={() => handleDelete(row.id)}>
                             <Trash2 size={18} />
@@ -458,40 +611,192 @@ export default function HoroscopeScopePage() {
                   {errors.scope && <span className="form-error">{errors.scope}</span>}
                 </div>
                 <div className="form-group">
-                  <label htmlFor="description" className="form-label">Description</label>
-                  <textarea id="description" name="description" value={formData.description ?? ''} onChange={handleInputChange} className="form-input" rows={2} placeholder="Optional" />
+                  <label htmlFor="name" className="form-label">Name <span className="required">*</span></label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    className={`form-input ${errors.name ? 'error' : ''}`}
+                    value={formData.name ?? ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData((p) => ({ ...p, name: v }));
+                      if (editingId) {
+                        setLocaleRows((prev) => {
+                          const en = prev.find((r) => r.language === 'EN');
+                          if (en) return prev.map((r) => (r.language === 'EN' ? { ...r, name: v } : r));
+                          return [...prev, { ...createLocaleRow('EN'), name: v, description: '' }];
+                        });
+                      }
+                    }}
+                    placeholder="e.g. Daily Horoscope"
+                  />
+                  {errors.name && <span className="form-error">{errors.name}</span>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Image</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileChange}
+                  <label htmlFor="description" className="form-label">Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
                     className="form-input"
-                    style={{ padding: '8px 12px' }}
+                    rows={2}
+                    value={formData.description ?? ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData((p) => ({ ...p, description: v }));
+                      if (editingId) {
+                        setLocaleRows((prev) => {
+                          const en = prev.find((r) => r.language === 'EN');
+                          if (en) return prev.map((r) => (r.language === 'EN' ? { ...r, description: v } : r));
+                          return [...prev, { ...createLocaleRow('EN'), name: formData.name, description: v }];
+                        });
+                      }
+                    }}
+                    placeholder="Optional"
                   />
-                  <input
-                    id="imageUrl"
-                    name="imageUrl"
-                    type="text"
-                    value={formData.imageUrl ?? ''}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Or paste image URL"
-                  />
-                  {(imagePreviewDataUrl || formData.imageUrl) ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                      <img
-                        src={imagePreviewDataUrl ?? formData.imageUrl}
-                        alt="Horoscope scope preview"
-                        style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 10, border: '1px solid #e2e8f0' }}
+                </div>
+
+                {editingId && showMultiLocaleSection && (
+                <div className="form-group">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Languages size={20} />
+                      <span className="form-label" style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Multi-language labels</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>Add/update localized Name + Description</span>
+                  </div>
+
+                  <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 12, alignItems: 'end' }}>
+                      <div>
+                        <label className="form-label" style={{ fontSize: 12 }}>Language</label>
+                        <select
+                          className="form-input"
+                          value={localeForm.language}
+                          onChange={(e) => {
+                            const next = e.target.value as LanguageEnumCode;
+                            const existing = localeRows.find((r) => r.language === next);
+                            setEditingLocaleKey(existing?.key ?? null);
+                            setLocaleForm({
+                              language: next,
+                              name: existing?.name ?? '',
+                              description: existing?.description ?? '',
+                            });
+                          }}
+                          disabled={submitting}
+                        >
+                          {LANGUAGE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ fontSize: 12 }}>Local name</label>
+                        <input
+                          className="form-input"
+                          value={localeForm.name}
+                          onChange={(e) => setLocaleForm((p) => ({ ...p, name: e.target.value }))}
+                          placeholder="Localized name"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <label className="form-label" style={{ fontSize: 12 }}>Local description</label>
+                      <textarea
+                        className="form-input"
+                        rows={2}
+                        value={localeForm.description}
+                        onChange={(e) => setLocaleForm((p) => ({ ...p, description: e.target.value }))}
+                        placeholder="Localized description (optional)"
+                        disabled={submitting}
                       />
-                      <button type="button" className="btn-secondary btn-small" onClick={clearImageSelection}>
-                        Clear image
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn-primary btn-small"
+                        disabled={!showLocaleForm || submitting || !localeForm.language || !localeForm.name.trim()}
+                        onClick={saveLocaleForm}
+                      >
+                        <Save size={16} />
+                        <span>{editingLocaleKey ? 'Update' : 'Save'}</span>
                       </button>
                     </div>
-                  ) : null}
+                  </div>
+
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>
+                    Saved translations
+                  </div>
+                  {localeRows.length === 0 ? (
+                    <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>
+                      No translations yet. Select a language above, enter Local name, and click Save.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {localeRows.map((row) => (
+                        <div
+                          key={row.key}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.5rem 0.75rem',
+                            background: '#fff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
+                            <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{row.language}</span>
+                            <span style={{ color: '#0f172a', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {row.name?.trim() ? row.name : '—'}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <ActionTooltip text="Edit">
+                              <button
+                                type="button"
+                                className="btn-icon-edit"
+                                onClick={() => {
+                                  setEditingLocaleKey(row.key);
+                                  setLocaleForm({ language: row.language, name: row.name ?? '', description: row.description ?? '' });
+                                }}
+                                disabled={submitting}
+                              >
+                                <Edit size={14} />
+                              </button>
+                            </ActionTooltip>
+                            <ActionTooltip text="Remove">
+                              <button
+                                type="button"
+                                className="btn-icon-delete"
+                                onClick={() => removeLocaleRow(row.key)}
+                                disabled={submitting || localeRows.length <= 1}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </ActionTooltip>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="btn-secondary btn-small"
+                      disabled={submitting}
+                      onClick={() => setShowMultiLocaleSection(false)}
+                      aria-label="Close multi-language editor"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
+                )}
                 <div className="form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setShowAddModal(false); resetForm(); }} disabled={submitting}>Cancel</button>
                   <button type="submit" className="btn-primary btn-small" disabled={submitting}>

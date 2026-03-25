@@ -39,9 +39,15 @@ export type HoroscopeScopeEnum =
 export interface HoroscopeScopeRequest {
   zodiacSign: ZodiacSignEnum;
   scope: HoroscopeScopeEnum;
+  name: string;
   description?: string;
-  imageUrl?: string;
-  imageBase64?: string;
+  locales?: HoroscopeScopeLocaleRequest[];
+}
+
+export interface HoroscopeScopeLocaleRequest {
+  language: LanguageEnumCode;
+  name: string;
+  description: string;
 }
 
 export interface HoroscopeScopeListRequest extends CrmListRequest {
@@ -101,7 +107,6 @@ export interface ZodiacSignListRequest extends CrmListRequest {
 
 // ---- Horoscope (Event-Service) ----
 export type HoroscopePeriodEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'YEARLY';
-export type LanguageEnumCode = 'EN' | 'NE' | string;
 
 export interface HoroscopeLocaleRequest {
   language: LanguageEnumCode;
