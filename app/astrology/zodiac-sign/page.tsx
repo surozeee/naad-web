@@ -98,7 +98,7 @@ function localesSummary(locales: ZodiacSignLocaleResponse[]): string {
     .join(' · ') || '—';
 }
 
-function mapApiToItem(raw: Record<string, unknown>): ZodiacSignItem {
+function mapApiToItem(raw: ZodiacSignResponse): ZodiacSignItem {
   const statusVal = String(raw.status ?? 'ACTIVE').toUpperCase();
   return {
     id: String(raw.id ?? ''),
@@ -163,7 +163,7 @@ export default function ZodiacSignPage() {
         sortBy: 'name',
         sortDirection: 'asc',
       });
-      const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
+      const list = (res.result ?? res.content ?? []) as ZodiacSignResponse[];
       setItems(list.map(mapApiToItem));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load zodiac signs');

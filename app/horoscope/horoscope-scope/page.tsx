@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Select from 'react-select';
 import {
   Plus,
   Search,
@@ -100,6 +101,8 @@ const LANGUAGE_OPTIONS: { value: LanguageEnumCode; label: string }[] = [
   { value: 'NE', label: 'Nepali' },
 ];
 
+type LangSelectOption = { value: LanguageEnumCode; label: string };
+
 interface LocaleFormRow {
   key: string;
   language: LanguageEnumCode;
@@ -142,6 +145,7 @@ export default function HoroscopeScopePage() {
   // UI state: multi-language editor form (menu-like UX)
   const [showLocaleForm, setShowLocaleForm] = useState(true);
   const [showMultiLocaleSection, setShowMultiLocaleSection] = useState(true);
+  const [localeOnlyMode, setLocaleOnlyMode] = useState(false);
   const [editingLocaleKey, setEditingLocaleKey] = useState<string | null>(null);
   const [localeForm, setLocaleForm] = useState<{ language: LanguageEnumCode; name: string; description: string }>({
     language: 'EN',
@@ -170,8 +174,65 @@ export default function HoroscopeScopePage() {
     setShowMultiLocaleSection(true);
   };
 
-  // Language dropdown shows all supported languages.
-  // Save will merge into the existing locale row by language (no duplicates).
+  const localeLanguageSelectOptions = useMemo<LangSelectOption[]>(
+    () => LANGUAGE_OPTIONS.map((o) => ({ value: o.value, label: `${o.label} (${o.value})` })),
+    []
+  );
+
+  /** Menu-style translations modal: pick a language, load existing row or start a new one for that code. */
+  const handleScopeTranslationsLanguageChange = (language: LanguageEnumCode) => {
+    const row = localeRows.find((r) => r.language === language);
+    if (row) {
+      setEditingLocaleKey(row.key);
+      setLocaleForm({ language: row.language, name: row.name ?? '', description: row.description ?? '' });
+    } else {
+      setEditingLocaleKey(null);
+      setLocaleForm({ language, name: '', description: '' });
+    }
+  };
+
+  const removeCurrentLocaleRow = async () => {
+    const keyToRemove = editingLocaleKey;
+    if (!keyToRemove) return;
+    const result = await Swal.fire({
+      title: 'Remove translation?',
+      text: 'This removes the localized name and description for this language until you save.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, remove',
+      cancelButtonText: 'Cancel',
+    });
+    if (!result.isConfirmed) return;
+    const next = localeRows.filter((r) => r.key !== keyToRemove);
+    setLocaleRows(next);
+    const pick = next.find((r) => r.name.trim()) ?? next[0];
+    if (pick) {
+      setLocaleForm({ language: pick.language, name: pick.name ?? '', description: pick.description ?? '' });
+      setEditingLocaleKey(pick.key);
+    } else {
+      setLocaleForm({ language: 'EN', name: '', description: '' });
+      setEditingLocaleKey(null);
+    }
+  };
+
+  const editingLocaleRow = useMemo(
+    () => (editingLocaleKey ? localeRows.find((r) => r.key === editingLocaleKey) ?? null : null),
+    [editingLocaleKey, localeRows]
+  );
+  const lockLanguageSelect = Boolean(editingLocaleRow?.name.trim());
+
+  const scopeTranslationsSelectOptions = useMemo(() => {
+    if (lockLanguageSelect) {
+      return localeLanguageSelectOptions.filter((o) => o.value === localeForm.language);
+    }
+    return localeLanguageSelectOptions;
+  }, [lockLanguageSelect, localeForm.language, localeLanguageSelectOptions]);
+
+  const scopeInfoSubtitle = useMemo(() => {
+    const z = ZODIAC_SIGN_OPTIONS.find((o) => o.value === formData.zodiacSign)?.label ?? formData.zodiacSign;
+    const s = SCOPE_OPTIONS.find((o) => o.value === formData.scope)?.label ?? formData.scope;
+    return `${z} · ${s}`;
+  }, [formData.zodiacSign, formData.scope]);
 
   const saveLocaleForm = () => {
     const name = localeForm.name.trim();
@@ -197,13 +258,6 @@ export default function HoroscopeScopePage() {
     });
 
     // Keep the editor open; the main scope modal still controls the save/update.
-  };
-
-  const removeLocaleRow = (key: string) => {
-    setLocaleRows((prev) => {
-      if (prev.length <= 1) return prev;
-      return prev.filter((r) => r.key !== key);
-    });
   };
 
   const fetchItems = useCallback(async () => {
@@ -315,13 +369,16 @@ export default function HoroscopeScopePage() {
     setEditingLocaleKey(null);
     setLocaleForm({ language: 'EN', name: '', description: '' });
     setShowMultiLocaleSection(true);
+    setLocaleOnlyMode(false);
   };
 
-  const handleEdit = async (row: HoroscopeScopeItem) => {
+  const handleEdit = async (row: HoroscopeScopeItem, openLocaleOnly = false) => {
     setErrors({});
     setFetchingDetail(true);
     setShowAddModal(true);
     setEditingId(row.id);
+    setLocaleOnlyMode(openLocaleOnly);
+    setShowMultiLocaleSection(openLocaleOnly);
     try {
       const res = await horoscopeScopeApi.getById(row.id);
       const d = (res.data ?? {}) as Record<string, unknown>;
@@ -346,6 +403,25 @@ export default function HoroscopeScopePage() {
       });
 
       setLocaleRows(fallback);
+      if (openLocaleOnly) {
+        const firstNamed = fallback.find((r) => r.name.trim());
+        if (firstNamed) {
+          setEditingLocaleKey(firstNamed.key);
+          setLocaleForm({
+            language: firstNamed.language,
+            name: firstNamed.name,
+            description: firstNamed.description ?? '',
+          });
+        } else {
+          const first = fallback[0];
+          setEditingLocaleKey(first?.key ?? null);
+          setLocaleForm({
+            language: first?.language ?? 'EN',
+            name: first?.name ?? '',
+            description: first?.description ?? '',
+          });
+        }
+      }
     } catch {
       // Fallback to existing row snapshot if backend fetch fails.
       setFormData({
@@ -354,7 +430,27 @@ export default function HoroscopeScopePage() {
         name: row.name ?? '',
         description: row.description || '',
       });
-      setLocaleRows(defaultLocaleRows());
+      const fb = defaultLocaleRows();
+      setLocaleRows(fb);
+      if (openLocaleOnly) {
+        const firstNamed = fb.find((r) => r.name.trim());
+        if (firstNamed) {
+          setEditingLocaleKey(firstNamed.key);
+          setLocaleForm({
+            language: firstNamed.language,
+            name: firstNamed.name,
+            description: firstNamed.description ?? '',
+          });
+        } else {
+          const first = fb[0];
+          setEditingLocaleKey(first?.key ?? null);
+          setLocaleForm({
+            language: first?.language ?? 'EN',
+            name: first?.name ?? '',
+            description: first?.description ?? '',
+          });
+        }
+      }
     } finally {
       setFetchingDetail(false);
     }
@@ -473,7 +569,6 @@ export default function HoroscopeScopePage() {
               <tr>
                 <SortableTh columnKey="scope">Scope</SortableTh>
                 <SortableTh columnKey="description">Description</SortableTh>
-                <th>Locales</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
               </tr>
@@ -481,11 +576,11 @@ export default function HoroscopeScopePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={5} className="empty-state">
+                  <td colSpan={4} className="empty-state">
                     <p>{items.length === 0 ? 'No horoscope scopes found' : 'No scopes match your search'}</p>
                   </td>
                 </tr>
@@ -498,11 +593,6 @@ export default function HoroscopeScopePage() {
                       </div>
                     </td>
                     <td>{row.description || '—'}</td>
-                    <td>
-                      <span style={{ display: 'inline-block', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={localesSummary(row.locales)}>
-                        {localesSummary(row.locales)}
-                      </span>
-                    </td>
                     <td>
                       <span className={`status-badge ${row.status}`}>
                         {row.status === 'active' && <Check size={14} />}
@@ -522,7 +612,7 @@ export default function HoroscopeScopePage() {
                   <button
                     type="button"
                     className="btn-icon-edit"
-                    onClick={() => handleEdit(row)}
+                    onClick={() => handleEdit(row, true)}
                     disabled={fetchingDetail}
                   >
                     <Languages size={18} />
@@ -547,7 +637,7 @@ export default function HoroscopeScopePage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={4}>
                     <div className="pagination-container">
                       <div className="pagination-left">
                         <span className="pagination-label">{PAGE_SIZE} per page</span>
@@ -586,6 +676,176 @@ export default function HoroscopeScopePage() {
 
         {showAddModal && (
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
+            {localeOnlyMode ? (
+              <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640, width: '92vw' }}>
+                <form onSubmit={handleSubmit} className="organization-form" style={{ margin: 0 }}>
+                  <div className="modal-header" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '1.35rem', margin: 0, flex: '1 1 auto' }}>
+                      <Languages size={24} />
+                      Multi-language labels
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                      <label className="form-label" style={{ margin: 0, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Language</label>
+                      <div style={{ minWidth: 140, width: 160 }}>
+                        <Select<LangSelectOption, false>
+                          isSearchable
+                          options={scopeTranslationsSelectOptions}
+                          value={localeLanguageSelectOptions.find((o) => o.value === localeForm.language) ?? null}
+                          onChange={(opt) => opt && handleScopeTranslationsLanguageChange(opt.value)}
+                          isDisabled={submitting || lockLanguageSelect}
+                          placeholder="Search language..."
+                          noOptionsMessage={() => 'No languages'}
+                          classNamePrefix="lang-select"
+                          styles={{
+                            control: (base) => ({ ...base, minHeight: 32, fontSize: 13 }),
+                            valueContainer: (base) => ({ ...base, padding: '0 6px' }),
+                            input: (base) => ({ ...base, fontSize: 13 }),
+                            singleValue: (base) => ({ ...base, fontSize: 13 }),
+                            indicatorsContainer: (base) => ({ ...base, paddingRight: 4 }),
+                            menuPortal: (base) => ({ ...base, zIndex: 1000000 }),
+                          }}
+                          menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                          menuPosition="fixed"
+                        />
+                      </div>
+                      <button type="button" className="modal-close-btn" onClick={() => { setShowAddModal(false); resetForm(); }} aria-label="Close">
+                        <X size={24} />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ padding: '0 1.5rem 1.5rem' }}>
+                    {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
+                    {fetchingDetail ? (
+                      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>
+                    ) : (
+                      <>
+                        <div style={{ marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#f1f5f9', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Horoscope scope</div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{formData.name?.trim() || '—'}</div>
+                          <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{scopeInfoSubtitle}</div>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                          <label className="form-label">Local name</label>
+                          <input
+                            type="text"
+                            value={localeForm.name}
+                            onChange={(e) => setLocaleForm((p) => ({ ...p, name: e.target.value }))}
+                            className="form-input"
+                            placeholder="Name in this language"
+                            style={{ minHeight: 44, fontSize: 15 }}
+                            disabled={submitting}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                          <label className="form-label">Local description</label>
+                          <textarea
+                            value={localeForm.description}
+                            onChange={(e) => setLocaleForm((p) => ({ ...p, description: e.target.value }))}
+                            className="form-input"
+                            rows={2}
+                            placeholder="Optional"
+                            disabled={submitting}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                          <button
+                            type="button"
+                            className="btn-primary btn-small"
+                            style={{ minHeight: 42, padding: '10px 20px' }}
+                            disabled={submitting || !localeForm.name.trim()}
+                            onClick={() => {
+                              setErrors((prev) => ({ ...prev, submit: '' }));
+                              saveLocaleForm();
+                            }}
+                          >
+                            <Save size={16} />
+                            <span>{editingLocaleKey && lockLanguageSelect ? 'Update' : 'Save'}</span>
+                          </button>
+                          {getMissingLanguages(localeRows).length > 0 && !lockLanguageSelect && (
+                            <button type="button" className="btn-secondary btn-small" style={{ minHeight: 42 }} disabled={submitting} onClick={openAddLocaleForm}>
+                              <Plus size={16} />
+                              <span>Add translation</span>
+                            </button>
+                          )}
+                          {editingLocaleKey && lockLanguageSelect && (
+                            <button type="button" className="btn-secondary btn-small" style={{ minHeight: 42 }} disabled={submitting} onClick={removeCurrentLocaleRow}>
+                              <Trash2 size={16} />
+                              <span>Remove</span>
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>Saved translations</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {localeRows.filter((r) => r.name.trim()).length === 0 ? (
+                            <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>
+                              No translations yet. Select a language above, enter Local name, and click Save.
+                            </div>
+                          ) : (
+                            localeRows
+                              .filter((r) => r.name.trim())
+                              .map((row) => (
+                                <div
+                                  key={row.key}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.5rem 0.75rem',
+                                    background: '#fff',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: 8,
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
+                                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{row.language}</span>
+                                    <span style={{ color: '#0f172a' }}>{row.name}</span>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <ActionTooltip text="Edit">
+                                      <button
+                                        type="button"
+                                        className="btn-icon-edit"
+                                        onClick={() => handleScopeTranslationsLanguageChange(row.language)}
+                                        disabled={submitting}
+                                      >
+                                        <Edit size={14} />
+                                      </button>
+                                    </ActionTooltip>
+                                  </div>
+                                </div>
+                              ))
+                          )}
+                        </div>
+                        <div className="form-actions" style={{ marginTop: '1.25rem', marginBottom: 0 }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => { setShowAddModal(false); resetForm(); }}
+                            style={{ minHeight: 42 }}
+                            disabled={submitting}
+                          >
+                            Close
+                          </button>
+                          <button type="submit" className="btn-primary btn-small" disabled={submitting} style={{ minHeight: 42 }}>
+                            {submitting ? (
+                              <>
+                                <span className="form-spinner" style={{ marginRight: 6 }} />
+                                <span>Updating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save size={16} />
+                                <span>Update</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </form>
+              </div>
+            ) : (
             <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{editingId ? 'Edit Horoscope Scope' : 'Add Horoscope Scope'}</h2>
@@ -663,7 +923,18 @@ export default function HoroscopeScopePage() {
                       <Languages size={20} />
                       <span className="form-label" style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Multi-language labels</span>
                     </div>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>Add/update localized Name + Description</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>Add/update localized Name + Description</span>
+                      <button
+                        type="button"
+                        className="btn-secondary btn-small"
+                        onClick={openAddLocaleForm}
+                        disabled={submitting || getMissingLanguages(localeRows).length === 0}
+                      >
+                        <Plus size={16} />
+                        <span>Add Locale</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 12 }}>
@@ -683,9 +954,12 @@ export default function HoroscopeScopePage() {
                               description: existing?.description ?? '',
                             });
                           }}
-                          disabled={submitting}
+                          disabled={submitting || lockLanguageSelect}
                         >
-                          {LANGUAGE_OPTIONS.map((o) => (
+                          {(lockLanguageSelect
+                            ? LANGUAGE_OPTIONS.filter((o) => o.value === localeForm.language)
+                            : LANGUAGE_OPTIONS.filter((o) => getMissingLanguages(localeRows).includes(o.value) || o.value === localeForm.language)
+                          ).map((o) => (
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
                         </select>
@@ -719,10 +993,13 @@ export default function HoroscopeScopePage() {
                         type="button"
                         className="btn-primary btn-small"
                         disabled={!showLocaleForm || submitting || !localeForm.language || !localeForm.name.trim()}
-                        onClick={saveLocaleForm}
+                        onClick={() => {
+                          setErrors((prev) => ({ ...prev, submit: '' }));
+                          saveLocaleForm();
+                        }}
                       >
                         <Save size={16} />
-                        <span>{editingLocaleKey ? 'Update' : 'Save'}</span>
+                        <span>{editingLocaleKey && lockLanguageSelect ? 'Update' : 'Save'}</span>
                       </button>
                     </div>
                   </div>
@@ -760,23 +1037,10 @@ export default function HoroscopeScopePage() {
                               <button
                                 type="button"
                                 className="btn-icon-edit"
-                                onClick={() => {
-                                  setEditingLocaleKey(row.key);
-                                  setLocaleForm({ language: row.language, name: row.name ?? '', description: row.description ?? '' });
-                                }}
+                                onClick={() => openEditLocaleForm(row)}
                                 disabled={submitting}
                               >
                                 <Edit size={14} />
-                              </button>
-                            </ActionTooltip>
-                            <ActionTooltip text="Remove">
-                              <button
-                                type="button"
-                                className="btn-icon-delete"
-                                onClick={() => removeLocaleRow(row.key)}
-                                disabled={submitting || localeRows.length <= 1}
-                              >
-                                <Trash2 size={14} />
                               </button>
                             </ActionTooltip>
                           </div>
@@ -814,6 +1078,7 @@ export default function HoroscopeScopePage() {
                 </div>
               </form>
             </div>
+            )}
           </div>
         )}
       </div>
