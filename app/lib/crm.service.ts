@@ -10,6 +10,10 @@ import type {
   CrmListRequest,
   HoroscopeScopeRequest,
   HoroscopeScopeListRequest,
+  HoroscopeScopeLocaleResponse,
+  HoroscopeScopeLocaleUpsertPayload,
+  ZodiacSignLocaleResponse,
+  ZodiacSignLocaleUpsertPayload,
   ZodiacSignRequest,
   ZodiacSignListRequest,
   ZodiacSignResponse,
@@ -35,6 +39,7 @@ import type {
   HoroscopePeriodRequest,
   HoroscopePeriodListRequest,
   HoroscopePeriodResponse,
+  HoroscopeCsvImportResult,
 } from '@/app/lib/crm.types';
 
 const BASE = '/api/crm';
@@ -130,13 +135,101 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
 
 /** Event-Service: /api/v2/event/horoscope-scope/* and /api/v2/event/zodiac-sign/* */
 export const horoscopeScopeApi = crud<unknown, HoroscopeScopeRequest, HoroscopeScopeRequest, HoroscopeScopeListRequest>('horoscope-scope', EVENT_BASE);
+
+const LOCALE_PATH = 'horoscope-scope-locale';
+
+function unwrapList<T>(r: GlobalResponse<T[] | undefined>): T[] {
+  const d = r.data;
+  if (Array.isArray(d)) return d;
+  const alt = (r as unknown as { result?: T[] }).result;
+  return Array.isArray(alt) ? alt : [];
+}
+
+/** Event-Service: /api/v2/event/horoscope-scope-locale/* (separate from scope update body). */
+export const horoscopeScopeLocaleApi = {
+  getByScopeId: async (horoscopeScopeId: string): Promise<HoroscopeScopeLocaleResponse[]> => {
+    const r = await request<HoroscopeScopeLocaleResponse[]>('POST', `${LOCALE_PATH}/get-by-scope-id`, {
+      body: { horoscopeScopeId },
+      base: EVENT_BASE,
+    });
+    return unwrapList(r);
+  },
+  create: async (body: HoroscopeScopeLocaleUpsertPayload): Promise<HoroscopeScopeLocaleResponse | undefined> => {
+    const r = await request<HoroscopeScopeLocaleResponse>('POST', `${LOCALE_PATH}/create`, {
+      body: body as object,
+      base: EVENT_BASE,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (id: string, body: HoroscopeScopeLocaleUpsertPayload): Promise<HoroscopeScopeLocaleResponse | undefined> => {
+    const r = await request<HoroscopeScopeLocaleResponse>('PUT', `${LOCALE_PATH}/update`, {
+      body: body as object,
+      headers: { id },
+      base: EVENT_BASE,
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', `${LOCALE_PATH}/delete`, { headers: { id }, base: EVENT_BASE }),
+};
 export const zodiacSignApi = crud<
   ZodiacSignResponse,
   ZodiacSignRequest,
   ZodiacSignRequest,
   ZodiacSignListRequest
 >('zodiac-sign', EVENT_BASE);
-export const horoscopeApi = crud<HoroscopeResponse, HoroscopeRequest, HoroscopeRequest, HoroscopeListRequest>('horoscope', EVENT_BASE);
+
+const ZODIAC_LOCALE_PATH = 'zodiac-sign-locale';
+
+/** Event-Service: /api/v2/event/zodiac-sign-locale/* */
+export const zodiacSignLocaleApi = {
+  getByZodiacSignId: async (zodiacSignId: string): Promise<ZodiacSignLocaleResponse[]> => {
+    const r = await request<ZodiacSignLocaleResponse[]>('POST', `${ZODIAC_LOCALE_PATH}/get-by-zodiac-sign-id`, {
+      body: { zodiacSignId },
+      base: EVENT_BASE,
+    });
+    return unwrapList(r);
+  },
+  create: async (body: ZodiacSignLocaleUpsertPayload): Promise<ZodiacSignLocaleResponse | undefined> => {
+    const r = await request<ZodiacSignLocaleResponse>('POST', `${ZODIAC_LOCALE_PATH}/create`, {
+      body: body as object,
+      base: EVENT_BASE,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (id: string, body: ZodiacSignLocaleUpsertPayload): Promise<ZodiacSignLocaleResponse | undefined> => {
+    const r = await request<ZodiacSignLocaleResponse>('PUT', `${ZODIAC_LOCALE_PATH}/update`, {
+      body: body as object,
+      headers: { id },
+      base: EVENT_BASE,
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', `${ZODIAC_LOCALE_PATH}/delete`, { headers: { id }, base: EVENT_BASE }),
+};
+const horoscopeCrud = crud<HoroscopeResponse, HoroscopeRequest, HoroscopeRequest, HoroscopeListRequest>('horoscope', EVENT_BASE);
+
+export const horoscopeApi = {
+  ...horoscopeCrud,
+  /**
+   * Server-side CSV import (multipart). Requires Event-Service endpoint POST /horoscope/import-csv.
+   * Until implemented, the UI falls back to client-side CSV → drafts → “Sync drafts to server”.
+   */
+  importCsv: async (file: File): Promise<HoroscopeCsvImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetchWithAuth(`${EVENT_BASE}/horoscope/import-csv`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin',
+    });
+    const json = (await res.json().catch(() => ({}))) as GlobalResponse<HoroscopeCsvImportResult>;
+    if (!res.ok) throw new Error(json.message ?? json.code ?? `HTTP ${res.status}`);
+    const data = json.data ?? (json as unknown as HoroscopeCsvImportResult);
+    return typeof data === 'object' && data !== null ? data : {};
+  },
+};
 export const horoscopePeriodApi = crud<HoroscopePeriodResponse, HoroscopePeriodRequest, HoroscopePeriodRequest, HoroscopePeriodListRequest>('horoscope-period', EVENT_BASE);
 /** Music type enum item from GET /music-type/enum */
 export interface MusicTypeEnumItem {

@@ -50,6 +50,21 @@ export interface HoroscopeScopeLocaleRequest {
   description: string;
 }
 
+/** Event-Service: horoscope-scope-locale APIs (persisted rows with id). */
+export interface HoroscopeScopeLocaleResponse {
+  id: string;
+  language: LanguageEnumCode;
+  name: string;
+  description?: string;
+}
+
+export interface HoroscopeScopeLocaleUpsertPayload {
+  horoscopeScopeId: string;
+  language: string;
+  name: string;
+  description?: string;
+}
+
 export interface HoroscopeScopeListRequest extends CrmListRequest {
   zodiacSign?: ZodiacSignEnum;
   scope?: HoroscopeScopeEnum;
@@ -68,6 +83,14 @@ export interface ZodiacSignLocaleRequest {
 export interface ZodiacSignLocaleResponse {
   id?: string;
   language: LanguageEnumCode;
+  name: string;
+  startingName?: string;
+}
+
+/** Event-Service: zodiac-sign-locale APIs (persisted rows with id). */
+export interface ZodiacSignLocaleUpsertPayload {
+  zodiacSignId: string;
+  language: string;
   name: string;
   startingName?: string;
 }
@@ -157,6 +180,18 @@ export interface HoroscopePeriodResponse extends HoroscopePeriodRequest {
 export interface HoroscopePeriodListRequest extends CrmListRequest {
   horoscope?: HoroscopePeriodEnum;
   status?: StatusEnum;
+}
+
+/** Response from POST multipart /horoscope/import-csv when Event-Service implements bulk CSV upsert. */
+export interface HoroscopeCsvImportRowError {
+  row: number;
+  message: string;
+}
+
+export interface HoroscopeCsvImportResult {
+  created?: number;
+  updated?: number;
+  errors?: HoroscopeCsvImportRowError[];
 }
 
 // ---- Music Type ----

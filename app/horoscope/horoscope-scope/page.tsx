@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Select from 'react-select';
 import {
   Plus,
@@ -22,8 +22,16 @@ import DashboardLayout from '@/app/components/DashboardLayout';
 import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '@/app/components/common/PageHeaderWithInfo';
 import { ActionTooltip } from '@/app/components/common/ActionTooltip';
-import { horoscopeScopeApi } from '@/app/lib/crm.service';
-import type { HoroscopeScopeLocaleRequest, HoroscopeScopeRequest, HoroscopeScopeEnum, LanguageEnumCode, ZodiacSignEnum } from '@/app/lib/crm.types';
+import { horoscopeScopeApi, horoscopeScopeLocaleApi } from '@/app/lib/crm.service';
+import type {
+  HoroscopeScopeLocaleRequest,
+  HoroscopeScopeLocaleResponse,
+  HoroscopeScopeRequest,
+  HoroscopeScopeEnum,
+  LanguageEnumCode,
+  ZodiacSignEnum,
+} from '@/app/lib/crm.types';
+import { masterService } from '@/app/lib/master.service';
 
 const ZODIAC_SIGN_OPTIONS: { value: ZodiacSignEnum; label: string }[] = [
   { value: 'ARIES', label: 'Aries' },
@@ -101,7 +109,7 @@ const LANGUAGE_OPTIONS: { value: LanguageEnumCode; label: string }[] = [
   { value: 'NE', label: 'Nepali' },
 ];
 
-type LangSelectOption = { value: LanguageEnumCode; label: string };
+type ScopeLangSelectOption = { value: string; label: string };
 
 interface LocaleFormRow {
   key: string;
@@ -147,11 +155,20 @@ export default function HoroscopeScopePage() {
   const [showMultiLocaleSection, setShowMultiLocaleSection] = useState(true);
   const [localeOnlyMode, setLocaleOnlyMode] = useState(false);
   const [editingLocaleKey, setEditingLocaleKey] = useState<string | null>(null);
-  const [localeForm, setLocaleForm] = useState<{ language: LanguageEnumCode; name: string; description: string }>({
+  const [localeForm, setLocaleForm] = useState<{ language: string; name: string; description: string }>({
     language: 'EN',
     name: '',
     description: '',
   });
+
+  /** Locale-only modal: server-backed rows + master language list (same pattern as menu translations). */
+  const [scopeLocalesApi, setScopeLocalesApi] = useState<HoroscopeScopeLocaleResponse[]>([]);
+  const [editingScopeLocaleId, setEditingScopeLocaleId] = useState<string | null>(null);
+  const [localeLanguageOptions, setLocaleLanguageOptions] = useState<ScopeLangSelectOption[]>([]);
+  const [localeLanguagesLoading, setLocaleLanguagesLoading] = useState(false);
+  const [localeSubmitting, setLocaleSubmitting] = useState(false);
+  const localeLanguageOptionsRef = useRef<ScopeLangSelectOption[]>([]);
+  localeLanguageOptionsRef.current = localeLanguageOptions;
 
   const getMissingLanguages = (rows: LocaleFormRow[]): LanguageEnumCode[] => {
     const existing = new Set(rows.map((r) => r.language));
@@ -174,59 +191,216 @@ export default function HoroscopeScopePage() {
     setShowMultiLocaleSection(true);
   };
 
-  const localeLanguageSelectOptions = useMemo<LangSelectOption[]>(
-    () => LANGUAGE_OPTIONS.map((o) => ({ value: o.value, label: `${o.label} (${o.value})` })),
-    []
-  );
+  const refreshScopeLocales = useCallback(async (): Promise<HoroscopeScopeLocaleResponse[]> => {
+    if (!editingId) return [];
+    try {
+      const list = await horoscopeScopeLocaleApi.getByScopeId(editingId);
+      setScopeLocalesApi(list);
+      return list;
+    } catch {
+      setScopeLocalesApi([]);
+      return [];
+    }
+  }, [editingId]);
 
-  /** Menu-style translations modal: pick a language, load existing row or start a new one for that code. */
-  const handleScopeTranslationsLanguageChange = (language: LanguageEnumCode) => {
-    const row = localeRows.find((r) => r.language === language);
-    if (row) {
-      setEditingLocaleKey(row.key);
-      setLocaleForm({ language: row.language, name: row.name ?? '', description: row.description ?? '' });
+  const syncScopeHeaderFromGetById = useCallback(async () => {
+    if (!editingId) return;
+    try {
+      const res = await horoscopeScopeApi.getById(editingId);
+      const d = (res.data ?? {}) as Record<string, unknown>;
+      setFormData((prev) => ({
+        ...prev,
+        name: String(d.name ?? prev.name),
+        description: d.description != null && String(d.description) !== '' ? String(d.description) : prev.description,
+      }));
+    } catch {
+      /* keep header */
+    }
+  }, [editingId]);
+
+  const handleScopeLocaleLanguageChange = (language: string) => {
+    const existing = scopeLocalesApi.find((l) => String(l.language).toUpperCase() === language.toUpperCase());
+    if (existing) {
+      setEditingScopeLocaleId(String(existing.id));
+      setLocaleForm({
+        language: String(existing.language),
+        name: existing.name ?? '',
+        description: existing.description ?? '',
+      });
     } else {
-      setEditingLocaleKey(null);
+      setEditingScopeLocaleId(null);
       setLocaleForm({ language, name: '', description: '' });
     }
   };
 
-  const removeCurrentLocaleRow = async () => {
-    const keyToRemove = editingLocaleKey;
-    if (!keyToRemove) return;
+  /** Active languages that do not yet have a saved row for this scope (used to enable “add another” via the same dropdown). */
+  const scopeLocaleMissingOptions = useMemo(() => {
+    const saved = new Set(scopeLocalesApi.map((l) => String(l.language).toUpperCase()));
+    return localeLanguageOptions.filter((o) => !saved.has(o.value));
+  }, [scopeLocalesApi, localeLanguageOptions]);
+
+  const localeOptionsForScopeModal = useMemo(() => {
+    if (!editingScopeLocaleId) {
+      return scopeLocaleMissingOptions;
+    }
+    const cur = localeLanguageOptions.find((o) => o.value === localeForm.language);
+    if (scopeLocaleMissingOptions.length === 0) {
+      return cur ? [cur] : [];
+    }
+    const order: ScopeLangSelectOption[] = [];
+    if (cur) order.push(cur);
+    for (const o of scopeLocaleMissingOptions) {
+      if (o.value !== cur?.value) order.push(o);
+    }
+    return order;
+  }, [editingScopeLocaleId, localeForm.language, localeLanguageOptions, scopeLocaleMissingOptions]);
+
+  const scopeLocaleLanguageSelectLocked =
+    Boolean(editingScopeLocaleId) && scopeLocaleMissingOptions.length === 0;
+
+  const handleAddScopeLocale = async () => {
+    if (!editingId || !localeForm.name.trim()) return;
+    setLocaleSubmitting(true);
+    try {
+      const addedLang = localeForm.language;
+      const created = await horoscopeScopeLocaleApi.create({
+        horoscopeScopeId: editingId,
+        language: localeForm.language,
+        name: localeForm.name.trim(),
+        description: localeForm.description.trim() || undefined,
+      });
+      const list = await refreshScopeLocales();
+      await fetchItems();
+      await syncScopeHeaderFromGetById();
+
+      const opts = localeLanguageOptionsRef.current;
+      const savedCodes = new Set(list.map((l) => String(l.language).toUpperCase()));
+      const nextMissing = opts.find((o) => !savedCodes.has(o.value));
+      if (nextMissing) {
+        setEditingScopeLocaleId(null);
+        setLocaleForm({ language: nextMissing.value, name: '', description: '' });
+      } else {
+        const match =
+          list.find((l) => String(l.language).toUpperCase() === addedLang.toUpperCase()) ??
+          (created?.id ? list.find((l) => String(l.id) === String(created.id)) : undefined);
+        if (match) {
+          setEditingScopeLocaleId(String(match.id));
+          setLocaleForm({
+            language: String(match.language),
+            name: match.name ?? '',
+            description: match.description ?? '',
+          });
+        }
+      }
+
+      await Swal.fire({ title: 'Saved', text: 'Translation saved.', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Failed to add translation', icon: 'error' });
+    } finally {
+      setLocaleSubmitting(false);
+    }
+  };
+
+  const handleUpdateScopeLocale = async () => {
+    if (!editingScopeLocaleId || !editingId || !localeForm.name.trim()) return;
+    setLocaleSubmitting(true);
+    try {
+      await horoscopeScopeLocaleApi.update(editingScopeLocaleId, {
+        horoscopeScopeId: editingId,
+        language: localeForm.language,
+        name: localeForm.name.trim(),
+        description: localeForm.description.trim() || undefined,
+      });
+      await refreshScopeLocales();
+      await fetchItems();
+      await syncScopeHeaderFromGetById();
+      await Swal.fire({ title: 'Updated', text: 'Translation updated.', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Failed to update', icon: 'error' });
+    } finally {
+      setLocaleSubmitting(false);
+    }
+  };
+
+  const handleDeleteScopeLocale = async (localeId: string) => {
     const result = await Swal.fire({
       title: 'Remove translation?',
-      text: 'This removes the localized name and description for this language until you save.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Yes, remove',
       cancelButtonText: 'Cancel',
     });
     if (!result.isConfirmed) return;
-    const next = localeRows.filter((r) => r.key !== keyToRemove);
-    setLocaleRows(next);
-    const pick = next.find((r) => r.name.trim()) ?? next[0];
-    if (pick) {
-      setLocaleForm({ language: pick.language, name: pick.name ?? '', description: pick.description ?? '' });
-      setEditingLocaleKey(pick.key);
-    } else {
-      setLocaleForm({ language: 'EN', name: '', description: '' });
-      setEditingLocaleKey(null);
+    setLocaleSubmitting(true);
+    try {
+      await horoscopeScopeLocaleApi.delete(localeId);
+      const list = await refreshScopeLocales();
+      await fetchItems();
+      await syncScopeHeaderFromGetById();
+      const first = list[0];
+      if (first) {
+        setEditingScopeLocaleId(String(first.id));
+        setLocaleForm({
+          language: String(first.language),
+          name: first.name ?? '',
+          description: first.description ?? '',
+        });
+      } else {
+        setEditingScopeLocaleId(null);
+        setLocaleForm({ language: localeLanguageOptions[0]?.value ?? 'EN', name: '', description: '' });
+      }
+      await Swal.fire({ title: 'Removed', text: 'Translation removed.', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      await Swal.fire({ title: 'Error', text: err instanceof Error ? err.message : 'Delete failed', icon: 'error' });
+    } finally {
+      setLocaleSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!showAddModal || !localeOnlyMode || !editingId) return;
+    setLocaleLanguagesLoading(true);
+    masterService.language
+      .listActive()
+      .then((res: { data?: unknown }) => {
+        const raw = res?.data;
+        const arr = Array.isArray(raw) ? raw : [];
+        const options = arr
+          .map((item: Record<string, unknown>) => {
+            const code = String(item.code ?? item.name ?? '').toUpperCase();
+            const name = String(item.name ?? item.code ?? code);
+            return code ? { value: code, label: `${name} (${code})` } : null;
+          })
+          .filter((o): o is ScopeLangSelectOption => o != null);
+        setLocaleLanguageOptions(options);
+      })
+      .catch(() => setLocaleLanguageOptions([]))
+      .finally(() => setLocaleLanguagesLoading(false));
+  }, [showAddModal, localeOnlyMode, editingId]);
+
+  useEffect(() => {
+    if (!localeOnlyMode || !showAddModal) return;
+    setLocaleForm((prev) => {
+      if (localeLanguageOptions.length === 0) return prev;
+      if (!prev.language && localeLanguageOptions[0]) return { ...prev, language: localeLanguageOptions[0].value };
+      if (prev.language && !localeLanguageOptions.some((o) => o.value === prev.language) && localeLanguageOptions[0])
+        return { ...prev, language: localeLanguageOptions[0].value };
+      if (!editingScopeLocaleId && prev.language) {
+        const saved = new Set(scopeLocalesApi.map((l) => String(l.language).toUpperCase()));
+        if (saved.has(prev.language.toUpperCase())) {
+          const firstMissing = localeLanguageOptions.find((o) => !saved.has(o.value));
+          if (firstMissing) return { ...prev, language: firstMissing.value, name: '', description: '' };
+        }
+      }
+      return prev;
+    });
+  }, [localeLanguageOptions, localeOnlyMode, showAddModal, scopeLocalesApi, editingScopeLocaleId]);
 
   const editingLocaleRow = useMemo(
     () => (editingLocaleKey ? localeRows.find((r) => r.key === editingLocaleKey) ?? null : null),
     [editingLocaleKey, localeRows]
   );
   const lockLanguageSelect = Boolean(editingLocaleRow?.name.trim());
-
-  const scopeTranslationsSelectOptions = useMemo(() => {
-    if (lockLanguageSelect) {
-      return localeLanguageSelectOptions.filter((o) => o.value === localeForm.language);
-    }
-    return localeLanguageSelectOptions;
-  }, [lockLanguageSelect, localeForm.language, localeLanguageSelectOptions]);
 
   const scopeInfoSubtitle = useMemo(() => {
     const z = ZODIAC_SIGN_OPTIONS.find((o) => o.value === formData.zodiacSign)?.label ?? formData.zodiacSign;
@@ -241,7 +415,7 @@ export default function HoroscopeScopePage() {
       return;
     }
     const description = localeForm.description.trim();
-    const language = localeForm.language;
+    const language = localeForm.language as LanguageEnumCode;
 
     setLocaleRows((prev) => {
       // Prevent duplicate language: merge into existing row if needed.
@@ -370,6 +544,11 @@ export default function HoroscopeScopePage() {
     setLocaleForm({ language: 'EN', name: '', description: '' });
     setShowMultiLocaleSection(true);
     setLocaleOnlyMode(false);
+    setScopeLocalesApi([]);
+    setEditingScopeLocaleId(null);
+    setLocaleLanguageOptions([]);
+    setLocaleLanguagesLoading(false);
+    setLocaleSubmitting(false);
   };
 
   const handleEdit = async (row: HoroscopeScopeItem, openLocaleOnly = false) => {
@@ -404,22 +583,25 @@ export default function HoroscopeScopePage() {
 
       setLocaleRows(fallback);
       if (openLocaleOnly) {
-        const firstNamed = fallback.find((r) => r.name.trim());
-        if (firstNamed) {
-          setEditingLocaleKey(firstNamed.key);
-          setLocaleForm({
-            language: firstNamed.language,
-            name: firstNamed.name,
-            description: firstNamed.description ?? '',
-          });
-        } else {
-          const first = fallback[0];
-          setEditingLocaleKey(first?.key ?? null);
-          setLocaleForm({
-            language: first?.language ?? 'EN',
-            name: first?.name ?? '',
-            description: first?.description ?? '',
-          });
+        try {
+          const list = await horoscopeScopeLocaleApi.getByScopeId(row.id);
+          setScopeLocalesApi(list);
+          const first = list[0];
+          if (first) {
+            setEditingScopeLocaleId(String(first.id));
+            setLocaleForm({
+              language: String(first.language),
+              name: first.name ?? '',
+              description: first.description ?? '',
+            });
+          } else {
+            setEditingScopeLocaleId(null);
+            setLocaleForm({ language: 'EN', name: '', description: '' });
+          }
+        } catch {
+          setScopeLocalesApi([]);
+          setEditingScopeLocaleId(null);
+          setLocaleForm({ language: 'EN', name: '', description: '' });
         }
       }
     } catch {
@@ -433,22 +615,25 @@ export default function HoroscopeScopePage() {
       const fb = defaultLocaleRows();
       setLocaleRows(fb);
       if (openLocaleOnly) {
-        const firstNamed = fb.find((r) => r.name.trim());
-        if (firstNamed) {
-          setEditingLocaleKey(firstNamed.key);
-          setLocaleForm({
-            language: firstNamed.language,
-            name: firstNamed.name,
-            description: firstNamed.description ?? '',
-          });
-        } else {
-          const first = fb[0];
-          setEditingLocaleKey(first?.key ?? null);
-          setLocaleForm({
-            language: first?.language ?? 'EN',
-            name: first?.name ?? '',
-            description: first?.description ?? '',
-          });
+        try {
+          const list = await horoscopeScopeLocaleApi.getByScopeId(row.id);
+          setScopeLocalesApi(list);
+          const first = list[0];
+          if (first) {
+            setEditingScopeLocaleId(String(first.id));
+            setLocaleForm({
+              language: String(first.language),
+              name: first.name ?? '',
+              description: first.description ?? '',
+            });
+          } else {
+            setEditingScopeLocaleId(null);
+            setLocaleForm({ language: 'EN', name: '', description: '' });
+          }
+        } catch {
+          setScopeLocalesApi([]);
+          setEditingScopeLocaleId(null);
+          setLocaleForm({ language: 'EN', name: '', description: '' });
         }
       }
     } finally {
@@ -678,7 +863,13 @@ export default function HoroscopeScopePage() {
           <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
             {localeOnlyMode ? (
               <div className="modal-content organization-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640, width: '92vw' }}>
-                <form onSubmit={handleSubmit} className="organization-form" style={{ margin: 0 }}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                  }}
+                  className="organization-form"
+                  style={{ margin: 0 }}
+                >
                   <div className="modal-header" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '1.35rem', margin: 0, flex: '1 1 auto' }}>
                       <Languages size={24} />
@@ -687,14 +878,19 @@ export default function HoroscopeScopePage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                       <label className="form-label" style={{ margin: 0, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Language</label>
                       <div style={{ minWidth: 140, width: 160 }}>
-                        <Select<LangSelectOption, false>
+                        <Select<ScopeLangSelectOption, false>
                           isSearchable
-                          options={scopeTranslationsSelectOptions}
-                          value={localeLanguageSelectOptions.find((o) => o.value === localeForm.language) ?? null}
-                          onChange={(opt) => opt && handleScopeTranslationsLanguageChange(opt.value)}
-                          isDisabled={submitting || lockLanguageSelect}
+                          options={localeOptionsForScopeModal}
+                          value={
+                            localeOptionsForScopeModal.find((o) => o.value === localeForm.language) ??
+                            localeLanguageOptions.find((o) => o.value === localeForm.language) ??
+                            null
+                          }
+                          onChange={(opt) => opt && handleScopeLocaleLanguageChange(opt.value)}
+                          isLoading={localeLanguagesLoading}
+                          isDisabled={localeLanguagesLoading || localeSubmitting || scopeLocaleLanguageSelectLocked}
                           placeholder="Search language..."
-                          noOptionsMessage={() => 'No languages'}
+                          noOptionsMessage={() => (localeLanguagesLoading ? 'Loading...' : localeOptionsForScopeModal.length === 0 ? 'No languages' : 'No match')}
                           classNamePrefix="lang-select"
                           styles={{
                             control: (base) => ({ ...base, minHeight: 32, fontSize: 13 }),
@@ -733,7 +929,7 @@ export default function HoroscopeScopePage() {
                             className="form-input"
                             placeholder="Name in this language"
                             style={{ minHeight: 44, fontSize: 15 }}
-                            disabled={submitting}
+                            disabled={localeSubmitting}
                           />
                         </div>
                         <div className="form-group" style={{ marginBottom: '1.25rem' }}>
@@ -744,7 +940,7 @@ export default function HoroscopeScopePage() {
                             className="form-input"
                             rows={2}
                             placeholder="Optional"
-                            disabled={submitting}
+                            disabled={localeSubmitting}
                           />
                         </div>
                         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -752,23 +948,20 @@ export default function HoroscopeScopePage() {
                             type="button"
                             className="btn-primary btn-small"
                             style={{ minHeight: 42, padding: '10px 20px' }}
-                            disabled={submitting || !localeForm.name.trim()}
-                            onClick={() => {
-                              setErrors((prev) => ({ ...prev, submit: '' }));
-                              saveLocaleForm();
-                            }}
+                            disabled={localeSubmitting || !localeForm.name.trim()}
+                            onClick={editingScopeLocaleId ? handleUpdateScopeLocale : handleAddScopeLocale}
                           >
                             <Save size={16} />
-                            <span>{editingLocaleKey && lockLanguageSelect ? 'Update' : 'Save'}</span>
+                            <span>{editingScopeLocaleId ? 'Update' : 'Save'}</span>
                           </button>
-                          {getMissingLanguages(localeRows).length > 0 && !lockLanguageSelect && (
-                            <button type="button" className="btn-secondary btn-small" style={{ minHeight: 42 }} disabled={submitting} onClick={openAddLocaleForm}>
-                              <Plus size={16} />
-                              <span>Add translation</span>
-                            </button>
-                          )}
-                          {editingLocaleKey && lockLanguageSelect && (
-                            <button type="button" className="btn-secondary btn-small" style={{ minHeight: 42 }} disabled={submitting} onClick={removeCurrentLocaleRow}>
+                          {editingScopeLocaleId && (
+                            <button
+                              type="button"
+                              className="btn-secondary btn-small"
+                              style={{ minHeight: 42 }}
+                              disabled={localeSubmitting}
+                              onClick={() => handleDeleteScopeLocale(editingScopeLocaleId)}
+                            >
                               <Trash2 size={16} />
                               <span>Remove</span>
                             </button>
@@ -776,44 +969,52 @@ export default function HoroscopeScopePage() {
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>Saved translations</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {localeRows.filter((r) => r.name.trim()).length === 0 ? (
+                          {scopeLocalesApi.length === 0 ? (
                             <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>
                               No translations yet. Select a language above, enter Local name, and click Save.
                             </div>
                           ) : (
-                            localeRows
-                              .filter((r) => r.name.trim())
-                              .map((row) => (
-                                <div
-                                  key={row.key}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '0.5rem 0.75rem',
-                                    background: '#fff',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: 8,
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-                                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{row.language}</span>
-                                    <span style={{ color: '#0f172a' }}>{row.name}</span>
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 4 }}>
-                                    <ActionTooltip text="Edit">
-                                      <button
-                                        type="button"
-                                        className="btn-icon-edit"
-                                        onClick={() => handleScopeTranslationsLanguageChange(row.language)}
-                                        disabled={submitting}
-                                      >
-                                        <Edit size={14} />
-                                      </button>
-                                    </ActionTooltip>
-                                  </div>
+                            scopeLocalesApi.map((loc) => (
+                              <div
+                                key={loc.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#fff',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: 8,
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
+                                  <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{String(loc.language)}</span>
+                                  <span style={{ color: '#0f172a' }}>{loc.name}</span>
                                 </div>
-                              ))
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                  <ActionTooltip text="Edit">
+                                    <button
+                                      type="button"
+                                      className="btn-icon-edit"
+                                      onClick={() => handleScopeLocaleLanguageChange(String(loc.language))}
+                                      disabled={localeSubmitting}
+                                    >
+                                      <Edit size={14} />
+                                    </button>
+                                  </ActionTooltip>
+                                  <ActionTooltip text="Remove">
+                                    <button
+                                      type="button"
+                                      className="btn-icon-delete"
+                                      onClick={() => handleDeleteScopeLocale(String(loc.id))}
+                                      disabled={localeSubmitting}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </ActionTooltip>
+                                </div>
+                              </div>
+                            ))
                           )}
                         </div>
                         <div className="form-actions" style={{ marginTop: '1.25rem', marginBottom: 0 }}>
@@ -822,22 +1023,9 @@ export default function HoroscopeScopePage() {
                             className="btn-secondary"
                             onClick={() => { setShowAddModal(false); resetForm(); }}
                             style={{ minHeight: 42 }}
-                            disabled={submitting}
+                            disabled={localeSubmitting}
                           >
                             Close
-                          </button>
-                          <button type="submit" className="btn-primary btn-small" disabled={submitting} style={{ minHeight: 42 }}>
-                            {submitting ? (
-                              <>
-                                <span className="form-spinner" style={{ marginRight: 6 }} />
-                                <span>Updating...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Save size={16} />
-                                <span>Update</span>
-                              </>
-                            )}
                           </button>
                         </div>
                       </>
