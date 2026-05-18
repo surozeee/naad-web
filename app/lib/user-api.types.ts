@@ -153,6 +153,7 @@ export interface UserDetailRequest {
   employeeCode?: string;
   userType?: UserTypeEnum;
   notifyTo?: string;
+  photoUrl?: string;
 }
 
 export interface UserRequest {
@@ -168,10 +169,35 @@ export interface UserRequest {
   userDetail?: UserDetailRequest;
 }
 
+export interface AstrologerCreateRequest {
+  emailAddress: string;
+  mobileNumber?: string;
+  password: string;
+  accountNonExpired?: boolean;
+  accountNonLocked?: boolean;
+  credentialsNonExpired?: boolean;
+  enabled?: boolean;
+  status?: UserStatusEnum;
+  userDetail?: UserDetailRequest;
+}
+
+export interface AstrologerUpdateRequest {
+  emailAddress: string;
+  mobileNumber?: string;
+  password?: string;
+  accountNonExpired?: boolean;
+  accountNonLocked?: boolean;
+  credentialsNonExpired?: boolean;
+  enabled?: boolean;
+  status?: UserStatusEnum;
+  userDetail?: UserDetailRequest;
+}
+
 export interface UserDetailResponse {
   id?: string;
   name?: string;
   phoneNumber?: string;
+  photoUrl?: string;
   roleType?: string;
   userType?: string;
   status?: string;

@@ -20,6 +20,8 @@ import type {
   PermissionGroupTreeResponse,
   RoleRequest,
   RoleResponse,
+  AstrologerCreateRequest,
+  AstrologerUpdateRequest,
   UserRequest,
   UserResponse,
 } from '@/app/lib/user-api.types';
@@ -78,6 +80,35 @@ export const userApi = {
   getById: (id: string) =>
     apiRequest<UserResponse>('GET', `users/${encodeURIComponent(id)}`).then((r) => r.data as UserResponse),
   create: (body: UserRequest) => apiRequest('POST', 'users/create', { body }),
+  createAstrologer: (body: AstrologerCreateRequest) =>
+    apiRequest<UserResponse>('POST', 'users/create-astrologer', { body }).then((r) => r.data as UserResponse),
+  updateAstrologer: (id: string, body: AstrologerUpdateRequest) =>
+    apiRequest('PUT', `users/astrologer/${encodeURIComponent(id)}`, { body }),
+  listAstrologers: (params?: PaginationRequest) =>
+    apiRequest<unknown>('POST', 'users/astrologer/list', { body: listBody(params) }).then((r) =>
+      normalizeList<UserResponse>(r)
+    ),
+  /** Server-side paginated list; returns rows + total for UI pagination. */
+  listAstrologersPaginated: async (params: PaginationRequest) => {
+    const res = await apiRequest<unknown>('POST', 'users/astrologer/list', { body: listBody(params) });
+    const d = res?.data;
+    if (d != null && typeof d === 'object' && !Array.isArray(d)) {
+      const obj = d as Record<string, unknown>;
+      const total =
+        typeof obj.totalElements === 'number' ? obj.totalElements : Number(obj.totalElements ?? 0);
+      const rows = normalizeList<UserResponse>(res);
+      return { rows, totalElements: Number.isFinite(total) ? total : rows.length };
+    }
+    const rows = normalizeList<UserResponse>(res);
+    return { rows, totalElements: rows.length };
+  },
+  uploadPhotoForUser: (id: string, encodedData: string) =>
+    apiRequest<string>('POST', `users/${encodeURIComponent(id)}/upload-photo`, { body: { encodedData } }).then(
+      (r) => (typeof r.data === 'string' ? r.data : '') as string
+    ),
+  deleteAstrologer: (id: string) => apiRequest('DELETE', `users/astrologer/${encodeURIComponent(id)}`),
+  changeAstrologerStatus: (id: string, status: StatusEnum) =>
+    apiRequest('PATCH', `users/astrologer/${encodeURIComponent(id)}`, { body: { status } }),
   update: (id: string, body: UserRequest) => apiRequest('PUT', `users/${encodeURIComponent(id)}`, { body }),
   changeStatus: (id: string, status: StatusEnum) =>
     apiRequest('PATCH', `users/${encodeURIComponent(id)}`, { body: { status } }),

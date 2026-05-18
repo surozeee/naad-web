@@ -43,6 +43,16 @@ const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
   ]},
 ];
 
+/** Menus for ASTROLOGER role – Jitsi meetings (create, share, history on one page). */
+const ASTROLOGER_MENU_ITEMS: SidebarMenuItem[] = [
+  {
+    id: 'meetings',
+    icon: '📹',
+    label: 'Meetings',
+    href: '/meetings',
+  },
+];
+
 /** Fallback for Superadmin when menu tree API fails or returns empty (full admin CRUD menus). */
 const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
   ...CUSTOMER_MENU_ITEMS,
@@ -61,6 +71,7 @@ const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
     { label: 'User', href: '/user-management/user' }, { label: 'Role', href: '/user-management/role' },
     { label: 'Permission', href: '/user-management/permission' }, { label: 'Permission Group', href: '/user-management/permission-group' },
     { label: 'Menu', href: '/user-management/menu' }, { label: 'Customers', href: '/user-management/customers' },
+    { label: 'Astrologer', href: '/user-management/astrologer' },
   ]},
   { id: 'event-management', icon: '📅', label: 'Event Management', href: '/event-management', submenu: [
     { label: 'Event Category', href: '/event-management/event-category' },
@@ -83,6 +94,8 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/user-management/permission-group': 'Permission Group',
   '/user-management/menu': 'Menu',
   '/user-management/customers': 'Customers',
+  '/user-management/astrologer': 'Astrologer',
+  '/meetings': 'Meetings',
   '/master-setting': 'Master Setting',
   '/master-setting/general': 'General',
   '/settings': 'Settings',
@@ -231,9 +244,19 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
       try {
         const profile = await getProfile();
         const roleName = (profile?.roleName ?? '').trim();
-        const isCustomer = /customer/i.test(roleName) || profile?.userDetail?.userType === 'CUSTOMER';
+        const userType = profile?.userDetail?.userType ?? '';
+        const isCustomer = /customer/i.test(roleName) || userType === 'CUSTOMER';
+        const isAstrologer =
+          /astrologer/i.test(roleName) ||
+          userType === 'ASTROLOGER' ||
+          String(userType).toUpperCase() === 'ASTROLOGER';
         if (isCustomer) {
           if (!cancelled) setMenuItems(CUSTOMER_MENU_ITEMS);
+          setMenuLoading(false);
+          return;
+        }
+        if (isAstrologer && !/super admin|admin/i.test(roleName)) {
+          if (!cancelled) setMenuItems(ASTROLOGER_MENU_ITEMS);
           setMenuLoading(false);
           return;
         }
