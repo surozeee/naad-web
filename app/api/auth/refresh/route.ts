@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
+import { API_BASE, backendFetch, getBackendNetworkErrorMessage, isBackendNetworkError } from '@/app/lib/api-base';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
-// API base from .env; fallback so app works without .env
-const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
-const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
 const REFRESH_URL = `${API_BASE}/api/v2/public/user/refresh/token`;
 
 const AUTH_COOKIE = 'naad_auth';
@@ -53,7 +50,7 @@ export async function POST(request: Request) {
       headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;
     }
 
-    const res = await fetch(REFRESH_URL, {
+    const res = await backendFetch(REFRESH_URL, {
       method: 'POST',
       headers,
       body: JSON.stringify({ refreshToken }),
@@ -105,8 +102,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[Auth] Refresh error:', error);
     const res = NextResponse.json(
-      { message: 'Refresh failed' },
-      { status: 500 }
+      { message: isBackendNetworkError(error) ? getBackendNetworkErrorMessage(error) : 'Refresh failed' },
+      { status: isBackendNetworkError(error) ? 503 : 500 }
     );
     clearAuthCookies(res);
     return res;

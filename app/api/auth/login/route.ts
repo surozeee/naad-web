@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import {
+  API_BASE,
+  backendFetch,
+  getBackendHttpErrorMessage,
+  getBackendNetworkErrorMessage,
+  isBackendNetworkError,
+} from '@/app/lib/api-base';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
-// API base from .env (NEXT_PUBLIC_BACKEND_URL, etc.); fallback so app works without .env
-const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
-const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
 const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
 
 const AUTH_COOKIE = 'naad_auth';
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
       headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;
     }
 
-    const res = await fetch(LOGIN_URL, {
+    const res = await backendFetch(LOGIN_URL, {
       method: 'POST',
       headers,
       body: JSON.stringify({ email, password }),
@@ -65,8 +68,16 @@ export async function POST(request: Request) {
     };
 
     if (!res.ok) {
-      const message = data?.message ?? data?.error ?? 'Invalid email or password.';
-      return NextResponse.json({ message }, { status: res.status });
+      const message = getBackendHttpErrorMessage(
+        res.status,
+        LOGIN_URL,
+        data?.message ?? data?.error
+      );
+      console.error('[Auth] Login backend error:', res.status, LOGIN_URL, data);
+      return NextResponse.json(
+        { message, code: data?.code },
+        { status: res.status === 404 ? 502 : res.status }
+      );
     }
 
     if (data?.status === 'FAILED') {
@@ -93,7 +104,6 @@ export async function POST(request: Request) {
       response.cookies.set(REFRESH_COOKIE, refresh_token, COOKIE_OPTIONS);
     }
 
-    // Set XSRF cookie on our domain so client sends it to our API (avoids 403 on backend).
     let xsrfValue: string | null = null;
     const setCookies =
       typeof (res.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
@@ -117,9 +127,12 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error('[Auth] Login API error:', error);
+    if (isBackendNetworkError(error)) {
+      console.error('[Auth] Backend URL:', LOGIN_URL);
+    }
     return NextResponse.json(
-      { message: 'Something went wrong. Please try again later.' },
-      { status: 500 }
+      { message: getBackendNetworkErrorMessage(error) },
+      { status: isBackendNetworkError(error) ? 503 : 500 }
     );
   }
 }

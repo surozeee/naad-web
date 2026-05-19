@@ -12,7 +12,8 @@ console.log('🚀 Starting production build...');
 // Set production environment variables
 process.env.NODE_ENV = 'production';
 process.env.NEXT_PUBLIC_ENVIRONMENT = 'production';
-process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api-naad.jojolapatech.com/api/v2';
+process.env.BACKEND_URL = 'https://api-naad.jojolapatech.com';
+process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api-naad.jojolapatech.com';
 process.env.NEXT_PUBLIC_FRONTEND_URL = 'https://naad.jojolapatech.com';
 process.env.NEXT_PUBLIC_OAUTH_BASE_URL = 'https://auth-naad.jojolaptech.com';
 process.env.NEXT_AUTH_XSRF_TOKEN = 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=';

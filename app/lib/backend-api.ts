@@ -1,17 +1,7 @@
+import { API_BASE, DEFAULT_API_BASE, backendUrl } from '@/app/lib/api-base';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
-/**
- * Shared backend API base (same as auth routes / erp-web).
- * Use for user, role, permission, permission-group proxies.
- */
-const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
-const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-export const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
-
-export function backendUrl(path: string): string {
-  const p = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE}${p.startsWith('/api') ? p : `/api/v2${p}`}`;
-}
+export { API_BASE, DEFAULT_API_BASE, backendUrl };
 
 const AUTH_COOKIE = 'naad_auth';
 const XSRF_COOKIE = 'XSRF-TOKEN';

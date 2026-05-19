@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/prepare-dev.js",
     "dev": "cross-env NODE_OPTIONS=--disable-warning=DEP0060 next dev -p 4000",
     "build": "node scripts/build-production.js",
     "start": "cross-env NODE_OPTIONS=--disable-warning=DEP0060 node scripts/start-server.js",

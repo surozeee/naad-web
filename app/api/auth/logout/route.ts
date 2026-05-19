@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
+import { API_BASE, backendFetch } from '@/app/lib/api-base';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
-// API base from .env; fallback so app works without .env
-const DEFAULT_API_BASE = 'https://api-naad.jojolapatech.com';
-const rawApiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_AUTH_API_URL ?? '').trim();
-const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/v2\/?$/i, '').replace(/\/api\/?$/, '') : DEFAULT_API_BASE;
 const LOGOUT_URL = `${API_BASE}/api/v2/public/user/logout`;
 
 const AUTH_COOKIE = 'naad_auth';
@@ -45,7 +42,7 @@ export async function POST(request: Request) {
         headers['X-XSRF-TOKEN'] = xsrf;
         headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;
       }
-      await fetch(LOGOUT_URL, {
+      await backendFetch(LOGOUT_URL, {
         method: 'POST',
         headers,
         body: JSON.stringify({ refreshToken: refreshToken || '' }),
