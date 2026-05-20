@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
+import { setAuthAccessExpiryFromExpiresIn } from '@/app/lib/auth-session';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 
 const LOGIN_API = '/api/auth/login';
@@ -70,6 +71,7 @@ export function LoginModal({
           refreshToken?: string;
           access_token?: string;
           refresh_token?: string;
+          expiresIn?: number;
           user?: { id?: string; email?: string; name?: string | null };
         };
         access_token?: string;
@@ -100,6 +102,8 @@ export function LoginModal({
         setLoading(false);
         return;
       }
+
+      setAuthAccessExpiryFromExpiresIn(data.data?.expiresIn);
 
       // Success: tokens are set in cookies by the login API; redirect only on success
       setRedirecting(true);

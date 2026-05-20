@@ -8,7 +8,7 @@ const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';
 const COOKIE_OPTIONS = {
   path: '/',
-  maxAge: 60 * 60 * 24 * 7,
+  maxAge: 60 * 60 * 24 * 10,
   sameSite: 'lax' as const,
   secure: process.env.NODE_ENV === 'production',
 };
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
         access_token?: string;
         refreshToken?: string;
         refresh_token?: string;
+        expiresIn?: number;
       };
       access_token?: string;
       refresh_token?: string;
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
       data.data?.accessToken ?? data.data?.access_token ?? data.access_token ?? '';
     const new_refresh =
       data.data?.refreshToken ?? data.data?.refresh_token ?? data.refresh_token ?? refreshToken;
+    const expires_in = data.data?.expiresIn;
 
     if (!access_token) {
       const errRes = NextResponse.json(
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       access_token,
       refresh_token: new_refresh,
+      ...(typeof expires_in === 'number' && expires_in > 0 ? { expires_in } : {}),
     });
     response.cookies.set(AUTH_COOKIE, access_token, COOKIE_OPTIONS);
     response.cookies.set(REFRESH_COOKIE, new_refresh, COOKIE_OPTIONS);

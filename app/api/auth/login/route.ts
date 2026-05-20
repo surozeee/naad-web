@@ -14,7 +14,8 @@ const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';
 const COOKIE_OPTIONS = {
   path: '/',
-  maxAge: 60 * 60 * 24 * 7, // 7 days
+  /** Match long-lived refresh token (e.g. 10d); access token is short — see proactive refresh. */
+  maxAge: 60 * 60 * 24 * 10,
   sameSite: 'lax' as const,
   secure: process.env.NODE_ENV === 'production',
 };
