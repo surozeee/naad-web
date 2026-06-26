@@ -51,7 +51,11 @@ interface ProfileGlobalResponse {
  * Fetches the current user's profile (uses session/cookies via fetchWithAuth).
  */
 export async function getProfile(): Promise<ProfileApiResponse | null> {
-  const res = await fetchWithAuth('/api/user/profile', { method: 'GET', credentials: 'same-origin' });
+  const res = await fetchWithAuth('/api/user/profile', {
+    method: 'GET',
+    credentials: 'same-origin',
+    ignoreAuthFailure: true,
+  });
   if (!res.ok) return null;
   const json = (await res.json()) as ProfileGlobalResponse;
   return json?.data ?? null;

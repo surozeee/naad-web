@@ -10,6 +10,24 @@ import { getServerXsrfToken } from '@/app/lib/get-xsrf';
 
 const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  USR007: 'Failed to generate authentication token. Please try again in a moment.',
+  IAM007: 'Your account has been locked due to multiple failed login attempts. Please try again later or contact support.',
+};
+
+function resolveLoginErrorMessage(data: {
+  code?: string;
+  message?: string;
+  error?: string;
+}): string {
+  const code = data?.code?.trim();
+  if (code && AUTH_ERROR_MESSAGES[code]) return AUTH_ERROR_MESSAGES[code];
+  const message = data?.message ?? data?.error;
+  if (message?.trim()) return message.trim();
+  if (code === 'USR007') return AUTH_ERROR_MESSAGES.USR007;
+  return 'Invalid email or password.';
+}
+
 const AUTH_COOKIE = 'naad_auth';
 const REFRESH_COOKIE = 'naad_refresh';
 const COOKIE_OPTIONS = {
@@ -38,23 +56,19 @@ export async function POST(request: Request) {
     }
 
     const headers: Record<string, string> = {
-      accept: '*/*',
       'Content-Type': 'application/json',
     };
-    const xsrfFromRequest = request.headers.get('X-XSRF-TOKEN')?.trim();
-    const xsrf = xsrfFromRequest || getServerXsrfToken() || undefined;
-    if (xsrf) {
-      headers['X-XSRF-TOKEN'] = xsrf;
-      headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;
-    }
+    const xsrf = getServerXsrfToken() || request.headers.get('X-XSRF-TOKEN')?.trim() || undefined;
+    if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
 
-    const res = await backendFetch(LOGIN_URL, {
+    const loginBody = JSON.stringify({ email: email.trim(), password });
+    let res = await backendFetch(LOGIN_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ email, password }),
+      body: loginBody,
     });
 
-    const data = (await res.json().catch(() => ({}))) as {
+    let data = (await res.json().catch(() => ({}))) as {
       status?: string;
       code?: string;
       message?: string;
@@ -68,6 +82,24 @@ export async function POST(request: Request) {
       };
     };
 
+    if (data?.status === 'FAILED' && data?.code === 'USR007' && !res.ok) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      res = await backendFetch(LOGIN_URL, {
+        method: 'POST',
+        headers,
+        body: loginBody,
+      });
+      data = (await res.json().catch(() => ({}))) as typeof data;
+    }
+
+    if (data?.status === 'FAILED') {
+      const message = resolveLoginErrorMessage(data);
+      const status =
+        data.code === 'USR007' ? 503 : res.status === 401 || res.status === 403 ? 401 : res.ok ? 401 : res.status;
+      console.error('[Auth] Login backend error:', res.status, LOGIN_URL, data);
+      return NextResponse.json({ message, code: data?.code }, { status });
+    }
+
     if (!res.ok) {
       const message = getBackendHttpErrorMessage(
         res.status,
@@ -79,11 +111,6 @@ export async function POST(request: Request) {
         { message, code: data?.code },
         { status: res.status === 404 ? 502 : res.status }
       );
-    }
-
-    if (data?.status === 'FAILED') {
-      const message = data?.message ?? 'Invalid email or password.';
-      return NextResponse.json({ message, code: data?.code }, { status: 401 });
     }
 
     const access_token =

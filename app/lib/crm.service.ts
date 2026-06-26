@@ -212,9 +212,13 @@ const horoscopeCrud = crud<HoroscopeResponse, HoroscopeRequest, HoroscopeRequest
 
 export const horoscopeApi = {
   ...horoscopeCrud,
+  changePublishStatus: async (id: string, publishStatus: string): Promise<void> => {
+    await request('PATCH', `${EVENT_BASE}/horoscope/change-publish-status`, {
+      headers: { id, publishStatus },
+    });
+  },
   /**
-   * Server-side CSV import (multipart). Requires Event-Service endpoint POST /horoscope/import-csv.
-   * Until implemented, the UI falls back to client-side CSV → drafts → “Sync drafts to server”.
+   * Server-side CSV import (multipart). POST /api/event/horoscope/import-csv → backend multilingual upsert.
    */
   importCsv: async (file: File): Promise<HoroscopeCsvImportResult> => {
     const formData = new FormData();
@@ -224,10 +228,17 @@ export const horoscopeApi = {
       body: formData,
       credentials: 'same-origin',
     });
-    const json = (await res.json().catch(() => ({}))) as GlobalResponse<HoroscopeCsvImportResult>;
+    const json = (await res.json().catch(() => ({}))) as GlobalResponse<HoroscopeCsvImportResult> & HoroscopeCsvImportResult;
     if (!res.ok) throw new Error(json.message ?? json.code ?? `HTTP ${res.status}`);
-    const data = json.data ?? (json as unknown as HoroscopeCsvImportResult);
-    return typeof data === 'object' && data !== null ? data : {};
+    const data = json.data ?? json;
+    if (typeof data === 'object' && data !== null) {
+      return {
+        created: data.created,
+        updated: data.updated,
+        errors: data.errors,
+      };
+    }
+    return {};
   },
 };
 export const horoscopePeriodApi = crud<HoroscopePeriodResponse, HoroscopePeriodRequest, HoroscopePeriodRequest, HoroscopePeriodListRequest>('horoscope-period', EVENT_BASE);

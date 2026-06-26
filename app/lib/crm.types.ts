@@ -72,7 +72,7 @@ export interface HoroscopeScopeListRequest extends CrmListRequest {
 }
 
 /** Backend LanguageEnum code (subset commonly used in admin UI). */
-export type LanguageEnumCode = 'EN' | 'NE' | string;
+export type LanguageEnumCode = 'EN' | 'NE' | 'HI' | string;
 
 export interface ZodiacSignLocaleRequest {
   language: LanguageEnumCode;
@@ -129,32 +129,63 @@ export interface ZodiacSignListRequest extends CrmListRequest {
 }
 
 // ---- Horoscope (Event-Service) ----
+export type HoroscopeTypeEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+export type HoroscopePublishStatusEnum = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+
+/** @deprecated Use HoroscopeTypeEnum on horoscope row instead of period FK */
 export type HoroscopePeriodEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'YEARLY';
 
 export interface HoroscopeLocaleRequest {
   language: LanguageEnumCode;
-  prediction: string;
-  luckyNumber: string;
-  color: string;
-  education: string;
-  expense: string;
+  title?: string;
+  summary?: string;
+  description?: string;
+  love?: string;
+  career?: string;
+  money?: string;
+  health?: string;
+  family?: string;
+  education?: string;
+  travel?: string;
+  advice?: string;
+  mood?: string;
+}
+
+export interface HoroscopeLocaleResponse extends HoroscopeLocaleRequest {
+  id?: string;
 }
 
 export interface HoroscopeRequest {
   zodiacSign: ZodiacSignEnum;
-  periodId: string;
-  prediction: string;
-  luckyNumber: string;
-  color: string;
-  education: string;
-  expense: string;
+  horoscopeType: HoroscopeTypeEnum;
+  title?: string;
+  summary?: string;
+  description?: string;
+  love?: string;
+  career?: string;
+  money?: string;
+  health?: string;
+  family?: string;
+  education?: string;
+  travel?: string;
+  advice?: string;
+  luckyNumber?: string;
+  luckyColor?: string;
+  luckyTime?: string;
+  mood?: string;
+  loveRating?: number;
+  careerRating?: number;
+  moneyRating?: number;
+  healthRating?: number;
+  overallRating?: number;
+  startDate: string;
+  endDate: string;
+  publishStatus?: HoroscopePublishStatusEnum;
   locales?: HoroscopeLocaleRequest[];
 }
 
 export interface HoroscopeResponse extends HoroscopeRequest {
   id: string;
-  period?: HoroscopePeriodEnum;
-  periodName?: string;
   status?: StatusEnum;
   createdAt?: string;
   lastModifiedAt?: string;
@@ -162,7 +193,10 @@ export interface HoroscopeResponse extends HoroscopeRequest {
 
 export interface HoroscopeListRequest extends CrmListRequest {
   zodiacSign?: ZodiacSignEnum;
-  periodId?: string;
+  horoscopeType?: HoroscopeTypeEnum;
+  publishStatus?: HoroscopePublishStatusEnum;
+  startDate?: string;
+  endDate?: string;
   status?: StatusEnum;
 }
 

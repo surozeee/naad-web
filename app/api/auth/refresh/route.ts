@@ -104,11 +104,10 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error('[Auth] Refresh error:', error);
-    const res = NextResponse.json(
+    const status = isBackendNetworkError(error) ? 503 : 500;
+    return NextResponse.json(
       { message: isBackendNetworkError(error) ? getBackendNetworkErrorMessage(error) : 'Refresh failed' },
-      { status: isBackendNetworkError(error) ? 503 : 500 }
+      { status }
     );
-    clearAuthCookies(res);
-    return res;
   }
 }

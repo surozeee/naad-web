@@ -1,52 +1,49 @@
 'use client';
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { CloudUpload, Download, FileSpreadsheet, Globe, Loader2, Pencil, Plus, RefreshCw, Save, Trash2, Upload } from 'lucide-react';
+import { CloudUpload, Download, FileSpreadsheet, Loader2, Pencil, Plus, RefreshCw, Save, Trash2, Upload } from 'lucide-react';
 import DashboardLayout from '@/app/components/DashboardLayout';
 import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '@/app/components/common/PageHeaderWithInfo';
-import { horoscopeApi, horoscopePeriodApi } from '@/app/lib/crm.service';
-import type {
-  HoroscopePeriodEnum,
-  HoroscopePeriodResponse,
-  HoroscopeRequest,
-  HoroscopeResponse,
-} from '@/app/lib/crm.types';
-
-type LanguageCode = 'en' | 'np' | 'hi';
-type ZodiacOption =
-  | 'ARIES'
-  | 'TAURUS'
-  | 'GEMINI'
-  | 'CANCER'
-  | 'LEO'
-  | 'VIRGO'
-  | 'LIBRA'
-  | 'SCORPIO'
-  | 'SAGITTARIUS'
-  | 'CAPRICORN'
-  | 'AQUARIUS'
-  | 'PISCES';
-
-type LocalizedText = Record<LanguageCode, string>;
+import { horoscopeApi } from '@/app/lib/crm.service';
+import { masterService } from '@/app/lib/master.service';
+import {
+  buildHoroscopeRequest,
+  createEmptyLocalizedFields,
+  DEFAULT_HOROSCOPE_LANGUAGES,
+  findHoroscopeLanguage,
+  getBaseHoroscopeLanguage,
+  getHoroscopeTextForLanguage,
+  hasHoroscopeTranslation,
+  HOROSCOPE_TEXT_FIELDS,
+  resolveHoroscopeLanguages,
+  type HoroscopeLanguageOption,
+  type HoroscopeLocalizedFields,
+  type HoroscopeTextField,
+  validateHoroscopeMultilangEntry,
+} from '@/app/lib/horoscope-multilang';
+import type { HoroscopeResponse, HoroscopeTypeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
+import { HoroscopeLanguageTabs } from '@/app/horoscope/components/HoroscopeLanguageTabs';
 
 interface HoroscopeEntry {
   id: string;
-  periodId: string;
-  zodiacSign: ZodiacOption;
+  horoscopeType: HoroscopeTypeEnum;
+  startDate: string;
+  endDate: string;
+  zodiacSign: ZodiacSignEnum;
   luckyNumber: string;
-  prediction: LocalizedText;
-  color: LocalizedText;
-  education: LocalizedText;
-  expense: LocalizedText;
+  luckyColor: string;
+  luckyTime: string;
+  localized: HoroscopeLocalizedFields;
   serverId?: string;
 }
 
 type HoroscopeFormState = Omit<HoroscopeEntry, 'id' | 'serverId'>;
 
-const STORAGE_KEY = 'horoscope-add-csv-drafts-v3';
+const STORAGE_KEY = 'horoscope-add-csv-drafts-v4';
+const TYPE_TABS: HoroscopeTypeEnum[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
 
-const ZODIAC_OPTIONS: Array<{ value: ZodiacOption; label: string }> = [
+const ZODIAC_OPTIONS: Array<{ value: ZodiacSignEnum; label: string }> = [
   { value: 'ARIES', label: 'Aries' },
   { value: 'TAURUS', label: 'Taurus' },
   { value: 'GEMINI', label: 'Gemini' },
@@ -61,46 +58,59 @@ const ZODIAC_OPTIONS: Array<{ value: ZodiacOption; label: string }> = [
   { value: 'PISCES', label: 'Pisces' },
 ];
 
-const LANGUAGES: Array<{ code: LanguageCode; label: string; badge: string }> = [
-  { code: 'en', label: 'English', badge: 'EN' },
-  { code: 'np', label: 'Nepali', badge: 'NP' },
-  { code: 'hi', label: 'Hindi', badge: 'HI' },
-];
-
-const CSV_HEADERS = [
-  'periodId',
-  'period',
-  'zodiacSign',
-  'luckyNumber',
-  'prediction_en',
-  'prediction_np',
-  'prediction_hi',
-  'color_en',
-  'color_np',
-  'color_hi',
-  'education_en',
-  'education_np',
-  'education_hi',
-  'expense_en',
-  'expense_np',
-  'expense_hi',
-] as const;
-
-const PERIOD_SLUG_TO_ENUM: Record<string, HoroscopePeriodEnum> = {
-  daily: 'DAILY',
-  weekly: 'WEEKLY',
-  monthly: 'MONTHLY',
-  yearly: 'YEARLY',
+const FIELD_LABELS: Record<HoroscopeTextField, string> = {
+  title: 'Title',
+  summary: 'Overview',
+  description: 'Description',
+  love: 'Love',
+  career: 'Career',
+  money: 'Money',
+  health: 'Health',
+  family: 'Family',
+  education: 'Education',
+  travel: 'Travel',
+  advice: 'Advice',
+  mood: 'Mood',
 };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CSV_BASE_HEADERS = [
+  'horoscopeType',
+  'zodiacSign',
+  'startDate',
+  'endDate',
+  'luckyNumber',
+  'luckyColor',
+  'luckyTime',
+] as const;
 
-function createLocalizedText(): LocalizedText {
-  return { en: '', np: '', hi: '' };
+const CSV_HEADERS = [
+  ...CSV_BASE_HEADERS,
+  ...HOROSCOPE_TEXT_FIELDS.flatMap((f) => [`${f}_en`, `${f}_np`, `${f}_hi`]),
+] as const;
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function createEntryId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createInitialForm(
+  type: HoroscopeTypeEnum,
+  languages: HoroscopeLanguageOption[] = DEFAULT_HOROSCOPE_LANGUAGES
+): HoroscopeFormState {
+  const d = todayIso();
+  return {
+    horoscopeType: type,
+    startDate: d,
+    endDate: d,
+    zodiacSign: 'ARIES',
+    luckyNumber: '',
+    luckyColor: '',
+    luckyTime: '',
+    localized: createEmptyLocalizedFields(languages),
+  };
 }
 
 function parseCsvRows(text: string): string[][] {
@@ -112,249 +122,126 @@ function parseCsvRows(text: string): string[][] {
   for (let i = 0; i < text.length; i += 1) {
     const char = text[i];
     const nextChar = text[i + 1];
-
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
         currentCell += '"';
         i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (char === ',' && !inQuotes) {
-      currentRow.push(currentCell.trim());
+      } else inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      currentRow.push(currentCell);
       currentCell = '';
-      continue;
-    }
-
-    if ((char === '\n' || char === '\r') && !inQuotes) {
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
       if (char === '\r' && nextChar === '\n') i += 1;
-      currentRow.push(currentCell.trim());
-      if (currentRow.some((value) => value !== '')) rows.push(currentRow);
-      currentCell = '';
+      currentRow.push(currentCell);
+      if (currentRow.some((c) => c.trim())) rows.push(currentRow);
       currentRow = [];
-      continue;
-    }
-
-    currentCell += char;
+      currentCell = '';
+    } else currentCell += char;
   }
-
-  if (currentCell !== '' || currentRow.length > 0) {
-    currentRow.push(currentCell.trim());
-    if (currentRow.some((value) => value !== '')) rows.push(currentRow);
-  }
-
+  currentRow.push(currentCell);
+  if (currentRow.some((c) => c.trim())) rows.push(currentRow);
   return rows;
 }
 
 function normalizeCsvValue(value: string): string {
-  return value.trim().replace(/^"|"$/g, '');
+  return value.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
 }
 
 function escapeCsvCell(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;
 }
 
-function isValidZodiac(value: string): value is ZodiacOption {
+function isValidZodiac(value: string): value is ZodiacSignEnum {
   return ZODIAC_OPTIONS.some((item) => item.value === value);
 }
 
-function resolveLocalizedField(
-  rowData: Record<string, string>,
-  baseName: 'prediction' | 'color' | 'education' | 'expense'
-): LocalizedText {
-  const fallback = rowData[baseName] ?? '';
+function resolveLocalizedField(rowData: Record<string, string>, field: HoroscopeTextField) {
+  const fallback = rowData[field] ?? '';
   return {
-    en: rowData[`${baseName}_en`] ?? fallback,
-    np: rowData[`${baseName}_np`] ?? fallback,
-    hi: rowData[`${baseName}_hi`] ?? fallback,
+    en: rowData[`${field}_en`] ?? fallback,
+    np: rowData[`${field}_np`] ?? '',
+    hi: rowData[`${field}_hi`] ?? '',
   };
 }
 
-function periodLabel(periods: HoroscopePeriodResponse[], periodId: string): string {
-  const p = periods.find((x) => x.id === periodId);
-  if (!p) return periodId.slice(0, 8) + '…';
-  return `${p.name} (${p.horoscope})`;
-}
-
-function resolvePeriodIdFromRow(
-  rowData: Record<string, string>,
-  periods: HoroscopePeriodResponse[]
-): string | null {
-  const rawId = (rowData.periodid ?? rowData.periodId ?? '').trim();
-  if (rawId && UUID_RE.test(rawId)) {
-    if (periods.some((p) => p.id === rawId)) return rawId;
-  }
-  const slug = (rowData.period ?? '').trim().toLowerCase();
-  if (!slug) return null;
-  const asEnum = PERIOD_SLUG_TO_ENUM[slug] ?? (slug.toUpperCase() as HoroscopePeriodEnum);
-  const match = periods.find((p) => p.horoscope === asEnum);
-  return match?.id ?? null;
-}
-
-function entryToRequest(entry: HoroscopeEntry, periodId: string): HoroscopeRequest {
-  const ln = entry.luckyNumber.trim();
-  const locales = [
-    {
-      language: 'NE' as const,
-      prediction: entry.prediction.np.trim(),
-      luckyNumber: ln,
-      color: entry.color.np.trim(),
-      education: entry.education.np.trim(),
-      expense: entry.expense.np.trim(),
-    },
-    {
-      language: 'HI' as const,
-      prediction: entry.prediction.hi.trim(),
-      luckyNumber: ln,
-      color: entry.color.hi.trim(),
-      education: entry.education.hi.trim(),
-      expense: entry.expense.hi.trim(),
-    },
-  ];
+function entryToMultilangEntry(entry: HoroscopeEntry) {
   return {
     zodiacSign: entry.zodiacSign,
-    periodId,
-    prediction: entry.prediction.en.trim(),
-    luckyNumber: ln,
-    color: entry.color.en.trim(),
-    education: entry.education.en.trim(),
-    expense: entry.expense.en.trim(),
-    locales,
+    horoscopeType: entry.horoscopeType,
+    startDate: entry.startDate,
+    endDate: entry.endDate,
+    luckyNumber: entry.luckyNumber,
+    luckyColor: entry.luckyColor,
+    luckyTime: entry.luckyTime,
+    localized: entry.localized,
   };
 }
 
-function migrateLegacyStoredEntry(
-  raw: Record<string, unknown>,
-  periods: HoroscopePeriodResponse[]
-): HoroscopeEntry | null {
-  if (raw.periodId && typeof raw.periodId === 'string' && raw.zodiacSign) {
-    return raw as unknown as HoroscopeEntry;
-  }
-  const legacyPeriod = raw.period as string | undefined;
-  const slug = legacyPeriod?.toLowerCase() ?? '';
-  const enumVal = PERIOD_SLUG_TO_ENUM[slug];
-  const pid = enumVal ? periods.find((p) => p.horoscope === enumVal)?.id : undefined;
-  if (!pid || !raw.zodiacSign) return null;
-  return {
-    id: typeof raw.id === 'string' ? raw.id : createEntryId(),
-    periodId: pid,
-    zodiacSign: raw.zodiacSign as ZodiacOption,
-    luckyNumber: String(raw.luckyNumber ?? ''),
-    prediction: (raw.prediction as LocalizedText) ?? createLocalizedText(),
-    color: (raw.color as LocalizedText) ?? createLocalizedText(),
-    education: (raw.education as LocalizedText) ?? createLocalizedText(),
-    expense: (raw.expense as LocalizedText) ?? createLocalizedText(),
-    serverId: typeof raw.serverId === 'string' ? raw.serverId : undefined,
-  };
-}
 
 export default function AddHoroscopeCsvPage() {
-  const [periods, setPeriods] = useState<HoroscopePeriodResponse[]>([]);
-  const [periodsLoading, setPeriodsLoading] = useState(true);
-  const [periodsError, setPeriodsError] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState<HoroscopeFormState | null>(null);
+  const [languages, setLanguages] = useState<HoroscopeLanguageOption[]>(DEFAULT_HOROSCOPE_LANGUAGES);
+  const [activeType, setActiveType] = useState<HoroscopeTypeEnum>('DAILY');
+  const [formData, setFormData] = useState<HoroscopeFormState>(() => createInitialForm('DAILY'));
   const [entries, setEntries] = useState<HoroscopeEntry[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeLanguage, setActiveLanguage] = useState<LanguageCode>('en');
+  const [activeLanguage, setActiveLanguage] = useState('en');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [csvMessage, setCsvMessage] = useState('');
-
   const [serverRows, setServerRows] = useState<HoroscopeResponse[]>([]);
   const [serverLoading, setServerLoading] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-
   const [syncing, setSyncing] = useState(false);
   const [serverCsvBusy, setServerCsvBusy] = useState(false);
   const [draftsHydrated, setDraftsHydrated] = useState(false);
 
-  const workingPeriodId = formData?.periodId ?? '';
+  const activeLangOption = useMemo(
+    () => findHoroscopeLanguage(languages, activeLanguage) ?? getBaseHoroscopeLanguage(languages),
+    [languages, activeLanguage]
+  );
 
-  const loadPeriods = useCallback(async () => {
-    setPeriodsLoading(true);
-    setPeriodsError(null);
-    try {
-      const { data } = await horoscopePeriodApi.listActive();
-      const list = data ?? [];
-      setPeriods(list);
-      setFormData((prev) => {
-        if (prev && list.some((p) => p.id === prev.periodId)) return prev;
-        const first = list[0];
-        if (!first) return prev;
-        return {
-          periodId: first.id,
-          zodiacSign: 'ARIES',
-          luckyNumber: '',
-          prediction: createLocalizedText(),
-          color: createLocalizedText(),
-          education: createLocalizedText(),
-          expense: createLocalizedText(),
-        };
-      });
-    } catch (e) {
-      setPeriodsError(e instanceof Error ? e.message : 'Failed to load horoscope periods');
-    } finally {
-      setPeriodsLoading(false);
-    }
+  useEffect(() => {
+    masterService.language
+      .listActive()
+      .then((res) => {
+        const raw = res?.data;
+        const arr = Array.isArray(raw) ? (raw as Array<Record<string, unknown>>) : [];
+        setLanguages(resolveHoroscopeLanguages(arr));
+      })
+      .catch(() => undefined);
   }, []);
 
   const refreshServerList = useCallback(async () => {
-    if (!workingPeriodId) {
-      setServerRows([]);
-      return;
-    }
     setServerLoading(true);
-    setServerError(null);
     try {
       const res = await horoscopeApi.list({
         pageNo: 0,
         pageSize: 200,
-        periodId: workingPeriodId,
+        horoscopeType: activeType,
         status: 'ACTIVE',
       });
-      const items = res.result ?? res.content ?? [];
-      setServerRows(items);
-    } catch (e) {
-      setServerError(e instanceof Error ? e.message : 'Failed to load horoscopes');
+      setServerRows((res.result ?? res.content ?? []) as HoroscopeResponse[]);
+    } catch {
       setServerRows([]);
     } finally {
       setServerLoading(false);
     }
-  }, [workingPeriodId]);
+  }, [activeType]);
 
   useEffect(() => {
-    loadPeriods();
-  }, [loadPeriods]);
-
-  useEffect(() => {
-    if (periods.length === 0) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as unknown;
-        if (Array.isArray(parsed)) {
-          const next: HoroscopeEntry[] = [];
-          for (const item of parsed) {
-            if (item && typeof item === 'object') {
-              const m = migrateLegacyStoredEntry(item as Record<string, unknown>, periods);
-              if (m) next.push(m);
-            }
-          }
-          if (next.length > 0) setEntries(next);
-        }
+        const parsed = JSON.parse(raw) as HoroscopeEntry[];
+        if (Array.isArray(parsed)) setEntries(parsed);
       }
     } catch {
       /* ignore */
     } finally {
       setDraftsHydrated(true);
     }
-  }, [periods]);
+  }, []);
 
   useEffect(() => {
     if (!draftsHydrated) return;
@@ -369,116 +256,73 @@ export default function AddHoroscopeCsvPage() {
     refreshServerList();
   }, [refreshServerList]);
 
-  const createInitialFormForPeriod = (periodId: string): HoroscopeFormState => ({
-    periodId,
-    zodiacSign: 'ARIES',
-    luckyNumber: '',
-    prediction: createLocalizedText(),
-    color: createLocalizedText(),
-    education: createLocalizedText(),
-    expense: createLocalizedText(),
-  });
-
   useEffect(() => {
-    if (!periodsLoading && periods.length > 0 && !formData) {
-      setFormData(createInitialFormForPeriod(periods[0].id));
-    }
-  }, [periodsLoading, periods, formData]);
+    setFormData((prev) => ({ ...prev, horoscopeType: activeType }));
+  }, [activeType]);
 
   const totals = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const e of entries) {
-      map.set(e.periodId, (map.get(e.periodId) ?? 0) + 1);
-    }
-    return periods.map((p) => ({
-      periodId: p.id,
-      label: `${p.name} (${p.horoscope})`,
-      count: map.get(p.id) ?? 0,
+    return TYPE_TABS.map((t) => ({
+      type: t,
+      count: entries.filter((e) => e.horoscopeType === t).length,
     }));
-  }, [entries, periods]);
+  }, [entries]);
 
   const groupedEntries = useMemo(() => {
-    return periods.map((p) => ({
-      periodId: p.id,
-      label: `${p.name} (${p.horoscope})`,
-      items: entries.filter((e) => e.periodId === p.id),
+    return TYPE_TABS.map((t) => ({
+      type: t,
+      items: entries.filter((e) => e.horoscopeType === t),
     }));
-  }, [entries, periods]);
+  }, [entries]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => (prev ? { ...prev, [name]: value } : prev));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  const handleLocalizedChange = (
-    section: 'prediction' | 'color' | 'education' | 'expense',
-    lang: LanguageCode,
-    value: string
-  ) => {
-    setFormData((prev) =>
-      prev
-        ? {
-            ...prev,
-            [section]: { ...prev[section], [lang]: value },
-          }
-        : prev
-    );
-    const key = `${section}_${lang}`;
+  const handleLocalizedChange = (field: HoroscopeTextField, lang: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      localized: {
+        ...prev.localized,
+        [field]: { ...prev.localized[field], [lang]: value },
+      },
+    }));
+    const key = `${field}_${lang}`;
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
   };
 
   const validateForm = (): boolean => {
-    if (!formData) return false;
+    const base = getBaseHoroscopeLanguage(languages);
     const nextErrors: Record<string, string> = {};
-    if (!formData.periodId) nextErrors.periodId = 'Select a horoscope period';
     if (!formData.zodiacSign) nextErrors.zodiacSign = 'Zodiac sign is required';
-    if (!formData.luckyNumber.trim()) nextErrors.luckyNumber = 'Lucky number is required';
-    for (const lang of LANGUAGES) {
-      if (!formData.prediction[lang.code].trim()) nextErrors[`prediction_${lang.code}`] = `Prediction (${lang.label}) is required`;
-      if (!formData.color[lang.code].trim()) nextErrors[`color_${lang.code}`] = `Color (${lang.label}) is required`;
-      if (!formData.education[lang.code].trim()) nextErrors[`education_${lang.code}`] = `Education (${lang.label}) is required`;
-      if (!formData.expense[lang.code].trim()) nextErrors[`expense_${lang.code}`] = `Expense (${lang.label}) is required`;
+    if (!formData.startDate) nextErrors.startDate = 'Start date is required';
+    if (!formData.endDate) nextErrors.endDate = 'End date is required';
+    if (!formData.localized.title[base.uiCode]?.trim()) {
+      nextErrors[`title_${base.uiCode}`] = `${base.label} title is required`;
+    }
+    if (!formData.localized.summary[base.uiCode]?.trim()) {
+      nextErrors[`summary_${base.uiCode}`] = `${base.label} summary is required`;
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
   const resetForm = () => {
-    const pid = formData?.periodId ?? periods[0]?.id ?? '';
-    setFormData(pid ? createInitialFormForPeriod(pid) : null);
+    setFormData(createInitialForm(activeType, languages));
     setErrors({});
     setEditingId(null);
-    setActiveLanguage('en');
+    setActiveLanguage(getBaseHoroscopeLanguage(languages).uiCode);
   };
 
   const handleAddOrUpdate = () => {
-    if (!validateForm() || !formData) return;
+    if (!validateForm()) return;
     const payload: HoroscopeEntry = {
       id: editingId ?? createEntryId(),
-      periodId: formData.periodId,
-      zodiacSign: formData.zodiacSign,
+      ...formData,
       luckyNumber: formData.luckyNumber.trim(),
-      prediction: {
-        en: formData.prediction.en.trim(),
-        np: formData.prediction.np.trim(),
-        hi: formData.prediction.hi.trim(),
-      },
-      color: {
-        en: formData.color.en.trim(),
-        np: formData.color.np.trim(),
-        hi: formData.color.hi.trim(),
-      },
-      education: {
-        en: formData.education.en.trim(),
-        np: formData.education.np.trim(),
-        hi: formData.education.hi.trim(),
-      },
-      expense: {
-        en: formData.expense.en.trim(),
-        np: formData.expense.np.trim(),
-        hi: formData.expense.hi.trim(),
-      },
+      luckyColor: formData.luckyColor.trim(),
+      luckyTime: formData.luckyTime.trim(),
       serverId: editingId ? entries.find((x) => x.id === editingId)?.serverId : undefined,
     };
     setEntries((prev) => (editingId ? prev.map((item) => (item.id === editingId ? payload : item)) : [payload, ...prev]));
@@ -487,14 +331,16 @@ export default function AddHoroscopeCsvPage() {
   };
 
   const handleEdit = (entry: HoroscopeEntry) => {
+    setActiveType(entry.horoscopeType);
     setFormData({
-      periodId: entry.periodId,
+      horoscopeType: entry.horoscopeType,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
       zodiacSign: entry.zodiacSign,
       luckyNumber: entry.luckyNumber,
-      prediction: { ...entry.prediction },
-      color: { ...entry.color },
-      education: { ...entry.education },
-      expense: { ...entry.expense },
+      luckyColor: entry.luckyColor,
+      luckyTime: entry.luckyTime,
+      localized: JSON.parse(JSON.stringify(entry.localized)) as HoroscopeLocalizedFields,
     });
     setEditingId(entry.id);
     setCsvMessage('');
@@ -506,24 +352,10 @@ export default function AddHoroscopeCsvPage() {
     setCsvMessage('Draft removed.');
   };
 
-  const clearAllDrafts = () => {
-    setEntries([]);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    setCsvMessage('All local drafts cleared.');
-  };
-
   const handleCsvUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (periods.length === 0) {
-      setCsvMessage('Load horoscope periods first.');
-      return;
-    }
     try {
       const text = await file.text();
       const rows = parseCsvRows(text);
@@ -532,79 +364,70 @@ export default function AddHoroscopeCsvPage() {
         return;
       }
       const headerMap = rows[0].map((cell) => normalizeCsvValue(cell).toLowerCase());
-      const requiredMultilang = CSV_HEADERS.filter((h) => h !== 'periodId' && h !== 'period');
-      const hasMultilang = requiredMultilang.every((header) => headerMap.includes(header));
-      const hasLegacy = ['zodiacsign', 'prediction', 'luckynumber', 'color', 'education', 'expense'].every((h) => headerMap.includes(h));
-      if (!hasMultilang && !hasLegacy) {
-        setCsvMessage('Invalid CSV headers. Use the template from “Download sample CSV”.');
-        return;
-      }
-      const importedEntries: HoroscopeEntry[] = [];
+      const imported: HoroscopeEntry[] = [];
       for (const row of rows.slice(1)) {
-        const rowData = Object.fromEntries(headerMap.map((header, index) => [header, normalizeCsvValue(row[index] ?? '')])) as Record<
-          string,
-          string
-        >;
-        const periodId = resolvePeriodIdFromRow(rowData, periods);
-        const zodiacSign = rowData.zodiacsign?.toUpperCase() ?? '';
-        if (!periodId || !isValidZodiac(zodiacSign)) continue;
-        importedEntries.push({
+        const rowData = Object.fromEntries(
+          headerMap.map((header, index) => [header, normalizeCsvValue(row[index] ?? '')])
+        ) as Record<string, string>;
+        const horoscopeType = (rowData.horoscopetype ?? rowData.period ?? activeType).toUpperCase() as HoroscopeTypeEnum;
+        const zodiacSign = (rowData.zodiacsign ?? '').toUpperCase();
+        const startDate = rowData.startdate ?? todayIso();
+        const endDate = rowData.enddate ?? startDate;
+        if (!TYPE_TABS.includes(horoscopeType) || !isValidZodiac(zodiacSign)) continue;
+        const localized = HOROSCOPE_TEXT_FIELDS.reduce((acc, field) => {
+          acc[field] = resolveLocalizedField(rowData, field);
+          return acc;
+        }, createEmptyLocalizedFields());
+        imported.push({
           id: createEntryId(),
-          periodId,
+          horoscopeType,
+          startDate,
+          endDate,
           zodiacSign,
           luckyNumber: rowData.luckynumber ?? '',
-          prediction: resolveLocalizedField(rowData, 'prediction'),
-          color: resolveLocalizedField(rowData, 'color'),
-          education: resolveLocalizedField(rowData, 'education'),
-          expense: resolveLocalizedField(rowData, 'expense'),
+          luckyColor: rowData.luckycolor ?? rowData.color ?? '',
+          luckyTime: rowData.luckytime ?? '',
+          localized,
         });
       }
-      if (importedEntries.length === 0) {
-        setCsvMessage('No valid rows. Each row needs a matching periodId or period (daily/weekly/monthly/yearly) and a valid zodiacSign.');
+      if (imported.length === 0) {
+        setCsvMessage('No valid rows. Check horoscopeType, zodiacSign, startDate, endDate.');
         return;
       }
-      setEntries((prev) => [...importedEntries, ...prev]);
-      setCsvMessage(`${importedEntries.length} row(s) imported into drafts.`);
+      setEntries((prev) => [...imported, ...prev]);
+      setCsvMessage(`${imported.length} row(s) imported into drafts.`);
     } catch {
       setCsvMessage('Failed to read CSV file.');
     }
   };
 
   const handleDownloadSample = () => {
-    const pid = formData?.periodId ?? periods[0]?.id ?? '';
-    if (!pid) {
-      setCsvMessage('No period available for the sample file.');
-      return;
-    }
     const headerLine = CSV_HEADERS.map(escapeCsvCell).join(',');
-    const sample = [
-      pid,
-      '',
+    const localized = createEmptyLocalizedFields();
+    localized.title.en = 'A productive day ahead';
+    localized.summary.en = 'Today brings fresh energy.';
+    const sampleCells = [
+      activeType,
       'ARIES',
+      todayIso(),
+      todayIso(),
       '7',
-      'Great day',
-      'उत्तम दिन',
-      'शानदार दिन',
       'Red',
-      'रातो',
-      'लाल',
-      'Good progress',
-      'राम्रो प्रगति',
-      'अच्छी प्रगति',
-      'Balanced',
-      'सन्तुलित',
-      'संतुलित',
-    ]
-      .map(escapeCsvCell)
-      .join(',');
-    const blob = new Blob([`${headerLine}\n${sample}\n`], { type: 'text/csv;charset=utf-8' });
+      '10:00 AM - 12:00 PM',
+      ...HOROSCOPE_TEXT_FIELDS.flatMap((f) => [
+        localized[f].en,
+        localized[f].np,
+        localized[f].hi,
+      ]),
+    ];
+    const blob = new Blob([`${headerLine}\n${sampleCells.map(escapeCsvCell).join(',')}\n`], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'horoscope-multilingual-template.csv';
     a.click();
     URL.revokeObjectURL(url);
-    setCsvMessage('Sample CSV downloaded. Replace periodId with your horoscope period UUID from the dropdown if needed.');
+    setCsvMessage('Sample CSV downloaded.');
   };
 
   const handleSyncDrafts = async () => {
@@ -615,49 +438,48 @@ export default function AddHoroscopeCsvPage() {
     setSyncing(true);
     setCsvMessage('');
     try {
-      const byPeriod = new Map<string, HoroscopeEntry[]>();
-      for (const en of entries) {
-        const list = byPeriod.get(en.periodId) ?? [];
-        list.push(en);
-        byPeriod.set(en.periodId, list);
-      }
       const idUpdates = new Map<string, string>();
-      for (const [periodId, list] of byPeriod) {
-        let res = await horoscopeApi.list({
-          pageNo: 0,
-          pageSize: 500,
-          periodId,
-          status: 'ACTIVE',
-        });
-        let existing = res.result ?? res.content ?? [];
-        const byZodiac = new Map<string, string>();
-        for (const h of existing) {
-          if (h.zodiacSign) byZodiac.set(h.zodiacSign, h.id);
+      const rowErrors: string[] = [];
+      for (const entry of entries) {
+        const validationError = validateHoroscopeMultilangEntry(entryToMultilangEntry(entry), languages);
+        if (validationError) {
+          rowErrors.push(`${entry.zodiacSign}: ${validationError}`);
+          continue;
         }
-        for (const entry of list) {
-          const body = entryToRequest(entry, periodId);
-          const existingId = entry.serverId ?? byZodiac.get(entry.zodiacSign);
+        const body = buildHoroscopeRequest(entryToMultilangEntry(entry), languages);
+        const existingId = entry.serverId;
+        try {
           if (existingId) {
             await horoscopeApi.update(existingId, body);
             idUpdates.set(entry.id, existingId);
           } else {
-            await horoscopeApi.create(body);
+            const res = await horoscopeApi.list({
+              pageNo: 0,
+              pageSize: 1,
+              horoscopeType: entry.horoscopeType,
+              startDate: entry.startDate,
+              endDate: entry.endDate,
+              zodiacSign: entry.zodiacSign,
+              status: 'ACTIVE',
+            });
+            const found = ((res.result ?? res.content ?? []) as HoroscopeResponse[])[0];
+            if (found) {
+              await horoscopeApi.update(found.id, body);
+              idUpdates.set(entry.id, found.id);
+            } else {
+              await horoscopeApi.create(body);
+            }
           }
-        }
-        res = await horoscopeApi.list({
-          pageNo: 0,
-          pageSize: 500,
-          periodId,
-          status: 'ACTIVE',
-        });
-        existing = res.result ?? res.content ?? [];
-        for (const entry of list) {
-          const found = existing.find((h) => h.zodiacSign === entry.zodiacSign);
-          if (found) idUpdates.set(entry.id, found.id);
+        } catch (err) {
+          rowErrors.push(`${entry.zodiacSign}: ${err instanceof Error ? err.message : 'Save failed'}`);
         }
       }
       setEntries((prev) => prev.map((e) => (idUpdates.has(e.id) ? { ...e, serverId: idUpdates.get(e.id) } : e)));
-      setCsvMessage('Drafts synced to the server (create/update by zodiac + period).');
+      setCsvMessage(
+        rowErrors.length > 0
+          ? `Synced with ${rowErrors.length} error(s): ${rowErrors.slice(0, 3).join('; ')}`
+          : 'Drafts synced (upsert by zodiac + type + date range).'
+      );
       await refreshServerList();
     } catch (e) {
       setCsvMessage(e instanceof Error ? e.message : 'Sync failed');
@@ -671,7 +493,6 @@ export default function AddHoroscopeCsvPage() {
     e.target.value = '';
     if (!file) return;
     setServerCsvBusy(true);
-    setCsvMessage('');
     try {
       const result = await horoscopeApi.importCsv(file);
       const parts: string[] = [];
@@ -681,411 +502,177 @@ export default function AddHoroscopeCsvPage() {
       setCsvMessage(parts.length ? `Server CSV: ${parts.join(', ')}` : 'Server CSV import finished.');
       await refreshServerList();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Server CSV import failed';
-      if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
-        setCsvMessage(
-          'Server CSV endpoint is not available yet. Use client CSV import and “Sync drafts to server”, or add POST /horoscope/import-csv on Event-Service.'
-        );
-      } else {
-        setCsvMessage(msg);
-      }
+      setCsvMessage(err instanceof Error ? err.message : 'Server CSV import failed');
     } finally {
       setServerCsvBusy(false);
     }
   };
 
-  const activeLangLabel = LANGUAGES.find((lang) => lang.code === activeLanguage)?.label ?? 'English';
-  const activePredictionError = errors[`prediction_${activeLanguage}`];
-  const activeColorError = errors[`color_${activeLanguage}`];
-  const activeEducationError = errors[`education_${activeLanguage}`];
-  const activeExpenseError = errors[`expense_${activeLanguage}`];
-
-  if (periodsLoading && periods.length === 0) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center gap-2 py-24 text-slate-600 dark:text-slate-400">
-          <Loader2 className="animate-spin" size={22} />
-          Loading horoscope periods…
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Add Horoscope CSV' }]} />
-
         <PageHeaderWithInfo
           title="Horoscope CSV Manager"
-          infoText="Drafts are stored in this browser. Pick an Event-Service horoscope period (UUID), edit EN / NP / HI fields, import CSV, then sync to create or update horoscopes. Nepali maps to backend language NE."
+          infoText="Choose a period type and language. Each language has its own list — English is the base record; other languages are locale translations. New languages from master settings appear automatically."
         />
 
-        {periodsError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-            {periodsError}{' '}
-            <button type="button" onClick={() => loadPeriods()} className="underline font-semibold">
-              Retry
+        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
+          {TYPE_TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                activeType === t ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'
+              }`}
+              onClick={() => setActiveType(t)}
+            >
+              {t.charAt(0) + t.slice(1).toLowerCase()}
             </button>
-          </div>
-        ) : null}
+          ))}
+        </div>
 
-        {periods.length === 0 && !periodsLoading ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-            No active horoscope periods. Create periods in CRM first, then reload this page.
-          </div>
-        ) : null}
+        <HoroscopeLanguageTabs
+          languages={languages}
+          activeUiCode={activeLanguage}
+          onChange={setActiveLanguage}
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {totals.map((item) => (
-            <div key={item.periodId} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-              <div className="text-sm text-slate-500 dark:text-slate-400">{item.label}</div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{item.count}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">Local drafts</div>
+            <div key={item.type} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+              <div className="text-sm text-slate-500">{item.type}</div>
+              <div className="text-2xl font-bold mt-1">{item.count}</div>
+              <div className="text-xs text-slate-400">local drafts</div>
             </div>
           ))}
         </div>
 
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Saved on server (selected period)</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Same period as in the form below.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => refreshServerList()}
-              disabled={!workingPeriodId || serverLoading}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 disabled:opacity-50"
-            >
-              {serverLoading ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
-              Refresh
-            </button>
-          </div>
-          <div className="p-6">
-            {serverError ? <p className="text-sm text-red-600 mb-3">{serverError}</p> : null}
-            {!workingPeriodId ? (
-              <p className="text-sm text-slate-500">Select a period in the form to load server horoscopes.</p>
-            ) : serverRows.length === 0 && !serverLoading ? (
-              <p className="text-sm text-slate-500">No active horoscopes for this period yet.</p>
-            ) : (
-              <ul className="space-y-2 max-h-56 overflow-y-auto">
-                {serverRows.map((h) => (
-                  <li
-                    key={h.id}
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm flex flex-wrap justify-between gap-2"
-                  >
-                    <span className="font-semibold text-slate-900 dark:text-white">{h.zodiacSign}</span>
-                    <span className="text-slate-600 dark:text-slate-400 line-clamp-2">{h.prediction}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)] gap-6">
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{editingId ? 'Edit draft' : 'Create draft'}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">English is stored as the main record; Nepali (NE) and Hindi are stored as locales.</p>
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-lg font-bold">{editingId ? 'Edit draft' : 'Create draft'}</h2>
             </div>
-
-            {formData ? (
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="periodId" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      Horoscope period (backend)
-                    </label>
-                    <select
-                      id="periodId"
-                      name="periodId"
-                      value={formData.periodId}
-                      onChange={handleInputChange}
-                      className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                    >
-                      {periods.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name} ({option.horoscope})
-                        </option>
-                      ))}
-                    </select>
-                    {errors.periodId ? <p className="mt-1 text-xs text-red-600">{errors.periodId}</p> : null}
-                  </div>
-
-                  <div>
-                    <label htmlFor="zodiacSign" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      Zodiac sign
-                    </label>
-                    <select
-                      id="zodiacSign"
-                      name="zodiacSign"
-                      value={formData.zodiacSign}
-                      onChange={handleInputChange}
-                      className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                    >
-                      {ZODIAC_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.zodiacSign ? <p className="mt-1 text-xs text-red-600">{errors.zodiacSign}</p> : null}
-                  </div>
-
-                  <div>
-                    <label htmlFor="luckyNumber" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      Lucky number
-                    </label>
-                    <input
-                      id="luckyNumber"
-                      name="luckyNumber"
-                      value={formData.luckyNumber}
-                      onChange={handleInputChange}
-                      placeholder="e.g. 7"
-                      className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                    />
-                    {errors.luckyNumber ? <p className="mt-1 text-xs text-red-600">{errors.luckyNumber}</p> : null}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/50 p-4">
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mr-2">
-                      <Globe size={16} />
-                      Content language
-                    </div>
-                    {LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => setActiveLanguage(lang.code)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                          activeLanguage === lang.code
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
-                        }`}
-                      >
-                        {lang.badge} - {lang.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Prediction ({activeLangLabel})</label>
-                      <textarea
-                        rows={4}
-                        value={formData.prediction[activeLanguage]}
-                        onChange={(e) => handleLocalizedChange('prediction', activeLanguage, e.target.value)}
-                        placeholder={`Write ${activeLangLabel} prediction…`}
-                        className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                      />
-                      {activePredictionError ? <p className="mt-1 text-xs text-red-600">{activePredictionError}</p> : null}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Color ({activeLangLabel})</label>
-                        <input
-                          value={formData.color[activeLanguage]}
-                          onChange={(e) => handleLocalizedChange('color', activeLanguage, e.target.value)}
-                          placeholder="e.g. Red"
-                          className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                        />
-                        {activeColorError ? <p className="mt-1 text-xs text-red-600">{activeColorError}</p> : null}
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Education ({activeLangLabel})</label>
-                        <input
-                          value={formData.education[activeLanguage]}
-                          onChange={(e) => handleLocalizedChange('education', activeLanguage, e.target.value)}
-                          placeholder="e.g. Good progress"
-                          className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                        />
-                        {activeEducationError ? <p className="mt-1 text-xs text-red-600">{activeEducationError}</p> : null}
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Expense ({activeLangLabel})</label>
-                        <input
-                          value={formData.expense[activeLanguage]}
-                          onChange={(e) => handleLocalizedChange('expense', activeLanguage, e.target.value)}
-                          placeholder="e.g. Balanced"
-                          className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-                        />
-                        {activeExpenseError ? <p className="mt-1 text-xs text-red-600">{activeExpenseError}</p> : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleAddOrUpdate}
-                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                  >
-                    {editingId ? <Save size={16} /> : <Plus size={16} />}
-                    {editingId ? 'Update draft' : 'Add draft'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="inline-flex items-center rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSyncDrafts}
-                    disabled={syncing || entries.length === 0}
-                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {syncing ? <Loader2 className="animate-spin" size={16} /> : <CloudUpload size={16} />}
-                    Sync drafts to server
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearAllDrafts}
-                    disabled={entries.length === 0}
-                    className="inline-flex items-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-50"
-                  >
-                    Clear local drafts
-                  </button>
-                </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input">
+                  {ZODIAC_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange} className="form-input" />
+                <input type="date" name="endDate" value={formData.endDate} onChange={handleInputChange} className="form-input" />
+                <input name="luckyNumber" value={formData.luckyNumber} onChange={handleInputChange} placeholder="Lucky number" className="form-input" />
+                <input name="luckyColor" value={formData.luckyColor} onChange={handleInputChange} placeholder="Lucky color" className="form-input" />
+                <input name="luckyTime" value={formData.luckyTime} onChange={handleInputChange} placeholder="Lucky time" className="form-input" />
               </div>
-            ) : (
-              <div className="p-6 text-sm text-slate-500">Loading form…</div>
-            )}
+
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                {activeLangOption.label} content
+              </p>
+
+              {HOROSCOPE_TEXT_FIELDS.map((field) => (
+                <div key={field}>
+                  <label className="text-xs font-medium text-slate-500">{FIELD_LABELS[field]} ({activeLangOption.label})</label>
+                  <textarea
+                    rows={field === 'title' ? 1 : 2}
+                    value={formData.localized[field][activeLanguage] ?? ''}
+                    onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
+                    className="form-input w-full mt-1"
+                  />
+                  {errors[`${field}_${activeLanguage}`] ? (
+                    <p className="text-xs text-red-600">{errors[`${field}_${activeLanguage}`]}</p>
+                  ) : null}
+                </div>
+              ))}
+
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={handleAddOrUpdate} className="btn-primary btn-small inline-flex items-center gap-1">
+                  {editingId ? <Save size={14} /> : <Plus size={14} />}
+                  {editingId ? 'Update' : 'Add'}
+                </button>
+                <button type="button" onClick={resetForm} className="btn-secondary btn-small">Reset</button>
+                <button type="button" onClick={handleSyncDrafts} disabled={syncing} className="btn-primary btn-small inline-flex items-center gap-1">
+                  {syncing ? <Loader2 className="animate-spin" size={14} /> : <CloudUpload size={14} />}
+                  Sync
+                </button>
+              </div>
+            </div>
           </section>
 
-          <section className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-3">
-                  <FileSpreadsheet size={20} className="text-emerald-600" />
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">CSV (client → drafts)</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">EN / NP / HI columns; periodId or period slug per row.</p>
-                  </div>
-                </div>
+          <section className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <FileSpreadsheet size={18} />
+                <h2 className="font-bold">CSV</h2>
               </div>
-
-              <div className="p-6 space-y-4">
-                <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-900/50">
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">Columns</div>
-                  <div className="mt-2 text-xs text-slate-600 dark:text-slate-400 break-words">{CSV_HEADERS.join(', ')}</div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={handleDownloadSample}
-                      disabled={periods.length === 0}
-                      className="inline-flex items-center gap-2 rounded-lg bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 px-4 py-2 text-sm font-semibold disabled:opacity-50"
-                    >
-                      <Download size={16} />
-                      Download sample CSV
-                    </button>
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
-                      <Upload size={16} />
-                      Upload CSV
-                      <input type="file" accept=".csv,text/csv" onChange={handleCsvUpload} className="hidden" />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">Server CSV import (optional)</div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                    When Event-Service exposes POST /horoscope/import-csv (multipart file), this uploads the file directly. Otherwise use sync above.
-                  </p>
-                  <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    {serverCsvBusy ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-                    Upload CSV to server
-                    <input type="file" accept=".csv,text/csv" onChange={handleServerCsvUpload} className="hidden" disabled={serverCsvBusy} />
-                  </label>
-                </div>
-
-                {csvMessage ? (
-                  <div className="rounded-lg bg-indigo-50 dark:bg-indigo-900/40 px-4 py-3 text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                    {csvMessage}
-                  </div>
-                ) : null}
+              <p className="text-xs text-slate-500 break-words mb-3">{CSV_HEADERS.join(', ')}</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={handleDownloadSample} className="btn-secondary btn-small inline-flex items-center gap-1">
+                  <Download size={14} /> Sample
+                </button>
+                <label className="btn-primary btn-small inline-flex items-center gap-1 cursor-pointer">
+                  <Upload size={14} /> Import
+                  <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
+                </label>
+                <label className="btn-secondary btn-small inline-flex items-center gap-1 cursor-pointer">
+                  {serverCsvBusy ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
+                  Server CSV
+                  <input type="file" accept=".csv" onChange={handleServerCsvUpload} className="hidden" disabled={serverCsvBusy} />
+                </label>
+                <button type="button" onClick={() => refreshServerList()} className="btn-secondary btn-small inline-flex items-center gap-1">
+                  {serverLoading ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+                </button>
               </div>
+              {csvMessage ? <p className="text-sm text-indigo-700 mt-3">{csvMessage}</p> : null}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Draft list</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Grouped by backend period. Sync sends create or update per zodiac.</p>
-              </div>
-
-              <div className="p-6 space-y-5">
-                {entries.length === 0 ? (
-                  <div className="text-sm text-slate-500 dark:text-slate-400">No drafts. Add one or import CSV.</div>
-                ) : (
-                  groupedEntries.map((group) => (
-                    <div key={group.periodId}>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white mb-3">
-                        {group.label} ({group.items.length})
-                      </div>
-                      {group.items.length === 0 ? (
-                        <div className="text-sm text-slate-400 mb-4">No drafts for this period.</div>
-                      ) : (
-                        <div className="space-y-3">
-                          {group.items.map((entry) => (
-                            <div key={entry.id} className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-base font-semibold text-slate-900 dark:text-white">
-                                    {ZODIAC_OPTIONS.find((item) => item.value === entry.zodiacSign)?.label ?? entry.zodiacSign}
-                                  </div>
-                                  <div className="text-xs text-slate-500 mt-0.5">{periodLabel(periods, entry.periodId)}</div>
-                                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">{entry.prediction.en}</div>
-                                  {entry.serverId ? (
-                                    <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Synced (id {entry.serverId.slice(0, 8)}…)</div>
-                                  ) : null}
-                                </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleEdit(entry)}
-                                    className="inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-600 p-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-                                  >
-                                    <Pencil size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDelete(entry.id)}
-                                    className="inline-flex items-center justify-center rounded-md border border-red-200 p-2 text-red-600 hover:bg-red-50"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="grid md:grid-cols-3 gap-3 mt-4 text-xs">
-                                {LANGUAGES.map((lang) => (
-                                  <div
-                                    key={`${entry.id}-${lang.code}`}
-                                    className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900/40"
-                                  >
-                                    <div className="font-semibold text-slate-800 dark:text-slate-300 mb-1">{lang.badge}</div>
-                                    <div className="text-slate-600 dark:text-slate-400">Prediction: {entry.prediction[lang.code]}</div>
-                                    <div className="text-slate-600 dark:text-slate-400 mt-1">Color: {entry.color[lang.code]}</div>
-                                    <div className="text-slate-600 dark:text-slate-400 mt-1">Education: {entry.education[lang.code]}</div>
-                                    <div className="text-slate-600 dark:text-slate-400 mt-1">Expense: {entry.expense[lang.code]}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 max-h-[480px] overflow-y-auto space-y-4">
+              <h2 className="font-bold">
+                {activeLangOption.label} drafts ({activeType.toLowerCase()})
+              </h2>
+              {(groupedEntries.find((g) => g.type === activeType)?.items ?? [])
+                .filter((entry) => {
+                  if (activeLangOption.isBase) return Boolean(entry.localized.title[activeLangOption.uiCode]?.trim());
+                  return Boolean(entry.localized.title[activeLangOption.uiCode]?.trim() || entry.localized.summary[activeLangOption.uiCode]?.trim());
+                })
+                .map((entry) => (
+                  <div key={entry.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                    <div className="flex justify-between gap-2">
+                      <div>
+                        <div className="font-semibold">{entry.zodiacSign}</div>
+                        <div className="text-xs text-slate-500">{entry.startDate} → {entry.endDate}</div>
+                        <div className="text-sm line-clamp-2">
+                          {entry.localized.title[activeLangOption.uiCode] || '—'}
                         </div>
-                      )}
+                      </div>
+                      <div className="flex gap-1">
+                        <button type="button" onClick={() => handleEdit(entry)} className="btn-icon-edit"><Pencil size={14} /></button>
+                        <button type="button" onClick={() => handleDelete(entry.id)} className="btn-icon-delete"><Trash2 size={14} /></button>
+                      </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))}
+
+              <h3 className="text-sm font-bold pt-2 border-t border-slate-200 dark:border-slate-700">
+                {activeLangOption.label} on server
+              </h3>
+              {serverLoading ? (
+                <p className="text-sm text-slate-500">Loading...</p>
+              ) : (
+                (activeLangOption.isBase
+                  ? serverRows
+                  : serverRows.filter((h) => hasHoroscopeTranslation(h, activeLangOption))
+                ).map((h) => (
+                  <div key={h.id} className="text-sm py-2 border-b border-slate-100 dark:border-slate-700">
+                    <div className="font-medium">{h.zodiacSign}</div>
+                    <div className="text-xs text-slate-500">{h.startDate} → {h.endDate}</div>
+                    <div className="line-clamp-2">
+                      {getHoroscopeTextForLanguage(h, 'title', activeLangOption) || '—'}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </section>
         </div>

@@ -4,11 +4,15 @@
  */
 const EXPIRY_MS_KEY = 'naad_access_expires_at_ms';
 
-/** Schedule refresh ~1 minute before access token expiry. */
+/** Schedule proactive refresh before access token expiry (backend may return ~60s tokens). */
 export function setAuthAccessExpiryFromExpiresIn(expiresInSeconds?: number | null): void {
-  if (expiresInSeconds == null || expiresInSeconds < 120) return;
+  if (expiresInSeconds == null || expiresInSeconds <= 0) return;
   try {
-    const refreshAt = Date.now() + expiresInSeconds * 1000 - 60_000;
+    const leadMs =
+      expiresInSeconds < 120
+        ? Math.max(5_000, Math.floor(expiresInSeconds * 500))
+        : 60_000;
+    const refreshAt = Date.now() + expiresInSeconds * 1000 - leadMs;
     sessionStorage.setItem(EXPIRY_MS_KEY, String(refreshAt));
   } catch {
     /* ignore */

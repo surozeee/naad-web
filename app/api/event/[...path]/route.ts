@@ -33,10 +33,19 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
       const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());
       if (v) forwardHeaders[h] = v;
     });
-    let body: string | undefined;
+    const contentType = request.headers.get('content-type') || '';
+    const isMultipart = contentType.includes('multipart/form-data');
+    let body: BodyInit | undefined;
     if (method !== 'GET' && method !== 'DELETE') {
       try {
-        body = await request.text();
+        if (isMultipart) {
+          const buffer = await request.arrayBuffer();
+          body = buffer.byteLength > 0 ? buffer : undefined;
+          if (contentType) forwardHeaders['Content-Type'] = contentType;
+          delete forwardHeaders['content-type'];
+        } else {
+          body = await request.text();
+        }
       } catch {
         body = undefined;
       }
@@ -46,8 +55,13 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
       headers: forwardHeaders,
       body: body || undefined,
     });
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
+    const responseContentType = res.headers.get('content-type') || '';
+    if (responseContentType.includes('application/json')) {
+      const data = await res.json().catch(() => ({}));
+      return NextResponse.json(data, { status: res.status });
+    }
+    const text = await res.text().catch(() => '');
+    return new NextResponse(text, { status: res.status });
   } catch (e) {
     console.error('[API event]', e);
     return NextResponse.json({ message: 'Event API request failed' }, { status: 500 });

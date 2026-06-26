@@ -6,16 +6,36 @@ export { API_BASE, DEFAULT_API_BASE, backendUrl };
 const AUTH_COOKIE = 'naad_auth';
 const XSRF_COOKIE = 'XSRF-TOKEN';
 
+function readCookieRawValue(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed.includes('%')) return trimmed;
+  try {
+    return decodeURIComponent(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
 function getCookieFromHeader(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
   const escaped = name.replace(/[-.*+?^${}()|[\]\\]/g, '\\$&');
   const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + escaped + '=([^;]*)'));
   if (!match) return null;
-  try {
-    return decodeURIComponent(match[1].trim());
-  } catch {
-    return match[1].trim();
-  }
+  return readCookieRawValue(match[1]);
+}
+
+/** Strip app session cookies before forwarding to backend (use Authorization Bearer instead). */
+function sanitizeForwardCookie(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  const kept = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => {
+      const name = part.split('=')[0]?.trim().toLowerCase() ?? '';
+      return name !== AUTH_COOKIE.toLowerCase() && name !== 'naad_refresh';
+    });
+  return kept.length > 0 ? kept.join('; ') : null;
 }
 
 /** Get XSRF cookie value; try decode so = and + are correct when browser sends encoded. */
@@ -39,11 +59,13 @@ export function backendHeaders(request: Request): Record<string, string> {
     'Content-Type': 'application/json',
   };
   const cookie = request.headers.get('cookie');
-  const accessToken = getCookieFromHeader(cookie, AUTH_COOKIE) ?? request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const authHeader = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const accessToken = authHeader || getCookieFromHeader(cookie, AUTH_COOKIE);
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
-  if (cookie) headers['Cookie'] = cookie;
+  const forwardCookie = sanitizeForwardCookie(cookie);
+  if (forwardCookie) headers['Cookie'] = forwardCookie;
   // XSRF: gateway expects X-XSRF-TOKEN header. Use NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN from env.
   const serverXsrf = getServerXsrfToken();
   const xsrfHeader = request.headers.get('X-XSRF-TOKEN')?.trim();

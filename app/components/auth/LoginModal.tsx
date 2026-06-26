@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
-import { setAuthAccessExpiryFromExpiresIn } from '@/app/lib/auth-session';
+import { clearAuthAccessExpiry, setAuthAccessExpiryFromExpiresIn } from '@/app/lib/auth-session';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 
 const LOGIN_API = '/api/auth/login';
@@ -78,15 +78,16 @@ export function LoginModal({
         refresh_token?: string;
       };
 
-      if (!res.ok) {
-        const message = data?.message ?? data?.error ?? t('login.error') ?? 'Login failed';
+      if (data?.status === 'FAILED' || !res.ok) {
+        const message =
+          data?.message ??
+          data?.error ??
+          (data?.code === 'USR007'
+            ? 'Failed to generate authentication token. Please try again in a moment.'
+            : data?.code === 'IAM007'
+              ? 'Your account has been locked due to multiple failed login attempts. Please try again later or contact support.'
+              : t('login.error') ?? 'Login failed');
         setError(message);
-        setLoading(false);
-        return;
-      }
-
-      if (data?.status === 'FAILED') {
-        setError(data?.message ?? 'Invalid email or password.');
         setLoading(false);
         return;
       }
@@ -103,6 +104,7 @@ export function LoginModal({
         return;
       }
 
+      clearAuthAccessExpiry();
       setAuthAccessExpiryFromExpiresIn(data.data?.expiresIn);
 
       // Success: tokens are set in cookies by the login API; redirect only on success

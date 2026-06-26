@@ -1,10 +1,11 @@
 /**
  * Authenticated fetch: proactive refresh before access-token expiry, then 401 + refresh + retry.
- * If refresh fails, clear tokens and redirect to homepage.
+ * If refresh fails, clear tokens and redirect to homepage (unless ignoreAuthFailure).
  * Bootstraps XSRF token from /api/csrf-token when missing (needed for gateway 403).
  */
 
 import { clearAuthAccessExpiry, setAuthAccessExpiryFromExpiresIn, shouldProactiveRefresh } from '@/app/lib/auth-session';
+import { getAuthAccessToken } from '@/app/lib/auth-guard';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { logout } from '@/app/lib/logout';
 
@@ -18,7 +19,14 @@ type RefreshJson = {
   expiresIn?: number;
 };
 
-async function refreshSession(xsrf: string | undefined): Promise<{ ok: boolean; bearer?: string }> {
+export interface FetchWithAuthOptions extends RequestInit {
+  /** When true, 401 / failed refresh does not trigger global logout (e.g. optional profile load). */
+  ignoreAuthFailure?: boolean;
+}
+
+let refreshInFlight: Promise<{ ok: boolean; bearer?: string }> | null = null;
+
+async function doRefreshSession(xsrf: string | undefined): Promise<{ ok: boolean; bearer?: string }> {
   const refreshRes = await fetch(REFRESH_API, {
     method: 'POST',
     credentials: 'same-origin',
@@ -44,19 +52,49 @@ async function refreshSession(xsrf: string | undefined): Promise<{ ok: boolean; 
   }
 }
 
+function refreshSession(xsrf: string | undefined): Promise<{ ok: boolean; bearer?: string }> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = doRefreshSession(xsrf).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+function applyBearer(headers: Headers, bearer?: string | null): void {
+  if (bearer) {
+    headers.set('Authorization', bearer.startsWith('Bearer ') ? bearer : `Bearer ${bearer}`);
+    return;
+  }
+  const token = getAuthAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+}
+
+function buildHeaders(init: RequestInit | undefined, xsrf: string | undefined, bearer?: string | null): Headers {
+  const headers = new Headers(init?.headers);
+  if (xsrf) headers.set('X-XSRF-TOKEN', xsrf);
+  if (!headers.has('Content-Type') && !(init?.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+  applyBearer(headers, bearer);
+  return headers;
+}
+
 /**
  * Fetch with automatic token refresh on 401.
+ * - Sends Authorization Bearer from naad_auth cookie on every request.
  * - Ensures XSRF token is available (fetches from /api/csrf-token if missing).
  * - If access token is near expiry (from login/refresh `expiresIn`), refreshes before the request.
- * - If response is 401, calls refresh API, then retries once.
- * - If refresh fails, clears tokens and redirects to /.
+ * - If response is 401, calls refresh API, then retries once with the new token.
+ * - If refresh fails, clears tokens and redirects to / (unless ignoreAuthFailure).
  */
 export async function fetchWithAuth(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: FetchWithAuthOptions
 ): Promise<Response> {
+  const { ignoreAuthFailure = false, ...fetchInit } = init ?? {};
   let xsrf = getXsrfToken();
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
   if (!xsrf && url.startsWith('/api/') && !url.startsWith(CSRF_TOKEN_API)) {
     const csrfRes = await fetch(CSRF_TOKEN_API, { credentials: 'same-origin' });
     try {
@@ -73,10 +111,8 @@ export async function fetchWithAuth(
     }
     xsrf = getXsrfToken();
   }
-  const headers = new Headers(init?.headers);
-  if (xsrf) headers.set('X-XSRF-TOKEN', xsrf);
-  if (!headers.has('Content-Type') && !(init?.body instanceof FormData)) headers.set('Content-Type', 'application/json');
 
+  let bearer: string | undefined;
   const skipProactive =
     !url.startsWith('/api/') ||
     url.startsWith(CSRF_TOKEN_API) ||
@@ -86,15 +122,17 @@ export async function fetchWithAuth(
   if (!skipProactive && shouldProactiveRefresh()) {
     const proactive = await refreshSession(xsrf);
     if (proactive.ok && proactive.bearer) {
-      headers.set('Authorization', proactive.bearer);
+      bearer = proactive.bearer;
     } else if (!proactive.ok) {
       clearAuthAccessExpiry();
     }
   }
 
+  const headers = buildHeaders(fetchInit, xsrf, bearer);
+
   let res = await fetch(input, {
-    ...init,
-    credentials: init?.credentials ?? 'same-origin',
+    ...fetchInit,
+    credentials: fetchInit.credentials ?? 'same-origin',
     headers,
   });
 
@@ -102,24 +140,21 @@ export async function fetchWithAuth(
 
   const refreshed = await refreshSession(xsrf);
   if (!refreshed.ok) {
-    logout('/');
+    if (!ignoreAuthFailure) logout('/');
     return res;
   }
 
-  let retryHeaders = new Headers(init?.headers);
-  if (refreshed.bearer) {
-    retryHeaders.set('Authorization', refreshed.bearer);
-  }
-  if (xsrf) retryHeaders.set('X-XSRF-TOKEN', xsrf);
-  if (!retryHeaders.has('Content-Type') && !(init?.body instanceof FormData)) retryHeaders.set('Content-Type', 'application/json');
+  const retryHeaders = buildHeaders(fetchInit, xsrf, refreshed.bearer);
 
   res = await fetch(input, {
-    ...init,
-    credentials: init?.credentials ?? 'same-origin',
+    ...fetchInit,
+    credentials: fetchInit.credentials ?? 'same-origin',
     headers: retryHeaders,
   });
-  if (res.status === 401) {
+
+  if (res.status === 401 && !ignoreAuthFailure) {
     logout('/');
   }
+
   return res;
 }

@@ -5,10 +5,26 @@
 
 const AUTH_COOKIE = 'naad_auth';
 
+function readCookieRawValue(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed.includes('%')) return trimmed;
+  try {
+    return decodeURIComponent(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name.replace(/[\-.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
+  return match ? readCookieRawValue(match[1]) : null;
+}
+
+/** Client-side access token from naad_auth cookie (for Authorization header). */
+export function getAuthAccessToken(): string | null {
+  const token = getCookie(AUTH_COOKIE);
+  return token?.trim() || null;
 }
 
 /**
