@@ -73,6 +73,9 @@ const FIELD_LABELS: Record<HoroscopeTextField, string> = {
   mood: 'Mood',
 };
 
+const PRIMARY_FIELDS: HoroscopeTextField[] = ['title', 'summary', 'description'];
+const EXTRA_FIELDS = HOROSCOPE_TEXT_FIELDS.filter((f) => !PRIMARY_FIELDS.includes(f));
+
 const CSV_BASE_HEADERS = [
   'horoscopeType',
   'zodiacSign',
@@ -273,6 +276,50 @@ export default function AddHoroscopeCsvPage() {
       items: entries.filter((e) => e.horoscopeType === t),
     }));
   }, [entries]);
+
+  const draftLangCounts = useMemo(() => {
+    const items = groupedEntries.find((g) => g.type === activeType)?.items ?? [];
+    const counts: Record<string, number> = {};
+    for (const lang of languages) {
+      counts[lang.uiCode] = items.filter((entry) => {
+        if (lang.isBase) return Boolean(entry.localized.title[lang.uiCode]?.trim());
+        return Boolean(
+          entry.localized.title[lang.uiCode]?.trim() || entry.localized.summary[lang.uiCode]?.trim()
+        );
+      }).length;
+    }
+    return counts;
+  }, [groupedEntries, activeType, languages]);
+
+  const serverLangCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const lang of languages) {
+      counts[lang.uiCode] = lang.isBase
+        ? serverRows.length
+        : serverRows.filter((h) => hasHoroscopeTranslation(h, lang)).length;
+    }
+    return counts;
+  }, [serverRows, languages]);
+
+  const activeDrafts = useMemo(
+    () =>
+      (groupedEntries.find((g) => g.type === activeType)?.items ?? []).filter((entry) => {
+        if (activeLangOption.isBase) return Boolean(entry.localized.title[activeLangOption.uiCode]?.trim());
+        return Boolean(
+          entry.localized.title[activeLangOption.uiCode]?.trim() ||
+            entry.localized.summary[activeLangOption.uiCode]?.trim()
+        );
+      }),
+    [groupedEntries, activeType, activeLangOption]
+  );
+
+  const activeServerRows = useMemo(
+    () =>
+      activeLangOption.isBase
+        ? serverRows
+        : serverRows.filter((h) => hasHoroscopeTranslation(h, activeLangOption)),
+    [serverRows, activeLangOption]
+  );
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -510,171 +557,196 @@ export default function AddHoroscopeCsvPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 max-w-[1400px]">
         <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Add Horoscope CSV' }]} />
         <PageHeaderWithInfo
           title="Horoscope CSV Manager"
-          infoText="Choose a period type and language. Each language has its own list — English is the base record; other languages are locale translations. New languages from master settings appear automatically."
+          infoText="Pick period type, then use language tabs to enter or review EN / NE / HI content per draft."
         />
 
-        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
-          {TYPE_TABS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                activeType === t ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'
-              }`}
-              onClick={() => setActiveType(t)}
-            >
-              {t.charAt(0) + t.slice(1).toLowerCase()}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+            {TYPE_TABS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
+                  activeType === t
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+                onClick={() => setActiveType(t)}
+              >
+                {t.charAt(0) + t.slice(1).toLowerCase()}
+                <span className="ml-1 text-[10px] opacity-70">({totals.find((x) => x.type === t)?.count ?? 0})</span>
+              </button>
+            ))}
+          </div>
+          {csvMessage ? (
+            <p className="text-xs text-indigo-700 dark:text-indigo-300 truncate max-w-md">{csvMessage}</p>
+          ) : null}
         </div>
 
-        <HoroscopeLanguageTabs
-          languages={languages}
-          activeUiCode={activeLanguage}
-          onChange={setActiveLanguage}
-        />
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {totals.map((item) => (
-            <div key={item.type} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-              <div className="text-sm text-slate-500">{item.type}</div>
-              <div className="text-2xl font-bold mt-1">{item.count}</div>
-              <div className="text-xs text-slate-400">local drafts</div>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-3">
+          <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-sm font-semibold">{editingId ? 'Edit draft' : 'New draft'}</h2>
+              <span className="text-[11px] text-slate-500">{activeType.toLowerCase()}</span>
             </div>
-          ))}
-        </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)] gap-6">
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-bold">{editingId ? 'Edit draft' : 'Create draft'}</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input">
+            <div className="p-3 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input text-sm py-1.5 col-span-2 md:col-span-1">
                   {ZODIAC_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
-                <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange} className="form-input" />
-                <input type="date" name="endDate" value={formData.endDate} onChange={handleInputChange} className="form-input" />
-                <input name="luckyNumber" value={formData.luckyNumber} onChange={handleInputChange} placeholder="Lucky number" className="form-input" />
-                <input name="luckyColor" value={formData.luckyColor} onChange={handleInputChange} placeholder="Lucky color" className="form-input" />
-                <input name="luckyTime" value={formData.luckyTime} onChange={handleInputChange} placeholder="Lucky time" className="form-input" />
+                <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange} className="form-input text-sm py-1.5" title="Start date" />
+                <input type="date" name="endDate" value={formData.endDate} onChange={handleInputChange} className="form-input text-sm py-1.5" title="End date" />
+                <input name="luckyNumber" value={formData.luckyNumber} onChange={handleInputChange} placeholder="Lucky #" className="form-input text-sm py-1.5" />
+                <input name="luckyColor" value={formData.luckyColor} onChange={handleInputChange} placeholder="Color" className="form-input text-sm py-1.5" />
+                <input name="luckyTime" value={formData.luckyTime} onChange={handleInputChange} placeholder="Time" className="form-input text-sm py-1.5" />
               </div>
 
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                {activeLangOption.label} content
-              </p>
+              <HoroscopeLanguageTabs
+                languages={languages}
+                activeUiCode={activeLanguage}
+                onChange={setActiveLanguage}
+                variant="underline"
+                compact
+              />
 
-              {HOROSCOPE_TEXT_FIELDS.map((field) => (
-                <div key={field}>
-                  <label className="text-xs font-medium text-slate-500">{FIELD_LABELS[field]} ({activeLangOption.label})</label>
-                  <textarea
-                    rows={field === 'title' ? 1 : 2}
-                    value={formData.localized[field][activeLanguage] ?? ''}
-                    onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
-                    className="form-input w-full mt-1"
-                  />
-                  {errors[`${field}_${activeLanguage}`] ? (
-                    <p className="text-xs text-red-600">{errors[`${field}_${activeLanguage}`]}</p>
-                  ) : null}
-                </div>
-              ))}
-
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={handleAddOrUpdate} className="btn-primary btn-small inline-flex items-center gap-1">
-                  {editingId ? <Save size={14} /> : <Plus size={14} />}
-                  {editingId ? 'Update' : 'Add'}
-                </button>
-                <button type="button" onClick={resetForm} className="btn-secondary btn-small">Reset</button>
-                <button type="button" onClick={handleSyncDrafts} disabled={syncing} className="btn-primary btn-small inline-flex items-center gap-1">
-                  {syncing ? <Loader2 className="animate-spin" size={14} /> : <CloudUpload size={14} />}
-                  Sync
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <FileSpreadsheet size={18} />
-                <h2 className="font-bold">CSV</h2>
-              </div>
-              <p className="text-xs text-slate-500 break-words mb-3">{CSV_HEADERS.join(', ')}</p>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={handleDownloadSample} className="btn-secondary btn-small inline-flex items-center gap-1">
-                  <Download size={14} /> Sample
-                </button>
-                <label className="btn-primary btn-small inline-flex items-center gap-1 cursor-pointer">
-                  <Upload size={14} /> Import
-                  <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
-                </label>
-                <label className="btn-secondary btn-small inline-flex items-center gap-1 cursor-pointer">
-                  {serverCsvBusy ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
-                  Server CSV
-                  <input type="file" accept=".csv" onChange={handleServerCsvUpload} className="hidden" disabled={serverCsvBusy} />
-                </label>
-                <button type="button" onClick={() => refreshServerList()} className="btn-secondary btn-small inline-flex items-center gap-1">
-                  {serverLoading ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
-                </button>
-              </div>
-              {csvMessage ? <p className="text-sm text-indigo-700 mt-3">{csvMessage}</p> : null}
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 max-h-[480px] overflow-y-auto space-y-4">
-              <h2 className="font-bold">
-                {activeLangOption.label} drafts ({activeType.toLowerCase()})
-              </h2>
-              {(groupedEntries.find((g) => g.type === activeType)?.items ?? [])
-                .filter((entry) => {
-                  if (activeLangOption.isBase) return Boolean(entry.localized.title[activeLangOption.uiCode]?.trim());
-                  return Boolean(entry.localized.title[activeLangOption.uiCode]?.trim() || entry.localized.summary[activeLangOption.uiCode]?.trim());
-                })
-                .map((entry) => (
-                  <div key={entry.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3">
-                    <div className="flex justify-between gap-2">
-                      <div>
-                        <div className="font-semibold">{entry.zodiacSign}</div>
-                        <div className="text-xs text-slate-500">{entry.startDate} → {entry.endDate}</div>
-                        <div className="text-sm line-clamp-2">
-                          {entry.localized.title[activeLangOption.uiCode] || '—'}
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button type="button" onClick={() => handleEdit(entry)} className="btn-icon-edit"><Pencil size={14} /></button>
-                        <button type="button" onClick={() => handleDelete(entry.id)} className="btn-icon-delete"><Trash2 size={14} /></button>
-                      </div>
-                    </div>
+              <div
+                key={activeLanguage}
+                className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1"
+                role="tabpanel"
+                aria-label={`${activeLangOption.label} content`}
+              >
+                {HOROSCOPE_TEXT_FIELDS.map((field) => (
+                  <div key={field} className={field === 'description' || field === 'summary' ? 'md:col-span-2' : ''}>
+                    <label className="text-[11px] font-medium text-slate-500">{FIELD_LABELS[field]}</label>
+                    <textarea
+                      rows={field === 'title' ? 1 : field === 'description' || field === 'summary' ? 2 : 1}
+                      value={formData.localized[field][activeLanguage] ?? ''}
+                      onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
+                      className="form-input w-full mt-0.5 text-sm py-1.5 min-h-[2rem]"
+                      placeholder={FIELD_LABELS[field]}
+                    />
+                    {errors[`${field}_${activeLanguage}`] ? (
+                      <p className="text-[11px] text-red-600 mt-0.5">{errors[`${field}_${activeLanguage}`]}</p>
+                    ) : null}
                   </div>
                 ))}
+              </div>
 
-              <h3 className="text-sm font-bold pt-2 border-t border-slate-200 dark:border-slate-700">
-                {activeLangOption.label} on server
-              </h3>
-              {serverLoading ? (
-                <p className="text-sm text-slate-500">Loading...</p>
-              ) : (
-                (activeLangOption.isBase
-                  ? serverRows
-                  : serverRows.filter((h) => hasHoroscopeTranslation(h, activeLangOption))
-                ).map((h) => (
-                  <div key={h.id} className="text-sm py-2 border-b border-slate-100 dark:border-slate-700">
-                    <div className="font-medium">{h.zodiacSign}</div>
-                    <div className="text-xs text-slate-500">{h.startDate} → {h.endDate}</div>
-                    <div className="line-clamp-2">
-                      {getHoroscopeTextForLanguage(h, 'title', activeLangOption) || '—'}
-                    </div>
-                  </div>
-                ))
-              )}
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-700">
+                <button type="button" onClick={handleAddOrUpdate} className="btn-primary btn-small inline-flex items-center gap-1">
+                  {editingId ? <Save size={13} /> : <Plus size={13} />}
+                  {editingId ? 'Update' : 'Add draft'}
+                </button>
+                <button type="button" onClick={resetForm} className="btn-secondary btn-small">Reset</button>
+                <button type="button" onClick={handleSyncDrafts} disabled={syncing} className="btn-secondary btn-small inline-flex items-center gap-1">
+                  {syncing ? <Loader2 className="animate-spin" size={13} /> : <CloudUpload size={13} />}
+                  Sync all
+                </button>
+              </div>
             </div>
           </section>
+
+          <aside className="space-y-3">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <FileSpreadsheet size={15} className="text-slate-500" />
+                <h2 className="text-sm font-semibold">CSV import</h2>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" onClick={handleDownloadSample} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs">
+                  <Download size={12} /> Sample
+                </button>
+                <label className="btn-primary btn-small inline-flex items-center gap-1 cursor-pointer text-xs">
+                  <Upload size={12} /> Draft
+                  <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
+                </label>
+                <label className="btn-secondary btn-small inline-flex items-center gap-1 cursor-pointer text-xs">
+                  {serverCsvBusy ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
+                  Server
+                  <input type="file" accept=".csv" onChange={handleServerCsvUpload} className="hidden" disabled={serverCsvBusy} />
+                </label>
+                <button type="button" onClick={() => refreshServerList()} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs">
+                  {serverLoading ? <Loader2 className="animate-spin" size={12} /> : <RefreshCw size={12} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+              <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-sm font-semibold">Records</h2>
+              </div>
+
+              <div className="px-3 pt-2">
+                <HoroscopeLanguageTabs
+                  languages={languages}
+                  activeUiCode={activeLanguage}
+                  onChange={setActiveLanguage}
+                  variant="underline"
+                  compact
+                  counts={draftLangCounts}
+                />
+              </div>
+
+              <div className="max-h-[280px] overflow-y-auto px-3 pb-2" role="tabpanel">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 py-1.5">
+                  Local drafts · {activeLangOption.label}
+                </p>
+                {activeDrafts.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-2">No {activeLangOption.label} drafts.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {activeDrafts.map((entry) => (
+                      <li
+                        key={entry.id}
+                        className="flex items-start justify-between gap-2 rounded border border-slate-100 dark:border-slate-700 px-2 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700/40"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-semibold">{entry.zodiacSign}</div>
+                          <div className="text-[10px] text-slate-500">{entry.startDate} → {entry.endDate}</div>
+                          <div className="truncate text-slate-600 dark:text-slate-300">
+                            {entry.localized.title[activeLangOption.uiCode] || '—'}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 gap-0.5">
+                          <button type="button" onClick={() => handleEdit(entry)} className="btn-icon-edit p-1"><Pencil size={12} /></button>
+                          <button type="button" onClick={() => handleDelete(entry.id)} className="btn-icon-delete p-1"><Trash2 size={12} /></button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 pt-2 pb-1.5 border-t border-slate-100 dark:border-slate-700 mt-2">
+                  On server · {activeLangOption.label}
+                  <span className="ml-1 font-normal normal-case">({serverLangCounts[activeLangOption.uiCode] ?? 0})</span>
+                </p>
+                {serverLoading ? (
+                  <p className="text-xs text-slate-500 py-1">Loading…</p>
+                ) : activeServerRows.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-1">No server records.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {activeServerRows.map((h) => (
+                      <li key={h.id} className="rounded border border-slate-100 dark:border-slate-700 px-2 py-1.5 text-xs">
+                        <div className="font-semibold">{h.zodiacSign}</div>
+                        <div className="text-[10px] text-slate-500">{h.startDate} → {h.endDate}</div>
+                        <div className="truncate text-slate-600 dark:text-slate-300">
+                          {getHoroscopeTextForLanguage(h, 'title', activeLangOption) || '—'}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </DashboardLayout>
