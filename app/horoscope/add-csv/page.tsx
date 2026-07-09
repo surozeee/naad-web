@@ -183,6 +183,13 @@ function entryToMultilangEntry(entry: HoroscopeEntry) {
   };
 }
 
+function statusTone(message: string): 'success' | 'error' | 'info' {
+  if (!message) return 'info';
+  if (/fail|error|invalid|http 4|http 5|required|no valid/i.test(message)) return 'error';
+  if (/synced|imported|downloaded|added|updated|created|finished/i.test(message)) return 'success';
+  return 'info';
+}
+
 
 export default function AddHoroscopeCsvPage() {
   const [languages, setLanguages] = useState<HoroscopeLanguageOption[]>(DEFAULT_HOROSCOPE_LANGUAGES);
@@ -340,17 +347,10 @@ export default function AddHoroscopeCsvPage() {
   };
 
   const validateForm = (): boolean => {
-    const base = getBaseHoroscopeLanguage(languages);
     const nextErrors: Record<string, string> = {};
     if (!formData.zodiacSign) nextErrors.zodiacSign = 'Zodiac sign is required';
     if (!formData.startDate) nextErrors.startDate = 'Start date is required';
     if (!formData.endDate) nextErrors.endDate = 'End date is required';
-    if (!formData.localized.title[base.uiCode]?.trim()) {
-      nextErrors[`title_${base.uiCode}`] = `${base.label} title is required`;
-    }
-    if (!formData.localized.summary[base.uiCode]?.trim()) {
-      nextErrors[`summary_${base.uiCode}`] = `${base.label} summary is required`;
-    }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -545,7 +545,10 @@ export default function AddHoroscopeCsvPage() {
       const parts: string[] = [];
       if (result.created != null) parts.push(`created ${result.created}`);
       if (result.updated != null) parts.push(`updated ${result.updated}`);
-      if (result.errors?.length) parts.push(`${result.errors.length} row error(s)`);
+      if (result.errors?.length) {
+        const first = result.errors[0];
+        parts.push(`${result.errors.length} row error(s)${first?.message ? `: ${first.message}` : ''}`);
+      }
       setCsvMessage(parts.length ? `Server CSV: ${parts.join(', ')}` : 'Server CSV import finished.');
       await refreshServerList();
     } catch (err) {
@@ -557,23 +560,21 @@ export default function AddHoroscopeCsvPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-3 max-w-[1400px]">
+      <div className="horoscope-csv-page space-y-4 max-w-[1400px] text-black dark:text-white">
         <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Add Horoscope CSV' }]} />
         <PageHeaderWithInfo
           title="Horoscope CSV Manager"
           infoText="Pick period type, then use language tabs to enter or review EN / NE / HI content per draft."
         />
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-1 border-b border-slate-200 dark:border-slate-600">
             {TYPE_TABS.map((t) => (
               <button
                 key={t}
                 type="button"
-                className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
-                  activeType === t
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                className={`horoscope-tab px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors ${
+                  activeType === t ? 'is-active' : 'border-transparent hover:text-black dark:hover:text-white'
                 }`}
                 onClick={() => setActiveType(t)}
               >
@@ -583,18 +584,20 @@ export default function AddHoroscopeCsvPage() {
             ))}
           </div>
           {csvMessage ? (
-            <p className="text-xs text-indigo-700 dark:text-indigo-300 truncate max-w-md">{csvMessage}</p>
+            <p className={`horoscope-status max-w-xl ${statusTone(csvMessage) === 'error' ? 'is-error' : statusTone(csvMessage) === 'success' ? 'is-success' : 'is-info'}`}>
+              {csvMessage}
+            </p>
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-3">
-          <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-sm font-semibold">{editingId ? 'Edit draft' : 'New draft'}</h2>
-              <span className="text-[11px] text-slate-500">{activeType.toLowerCase()}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
+          <section className="horoscope-panel rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-sm font-semibold text-black dark:text-white">{editingId ? 'Edit draft' : 'New draft'}</h2>
+              <span className="text-[11px] font-medium uppercase tracking-wide horoscope-muted">{activeType.toLowerCase()}</span>
             </div>
 
-            <div className="p-3 space-y-3">
+            <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                 <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input text-sm py-1.5 col-span-2 md:col-span-1">
                   {ZODIAC_OPTIONS.map((o) => (
@@ -624,12 +627,12 @@ export default function AddHoroscopeCsvPage() {
               >
                 {HOROSCOPE_TEXT_FIELDS.map((field) => (
                   <div key={field} className={field === 'description' || field === 'summary' ? 'md:col-span-2' : ''}>
-                    <label className="text-[11px] font-medium text-slate-500">{FIELD_LABELS[field]}</label>
+                    <label className="text-[11px] font-semibold text-black dark:text-white">{FIELD_LABELS[field]}</label>
                     <textarea
                       rows={field === 'title' ? 1 : field === 'description' || field === 'summary' ? 2 : 1}
                       value={formData.localized[field][activeLanguage] ?? ''}
                       onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
-                      className="form-input w-full mt-0.5 text-sm py-1.5 min-h-[2rem]"
+                      className="form-input w-full mt-1 text-sm py-2 min-h-[2.25rem]"
                       placeholder={FIELD_LABELS[field]}
                     />
                     {errors[`${field}_${activeLanguage}`] ? (
@@ -653,12 +656,15 @@ export default function AddHoroscopeCsvPage() {
             </div>
           </section>
 
-          <aside className="space-y-3">
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <FileSpreadsheet size={15} className="text-slate-500" />
-                <h2 className="text-sm font-semibold">CSV import</h2>
+          <aside className="space-y-4">
+            <div className="horoscope-panel rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FileSpreadsheet size={16} className="text-black dark:text-white" />
+                <h2 className="text-sm font-semibold text-black dark:text-white">CSV import</h2>
               </div>
+              <p className="text-xs horoscope-muted mb-3">
+                Draft imports rows locally. Server uploads the CSV to NAAD and upserts horoscopes.
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 <button type="button" onClick={handleDownloadSample} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs">
                   <Download size={12} /> Sample
@@ -678,9 +684,9 @@ export default function AddHoroscopeCsvPage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
-              <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-sm font-semibold">Records</h2>
+            <div className="horoscope-panel rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-sm font-semibold text-black dark:text-white">Records</h2>
               </div>
 
               <div className="px-3 pt-2">
@@ -694,23 +700,23 @@ export default function AddHoroscopeCsvPage() {
                 />
               </div>
 
-              <div className="max-h-[280px] overflow-y-auto px-3 pb-2" role="tabpanel">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 py-1.5">
+              <div className="max-h-[280px] overflow-y-auto px-4 pb-3" role="tabpanel">
+                <p className="text-[10px] font-semibold uppercase tracking-wide horoscope-muted py-2">
                   Local drafts · {activeLangOption.label}
                 </p>
                 {activeDrafts.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-2">No {activeLangOption.label} drafts.</p>
+                  <p className="text-xs horoscope-muted py-2">No {activeLangOption.label} drafts.</p>
                 ) : (
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {activeDrafts.map((entry) => (
                       <li
                         key={entry.id}
-                        className="flex items-start justify-between gap-2 rounded border border-slate-100 dark:border-slate-700 px-2 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700/40"
+                        className="flex items-start justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/60"
                       >
-                        <div className="min-w-0">
+                        <div className="min-w-0 text-black dark:text-white">
                           <div className="font-semibold">{entry.zodiacSign}</div>
-                          <div className="text-[10px] text-slate-500">{entry.startDate} → {entry.endDate}</div>
-                          <div className="truncate text-slate-600 dark:text-slate-300">
+                          <div className="text-[10px] horoscope-muted">{entry.startDate} → {entry.endDate}</div>
+                          <div className="truncate">
                             {entry.localized.title[activeLangOption.uiCode] || '—'}
                           </div>
                         </div>
@@ -723,21 +729,21 @@ export default function AddHoroscopeCsvPage() {
                   </ul>
                 )}
 
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 pt-2 pb-1.5 border-t border-slate-100 dark:border-slate-700 mt-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide horoscope-muted pt-3 pb-2 border-t border-slate-200 dark:border-slate-700 mt-2">
                   On server · {activeLangOption.label}
                   <span className="ml-1 font-normal normal-case">({serverLangCounts[activeLangOption.uiCode] ?? 0})</span>
                 </p>
                 {serverLoading ? (
-                  <p className="text-xs text-slate-500 py-1">Loading…</p>
+                  <p className="text-xs horoscope-muted py-1">Loading…</p>
                 ) : activeServerRows.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-1">No server records.</p>
+                  <p className="text-xs horoscope-muted py-1">No server records.</p>
                 ) : (
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {activeServerRows.map((h) => (
-                      <li key={h.id} className="rounded border border-slate-100 dark:border-slate-700 px-2 py-1.5 text-xs">
+                      <li key={h.id} className="rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-2 text-xs text-black dark:text-white">
                         <div className="font-semibold">{h.zodiacSign}</div>
-                        <div className="text-[10px] text-slate-500">{h.startDate} → {h.endDate}</div>
-                        <div className="truncate text-slate-600 dark:text-slate-300">
+                        <div className="text-[10px] horoscope-muted">{h.startDate} → {h.endDate}</div>
+                        <div className="truncate">
                           {getHoroscopeTextForLanguage(h, 'title', activeLangOption) || '—'}
                         </div>
                       </li>

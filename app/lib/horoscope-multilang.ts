@@ -260,12 +260,9 @@ export function validateHoroscopeMultilangEntry(
   entry: HoroscopeMultilangEntry,
   languages: HoroscopeLanguageOption[] = DEFAULT_HOROSCOPE_LANGUAGES
 ): string | null {
-  const base = getBaseHoroscopeLanguage(languages);
   if (!entry.zodiacSign) return 'Zodiac sign is required';
   if (!entry.horoscopeType) return 'Horoscope type is required';
   if (!entry.startDate?.trim()) return 'Start date is required';
   if (!entry.endDate?.trim()) return 'End date is required';
-  if (!entry.localized.title[base.uiCode]?.trim()) return `${base.label} title is required`;
-  if (!entry.localized.summary[base.uiCode]?.trim()) return `${base.label} summary is required`;
   return null;
 }

@@ -213,8 +213,9 @@ const horoscopeCrud = crud<HoroscopeResponse, HoroscopeRequest, HoroscopeRequest
 export const horoscopeApi = {
   ...horoscopeCrud,
   changePublishStatus: async (id: string, publishStatus: string): Promise<void> => {
-    await request('PATCH', `${EVENT_BASE}/horoscope/change-publish-status`, {
+    await request<void>('PATCH', 'horoscope/change-publish-status', {
       headers: { id, publishStatus },
+      base: EVENT_BASE,
     });
   },
   /**
@@ -222,14 +223,21 @@ export const horoscopeApi = {
    */
   importCsv: async (file: File): Promise<HoroscopeCsvImportResult> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', file, file.name || 'horoscope.csv');
     const res = await fetchWithAuth(`${EVENT_BASE}/horoscope/import-csv`, {
       method: 'POST',
       body: formData,
       credentials: 'same-origin',
     });
     const json = (await res.json().catch(() => ({}))) as GlobalResponse<HoroscopeCsvImportResult> & HoroscopeCsvImportResult;
-    if (!res.ok) throw new Error(json.message ?? json.code ?? `HTTP ${res.status}`);
+    if (!res.ok) {
+      const detail =
+        (typeof json.message === 'string' && json.message.trim()) ||
+        (typeof json.code === 'string' && json.code.trim()) ||
+        (typeof json.data === 'string' && json.data) ||
+        `HTTP ${res.status}`;
+      throw new Error(detail);
+    }
     const data = json.data ?? json;
     if (typeof data === 'object' && data !== null) {
       return {

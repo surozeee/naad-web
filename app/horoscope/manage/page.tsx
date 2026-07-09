@@ -164,10 +164,6 @@ export default function HoroscopeManagePage() {
       ),
     };
 
-    if (!body.title?.trim()) {
-      await Swal.fire({ icon: 'error', text: `${getBaseHoroscopeLanguage(languages).label} title is required.` });
-      return;
-    }
     if (!body.startDate || !body.endDate) {
       await Swal.fire({ icon: 'error', text: 'Start and end dates are required.' });
       return;

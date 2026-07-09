@@ -14,6 +14,10 @@ export default function MainContent({ children }: { children: React.ReactNode })
                           pathname?.startsWith('/puja') ||
                           pathname?.startsWith('/music') ||
                           pathname?.startsWith('/customer') ||
+                          pathname?.startsWith('/meetings') ||
+                          pathname?.startsWith('/support') ||
+                          pathname?.startsWith('/settings') ||
+                          pathname?.startsWith('/profile') ||
                           pathname?.startsWith('/event-management') ||
                           pathname?.startsWith('/master-setting') ||
                           pathname?.startsWith('/user-management');

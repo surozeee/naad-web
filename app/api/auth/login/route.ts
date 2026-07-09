@@ -7,6 +7,7 @@ import {
   isBackendNetworkError,
 } from '@/app/lib/api-base';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
+import { buildLoginUserPayload } from '@/app/lib/login-user';
 
 const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
 
@@ -125,7 +126,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = NextResponse.json(data);
+    const userData = (data.data?.user ?? {}) as Record<string, unknown>;
+    const enrichedUser = buildLoginUserPayload(userData, email.trim());
+    const enrichedData = {
+      ...data,
+      data: {
+        ...data.data,
+        user: enrichedUser,
+      },
+    };
+
+    const response = NextResponse.json(enrichedData);
 
     response.cookies.set(AUTH_COOKIE, access_token, COOKIE_OPTIONS);
     if (refresh_token) {

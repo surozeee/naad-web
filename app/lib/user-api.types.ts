@@ -14,6 +14,7 @@ export type UserTypeEnum =
   | 'COMPANY_ADMIN'
   | 'EMPLOYEE'
   | 'CUSTOMER'
+  | 'ASTROLOGER'
   | 'PARTNER'
   | string;
 

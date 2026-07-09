@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { backendFetch } from '@/app/lib/api-base';
 import { backendHeaders, backendUrl } from '@/app/lib/backend-api';
 
 /** Proxy all /api/event/* requests to backend /api/v2/event/*. Forwards method, body, and headers (id, status). */
@@ -18,7 +19,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   return proxy(request, await params, 'DELETE');
 }
 
-const EVENT_HEADERS = ['id', 'status'];
+const EVENT_HEADERS = ['id', 'status', 'publishstatus'];
 
 async function proxy(request: NextRequest, params: { path: string[] }, method: string) {
   try {
@@ -28,29 +29,26 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     }
     const backendPath = `/event/${pathSegments.join('/')}`;
     const url = backendUrl(backendPath);
-    const forwardHeaders = backendHeaders(request);
+    const contentType = request.headers.get('content-type') || '';
+    const isMultipart = contentType.includes('multipart/form-data');
+    const forwardHeaders = backendHeaders(request, { includeJsonContentType: !isMultipart });
     EVENT_HEADERS.forEach((h) => {
       const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());
       if (v) forwardHeaders[h] = v;
     });
-    const contentType = request.headers.get('content-type') || '';
-    const isMultipart = contentType.includes('multipart/form-data');
     let body: BodyInit | undefined;
     if (method !== 'GET' && method !== 'DELETE') {
-      try {
-        if (isMultipart) {
-          const buffer = await request.arrayBuffer();
-          body = buffer.byteLength > 0 ? buffer : undefined;
-          if (contentType) forwardHeaders['Content-Type'] = contentType;
-          delete forwardHeaders['content-type'];
-        } else {
+      if (isMultipart) {
+        body = await request.formData();
+      } else {
+        try {
           body = await request.text();
+        } catch {
+          body = undefined;
         }
-      } catch {
-        body = undefined;
       }
     }
-    const res = await fetch(url, {
+    const res = await backendFetch(url, {
       method,
       headers: forwardHeaders,
       body: body || undefined,

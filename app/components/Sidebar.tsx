@@ -3,6 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  authProfileFromUserApi,
+  getAuthProfileFromLocalStorage,
+  saveAuthProfileToLocalStorage,
+} from '@/app/lib/auth-storage';
+import { mapToNaadPortalRole, type NaadPortalRole } from '@/app/lib/menu-role';
 import { getProfile } from '@/app/lib/profile.service';
 import type { MenuResponse } from '@/app/lib/user-api.types';
 
@@ -143,6 +149,21 @@ function getDisplayLabel(href: string, apiName: string): string {
   return KNOWN_MENU_LABELS[key] ?? apiName ?? '';
 }
 
+function menuItemsForPortalRole(portalRole: NaadPortalRole): SidebarMenuItem[] {
+  if (portalRole === 'customer') return CUSTOMER_MENU_ITEMS;
+  if (portalRole === 'astrologer') return ASTROLOGER_MENU_ITEMS;
+  return ADMIN_MENU_ITEMS;
+}
+
+function initialMenuItemsFromStorage(): SidebarMenuItem[] {
+  if (typeof window === 'undefined') return ADMIN_MENU_ITEMS;
+  const stored = getAuthProfileFromLocalStorage();
+  if (!stored?.role && !stored?.userType) return ADMIN_MENU_ITEMS;
+  const userType = stored.userType ?? null;
+  const roleName = stored.role ?? stored.roles?.[0] ?? null;
+  return menuItemsForPortalRole(mapToNaadPortalRole(userType, roleName));
+}
+
 function mapMenuResponseToItem(m: MenuResponse): SidebarMenuItem {
   const href = m.url || '#';
   const submenu = m.subMenu?.length
@@ -235,38 +256,31 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
     });
   }, [collapsedOpenId, collapsed]);
 
-  const [menuItems, setMenuItems] = useState<SidebarMenuItem[]>(ADMIN_MENU_ITEMS);
-  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<SidebarMenuItem[]>(initialMenuItemsFromStorage);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        const stored = getAuthProfileFromLocalStorage();
+        if (stored?.role || stored?.userType) {
+          const portalRole = mapToNaadPortalRole(
+            stored.userType,
+            stored.role ?? stored.roles?.[0] ?? null
+          );
+          if (!cancelled) setMenuItems(menuItemsForPortalRole(portalRole));
+        }
+
         const profile = await getProfile();
-        const roleName = (profile?.roleName ?? '').trim();
-        const userType = profile?.userDetail?.userType ?? '';
-        const isCustomer = /customer/i.test(roleName) || userType === 'CUSTOMER';
-        const isAstrologer =
-          /astrologer/i.test(roleName) ||
-          userType === 'ASTROLOGER' ||
-          String(userType).toUpperCase() === 'ASTROLOGER';
-        if (isCustomer) {
-          if (!cancelled) setMenuItems(CUSTOMER_MENU_ITEMS);
-          setMenuLoading(false);
-          return;
+        if (profile) {
+          saveAuthProfileToLocalStorage(authProfileFromUserApi(profile));
         }
-        if (isAstrologer && !/super admin|admin/i.test(roleName)) {
-          if (!cancelled) setMenuItems(ASTROLOGER_MENU_ITEMS);
-          setMenuLoading(false);
-          return;
-        }
-        // Superadmin: use static admin menu so labels and structure are always correct.
-        // Menu CRUD (User Management → Menu) still configures backend; sidebar uses this list.
-        if (!cancelled) setMenuItems(ADMIN_MENU_ITEMS);
+        const roleName = (profile?.roleName ?? stored?.role ?? '').trim();
+        const userType = profile?.userDetail?.userType ?? stored?.userType ?? '';
+        const portalRole = mapToNaadPortalRole(userType, roleName);
+        if (!cancelled) setMenuItems(menuItemsForPortalRole(portalRole));
       } catch {
-        if (!cancelled) setMenuItems(ADMIN_MENU_ITEMS);
-      } finally {
-        if (!cancelled) setMenuLoading(false);
+        if (!cancelled) setMenuItems(initialMenuItemsFromStorage());
       }
     })();
     return () => { cancelled = true; };

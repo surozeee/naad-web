@@ -69,8 +69,11 @@ body {
 .page-header-section .page-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #000000;
   margin: 0;
+}
+.dark .page-header-section .page-title {
+  color: #ffffff;
 }
 
 .page-header-with-info {
@@ -511,8 +514,17 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 0.9375rem;
-  color: #1e293b;
+  color: #000000;
+  background: #ffffff;
   transition: all 0.2s;
+}
+.dark .form-input {
+  color: #ffffff;
+  background: #1e293b;
+  border-color: #475569;
+}
+.dark .form-input::placeholder {
+  color: #94a3b8;
 }
 .form-input:focus {
   outline: none;
@@ -709,4 +721,79 @@ body {
     grid-template-columns: 1fr;
     gap: 14px;
   }
+}
+
+/* Horoscope CSV manager */
+.horoscope-csv-page {
+  color: #000000;
+}
+.dark .horoscope-csv-page {
+  color: #ffffff;
+}
+.horoscope-csv-page .horoscope-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.dark .horoscope-csv-page .horoscope-panel {
+  background: #0f172a;
+  border-color: #334155;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.horoscope-csv-page .horoscope-muted {
+  color: #475569;
+}
+.dark .horoscope-csv-page .horoscope-muted {
+  color: #cbd5e1;
+}
+.horoscope-csv-page .horoscope-tab {
+  color: #475569;
+}
+.dark .horoscope-csv-page .horoscope-tab {
+  color: #cbd5e1;
+}
+.horoscope-csv-page .horoscope-tab.is-active {
+  color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.dark .horoscope-csv-page .horoscope-tab.is-active {
+  color: #93c5fd;
+  border-color: #93c5fd;
+}
+.horoscope-csv-page .horoscope-status {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.horoscope-csv-page .horoscope-status.is-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.dark .horoscope-csv-page .horoscope-status.is-success {
+  background: rgba(6, 95, 70, 0.2);
+  color: #a7f3d0;
+  border-color: #047857;
+}
+.horoscope-csv-page .horoscope-status.is-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.dark .horoscope-csv-page .horoscope-status.is-error {
+  background: rgba(153, 27, 27, 0.2);
+  color: #fecaca;
+  border-color: #b91c1c;
+}
+.horoscope-csv-page .horoscope-status.is-info {
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+}
+.dark .horoscope-csv-page .horoscope-status.is-info {
+  background: rgba(30, 58, 138, 0.25);
+  color: #bfdbfe;
+  border-color: #1d4ed8;
 }

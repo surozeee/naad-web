@@ -2,8 +2,15 @@
 
 import { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
+import {
+  authProfileFromLoginUser,
+  authProfileFromUserApi,
+  saveAuthProfileToLocalStorage,
+} from '@/app/lib/auth-storage';
 import { clearAuthAccessExpiry, setAuthAccessExpiryFromExpiresIn } from '@/app/lib/auth-session';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
+import { resolvePostLoginRedirect } from '@/app/lib/login-redirect';
+import { getProfile } from '@/app/lib/profile.service';
 
 const LOGIN_API = '/api/auth/login';
 
@@ -107,9 +114,28 @@ export function LoginModal({
       clearAuthAccessExpiry();
       setAuthAccessExpiryFromExpiresIn(data.data?.expiresIn);
 
-      // Success: tokens are set in cookies by the login API; redirect only on success
+      const loginUser = (data.data?.user ?? {}) as Record<string, unknown>;
+      let authProfile = authProfileFromLoginUser(loginUser);
+
+      try {
+        const apiProfile = await getProfile();
+        if (apiProfile) {
+          authProfile = authProfileFromUserApi(apiProfile);
+        }
+      } catch {
+        // Fall back to login payload role hints when profile fetch fails.
+      }
+
+      saveAuthProfileToLocalStorage(authProfile);
+
+      const destination = resolvePostLoginRedirect(
+        authProfile.userType,
+        authProfile.role,
+        redirectAfterLogin
+      );
+
       setRedirecting(true);
-      window.location.assign(redirectAfterLogin);
+      window.location.assign(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : (t('login.error') ?? 'Login failed'));
     } finally {

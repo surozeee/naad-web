@@ -53,11 +53,16 @@ function getXsrfCookieRaw(cookieHeader: string | null): string | null {
 }
 
 /** Build headers for backend request: Authorization Bearer, Cookie, X-XSRF-TOKEN (required by many backends to avoid 403). */
-export function backendHeaders(request: Request): Record<string, string> {
+export function backendHeaders(
+  request: Request,
+  options?: { includeJsonContentType?: boolean }
+): Record<string, string> {
   const headers: Record<string, string> = {
     accept: '*/*',
-    'Content-Type': 'application/json',
   };
+  if (options?.includeJsonContentType !== false) {
+    headers['Content-Type'] = 'application/json';
+  }
   const cookie = request.headers.get('cookie');
   const authHeader = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim();
   const accessToken = authHeader || getCookieFromHeader(cookie, AUTH_COOKIE);

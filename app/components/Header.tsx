@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from './ThemeProvider';
 import { logout } from '@/app/lib/logout';
+import { getPortalRoleLabel, resolveAuthRole } from '@/app/lib/menu-role';
+import { useAuthProfile } from '@/app/lib/use-auth-profile';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -12,10 +14,34 @@ interface HeaderProps {
   sidebarCollapsed: boolean;
 }
 
+function getInitials(name?: string | null, email?: string | null): string {
+  const source = (name?.trim() || email?.trim() || 'U').trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
+
 export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, sidebarCollapsed }: HeaderProps) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { profile } = useAuthProfile();
+
+  const { displayName, displayEmail, portalRole, initials } = useMemo(() => {
+    const resolved = resolveAuthRole(profile);
+    const name = profile?.name?.trim();
+    const email = profile?.email?.trim();
+    return {
+      displayName: name || email || 'User',
+      displayEmail: email || '',
+      portalRole: resolved.portalRole,
+      initials: getInitials(name, email),
+    };
+  }, [profile]);
+
+  const roleLabel = getPortalRoleLabel(portalRole);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -122,15 +148,32 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-purple-300 transition-all cursor-pointer"
+                className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-all"
                 aria-label="User menu"
               >
-                U
+                <span className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+                  {initials}
+                </span>
+                <span className="hidden lg:flex flex-col items-start max-w-[140px]">
+                  <span className="text-sm font-medium text-gray-800 dark:text-white truncate w-full text-left">
+                    {displayName}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{roleLabel}</span>
+                </span>
               </button>
 
               {/* Dropdown Menu */}
               {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 z-50">
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
+                    <div className="text-sm font-semibold text-gray-800 dark:text-white truncate">{displayName}</div>
+                    {displayEmail && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{displayEmail}</div>
+                    )}
+                    <div className="mt-1 inline-flex text-xs font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                      {roleLabel}
+                    </div>
+                  </div>
                   <Link
                     href="/profile"
                     className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
