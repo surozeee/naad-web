@@ -81,5 +81,9 @@ export function backendHeaders(
     if (!headers['Cookie']) headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;
     else if (!cookie?.includes('XSRF-TOKEN=')) headers['Cookie'] = headers['Cookie'] + `; XSRF-TOKEN=${xsrf}`;
   }
+  const acceptLanguage = request.headers.get('accept-language')?.trim();
+  if (acceptLanguage) {
+    headers['Accept-Language'] = acceptLanguage;
+  }
   return headers;
 }

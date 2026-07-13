@@ -46,7 +46,60 @@ const ZODIAC_SIGN_OPTIONS: { value: ZodiacSignEnum; label: string }[] = [
   { value: 'PISCES', label: 'Pisces' },
 ];
 
+/** Default local names (matches backend ZodiacSignEnum seed) for empty locale forms. */
+const ZODIAC_DEFAULT_LOCALES: Record<string, Partial<Record<ZodiacSignEnum, { name: string; startingName?: string }>>> = {
+  EN: Object.fromEntries(ZODIAC_SIGN_OPTIONS.map((o) => [o.value, { name: o.label }])) as Partial<
+    Record<ZodiacSignEnum, { name: string; startingName?: string }>
+  >,
+  NE: {
+    ARIES: { name: 'मेष', startingName: 'Mesh' },
+    TAURUS: { name: 'वृषभ', startingName: 'Vrishabh' },
+    GEMINI: { name: 'मिथुन', startingName: 'Mithun' },
+    CANCER: { name: 'कर्कट', startingName: 'Karkat' },
+    LEO: { name: 'सिंह', startingName: 'Simha' },
+    VIRGO: { name: 'कन्या', startingName: 'Kanya' },
+    LIBRA: { name: 'तुला', startingName: 'Tula' },
+    SCORPIO: { name: 'वृश्चिक', startingName: 'Vrishchik' },
+    SAGITTARIUS: { name: 'धनु', startingName: 'Dhanu' },
+    CAPRICORN: { name: 'मकर', startingName: 'Makar' },
+    AQUARIUS: { name: 'कुम्भ', startingName: 'Kumbha' },
+    PISCES: { name: 'मीन', startingName: 'Meen' },
+  },
+};
+
 type ZodiacLangSelectOption = { value: string; label: string };
+
+function normalizeLanguageEnumCode(raw: unknown, nameHint?: unknown): string | null {
+  const fromCode = String(raw ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  if (fromCode === 'NP' || fromCode === 'NEP' || fromCode === 'NEPALI') return 'NE';
+  if (fromCode === 'ENG' || fromCode === 'ENGLISH') return 'EN';
+  if (fromCode === 'HIN' || fromCode === 'HINDI') return 'HI';
+  if (/^[A-Z]{2,3}$/.test(fromCode)) return fromCode;
+
+  const name = String(nameHint ?? '')
+    .trim()
+    .toLowerCase();
+  if (name === 'nepali' || name === 'नेपाली') return 'NE';
+  if (name === 'english') return 'EN';
+  if (name === 'hindi' || name === 'हिन्दी' || name === 'हिंदी') return 'HI';
+  return null;
+}
+
+function defaultLocaleFields(
+  language: string,
+  zodiacSign: string
+): { name: string; startingName: string } {
+  const lang = language.toUpperCase();
+  const sign = zodiacSign.toUpperCase() as ZodiacSignEnum;
+  const hit = ZODIAC_DEFAULT_LOCALES[lang]?.[sign];
+  return {
+    name: hit?.name ?? '',
+    startingName: hit?.startingName ?? '',
+  };
+}
 
 interface ZodiacSignItem {
   id: string;
@@ -193,17 +246,19 @@ export default function ZodiacSignPage() {
   }, [editingId]);
 
   const handleZodiacLocaleLanguageChange = (language: string) => {
-    const existing = zodiacLocalesApi.find((l) => String(l.language).toUpperCase() === language.toUpperCase());
+    const code = normalizeLanguageEnumCode(language) ?? language.toUpperCase();
+    const existing = zodiacLocalesApi.find((l) => String(l.language).toUpperCase() === code);
     if (existing) {
       setEditingZodiacLocaleId(String(existing.id));
       setLocaleForm({
-        language: String(existing.language),
+        language: code,
         name: existing.name ?? '',
         startingName: existing.startingName ?? '',
       });
     } else {
+      const defaults = defaultLocaleFields(code, formData.zodiacSign);
       setEditingZodiacLocaleId(null);
-      setLocaleForm({ language, name: '', startingName: '' });
+      setLocaleForm({ language: code, name: defaults.name, startingName: defaults.startingName });
     }
   };
 
@@ -242,7 +297,7 @@ export default function ZodiacSignPage() {
       const addedLang = localeForm.language;
       const created = await zodiacSignLocaleApi.create({
         zodiacSignId: editingId,
-        language: localeForm.language,
+        language: normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase(),
         name: localeForm.name.trim(),
         startingName: localeForm.startingName.trim() || undefined,
       });
@@ -255,7 +310,12 @@ export default function ZodiacSignPage() {
       const nextMissing = opts.find((o) => !savedCodes.has(o.value));
       if (nextMissing) {
         setEditingZodiacLocaleId(null);
-        setLocaleForm({ language: nextMissing.value, name: '', startingName: '' });
+        const defaults = defaultLocaleFields(nextMissing.value, formData.zodiacSign);
+        setLocaleForm({
+          language: nextMissing.value,
+          name: defaults.name,
+          startingName: defaults.startingName,
+        });
       } else {
         const match =
           list.find((l) => String(l.language).toUpperCase() === addedLang.toUpperCase()) ??
@@ -284,7 +344,7 @@ export default function ZodiacSignPage() {
     try {
       await zodiacSignLocaleApi.update(editingZodiacLocaleId, {
         zodiacSignId: editingId,
-        language: localeForm.language,
+        language: normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase(),
         name: localeForm.name.trim(),
         startingName: localeForm.startingName.trim() || undefined,
       });
@@ -344,9 +404,10 @@ export default function ZodiacSignPage() {
         const arr = Array.isArray(raw) ? raw : [];
         const options = arr
           .map((item: Record<string, unknown>) => {
-            const code = String(item.code ?? item.name ?? '').toUpperCase();
-            const name = String(item.name ?? item.code ?? code);
-            return code ? { value: code, label: `${name} (${code})` } : null;
+            const code = normalizeLanguageEnumCode(item.code, item.name ?? item.nativeName);
+            if (!code) return null;
+            const name = String(item.name ?? item.nativeName ?? item.code ?? code);
+            return { value: code, label: `${name} (${code})` };
           })
           .filter((o): o is ZodiacLangSelectOption => o != null);
         setLocaleLanguageOptions(options);
@@ -366,12 +427,20 @@ export default function ZodiacSignPage() {
         const saved = new Set(zodiacLocalesApi.map((l) => String(l.language).toUpperCase()));
         if (saved.has(prev.language.toUpperCase())) {
           const firstMissing = localeLanguageOptions.find((o) => !saved.has(o.value));
-          if (firstMissing) return { ...prev, language: firstMissing.value, name: '', startingName: '' };
+          if (firstMissing) {
+            const defaults = defaultLocaleFields(firstMissing.value, formData.zodiacSign);
+            return {
+              ...prev,
+              language: firstMissing.value,
+              name: defaults.name,
+              startingName: defaults.startingName,
+            };
+          }
         }
       }
       return prev;
     });
-  }, [localeLanguageOptions, localeOnlyMode, showAddModal, zodiacLocalesApi, editingZodiacLocaleId]);
+  }, [localeLanguageOptions, localeOnlyMode, showAddModal, zodiacLocalesApi, editingZodiacLocaleId, formData.zodiacSign]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -489,18 +558,22 @@ export default function ZodiacSignPage() {
           if (first) {
             setEditingZodiacLocaleId(String(first.id));
             setLocaleForm({
-              language: String(first.language),
+              language: normalizeLanguageEnumCode(first.language) ?? String(first.language),
               name: first.name ?? '',
               startingName: first.startingName ?? '',
             });
           } else {
+            const sign = (detail.zodiacSign || row.zodiacSign || 'ARIES') as string;
+            const defaults = defaultLocaleFields('EN', sign);
             setEditingZodiacLocaleId(null);
-            setLocaleForm({ language: 'EN', name: '', startingName: '' });
+            setLocaleForm({ language: 'EN', name: defaults.name, startingName: defaults.startingName });
           }
         } catch {
           setZodiacLocalesApi([]);
+          const sign = row.zodiacSign || 'ARIES';
+          const defaults = defaultLocaleFields('EN', sign);
           setEditingZodiacLocaleId(null);
-          setLocaleForm({ language: 'EN', name: '', startingName: '' });
+          setLocaleForm({ language: 'EN', name: defaults.name, startingName: defaults.startingName });
         }
       }
     } catch (err) {

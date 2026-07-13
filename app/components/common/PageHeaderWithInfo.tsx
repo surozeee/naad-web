@@ -5,7 +5,7 @@ import { Info } from 'lucide-react';
 
 type PageHeaderWithInfoProps = {
   title: string;
-  infoText: string;
+  infoText?: string;
   children?: React.ReactNode;
 };
 
@@ -16,21 +16,23 @@ export function PageHeaderWithInfo({ title, infoText, children }: PageHeaderWith
     <div className="page-header-section">
       <div className="page-header-with-info">
         <h1 className="page-title">{title}</h1>
-        <div
-          className="page-header-info-wrap"
-          onMouseEnter={() => setShowInfoTooltip(true)}
-          onMouseLeave={() => setShowInfoTooltip(false)}
-        >
-          <button type="button" aria-label="Page information" className="page-header-info-btn">
-            <Info size={18} />
-          </button>
-          {showInfoTooltip && (
-            <div className="page-header-info-tooltip">
-              <div className="page-header-info-tooltip-arrow" />
-              {infoText}
-            </div>
-          )}
-        </div>
+        {infoText ? (
+          <div
+            className="page-header-info-wrap"
+            onMouseEnter={() => setShowInfoTooltip(true)}
+            onMouseLeave={() => setShowInfoTooltip(false)}
+          >
+            <button type="button" aria-label="Page information" className="page-header-info-btn">
+              <Info size={18} />
+            </button>
+            {showInfoTooltip && (
+              <div className="page-header-info-tooltip">
+                <div className="page-header-info-tooltip-arrow" />
+                {infoText}
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
       {children}
     </div>

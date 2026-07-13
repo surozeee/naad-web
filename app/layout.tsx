@@ -5,6 +5,7 @@ import "./auth.css";
 import Navigation from "./components/Navigation";
 import MainContent from "./components/MainContent";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { LocaleProvider } from "./components/LocaleProvider";
 import { AuthModalProvider } from "./components/AuthModalContext";
 import CsrfBootstrap from "./components/CsrfBootstrap";
 
@@ -33,7 +34,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{const t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
+            __html: `(function(){try{const t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';}const l=(localStorage.getItem('uiLanguage')||'en').toLowerCase().slice(0,2);if(l){document.documentElement.lang=l;}}catch(e){}})();`,
           }}
         />
       </head>
@@ -41,6 +42,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+          <LocaleProvider>
           <AuthModalProvider>
             <CsrfBootstrap />
             <Navigation />
@@ -48,6 +50,7 @@ export default function RootLayout({
               {children}
             </MainContent>
           </AuthModalProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

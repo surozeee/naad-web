@@ -8,6 +8,7 @@ import { clearAuthAccessExpiry, setAuthAccessExpiryFromExpiresIn, shouldProactiv
 import { getAuthAccessToken } from '@/app/lib/auth-guard';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { logout } from '@/app/lib/logout';
+import { getStoredUiLanguage } from '@/app/lib/ui-language';
 
 const REFRESH_API = '/api/auth/refresh';
 const CSRF_TOKEN_API = '/api/csrf-token';
@@ -74,6 +75,9 @@ function buildHeaders(init: RequestInit | undefined, xsrf: string | undefined, b
   if (xsrf) headers.set('X-XSRF-TOKEN', xsrf);
   if (!headers.has('Content-Type') && !(init?.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
+  }
+  if (!headers.has('Accept-Language')) {
+    headers.set('Accept-Language', getStoredUiLanguage());
   }
   applyBearer(headers, bearer);
   return headers;

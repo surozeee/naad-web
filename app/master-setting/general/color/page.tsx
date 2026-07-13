@@ -569,72 +569,115 @@ export default function ColorSetupPage() {
 
         {showAddModal && (
           <div className="modal-overlay" onClick={() => !submitting && setShowAddModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
-              <div className="modal-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Palette size={20} />
-                  <h2>{editingId ? 'Edit Color' : 'Add Color'}</h2>
+            <div
+              className="modal-content color-modal"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="color-modal-title"
+            >
+              <div className="modal-header color-modal-header">
+                <div className="color-modal-title-row">
+                  <span className="color-modal-icon" aria-hidden>
+                    <Palette size={18} />
+                  </span>
+                  <div>
+                    <h2 id="color-modal-title">{editingId ? 'Edit Color' : 'Add Color'}</h2>
+                    <p className="color-modal-subtitle">
+                      {editingId ? 'Update name, hex, or sort order' : 'Define a color for lucky color and UI use'}
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
-                  className="modal-close"
+                  className="modal-close-btn"
                   onClick={() => !submitting && setShowAddModal(false)}
                   aria-label="Close"
+                  disabled={submitting}
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <label className="form-label">
+
+              <form onSubmit={handleSubmit} className="organization-form color-modal-form">
+                <div className="form-group">
+                  <label htmlFor="color-name" className="form-label">
                     Name <span className="required">*</span>
-                    <input
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className={`form-input ${errors.name ? 'error' : ''}`}
-                      placeholder="e.g. Coral"
-                    />
-                    {errors.name ? <span className="form-error">{errors.name}</span> : null}
                   </label>
-                  <label className="form-label">
+                  <input
+                    id="color-name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.name ? 'error' : ''}`}
+                    placeholder="e.g. Coral"
+                    autoFocus
+                    disabled={submitting}
+                  />
+                  {errors.name ? <span className="form-error">{errors.name}</span> : null}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="color-hex" className="form-label">
                     Hex code <span className="required">*</span>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  </label>
+                  <div className="color-hex-field">
+                    <label
+                      className="color-swatch-picker"
+                      title="Pick a color"
+                      style={{
+                        backgroundColor: normalizeHex(formData.hexCode).match(/^#[0-9A-Fa-f]{6}$/)
+                          ? normalizeHex(formData.hexCode)
+                          : '#6366F1',
+                      }}
+                    >
                       <input
                         type="color"
-                        value={normalizeHex(formData.hexCode).match(/^#[0-9A-Fa-f]{6}$/)
-                          ? normalizeHex(formData.hexCode)
-                          : '#6366F1'}
+                        aria-label="Color picker"
+                        value={
+                          normalizeHex(formData.hexCode).match(/^#[0-9A-Fa-f]{6}$/)
+                            ? normalizeHex(formData.hexCode)
+                            : '#6366F1'
+                        }
                         onChange={(e) =>
                           setFormData((prev) => ({ ...prev, hexCode: e.target.value.toUpperCase() }))
                         }
-                        style={{ width: 48, height: 40, padding: 2, cursor: 'pointer' }}
+                        disabled={submitting}
                       />
-                      <input
-                        name="hexCode"
-                        value={formData.hexCode}
-                        onChange={handleInputChange}
-                        className={`form-input ${errors.hexCode ? 'error' : ''}`}
-                        placeholder="#DC2626"
-                        style={{ flex: 1 }}
-                      />
-                    </div>
-                    {errors.hexCode ? <span className="form-error">{errors.hexCode}</span> : null}
-                  </label>
-                  <label className="form-label">
-                    Sort order
+                    </label>
                     <input
-                      name="sortOrder"
-                      value={formData.sortOrder}
+                      id="color-hex"
+                      name="hexCode"
+                      value={formData.hexCode}
                       onChange={handleInputChange}
-                      className={`form-input ${errors.sortOrder ? 'error' : ''}`}
-                      placeholder="Optional"
+                      className={`form-input color-hex-input ${errors.hexCode ? 'error' : ''}`}
+                      placeholder="#DC2626"
+                      spellCheck={false}
+                      disabled={submitting}
                     />
-                    {errors.sortOrder ? <span className="form-error">{errors.sortOrder}</span> : null}
-                  </label>
-                  {errors.submit ? <p className="form-error">{errors.submit}</p> : null}
+                  </div>
+                  {errors.hexCode ? <span className="form-error">{errors.hexCode}</span> : null}
                 </div>
-                <div className="modal-footer">
+
+                <div className="form-group">
+                  <label htmlFor="color-sort" className="form-label">
+                    Sort order
+                  </label>
+                  <input
+                    id="color-sort"
+                    name="sortOrder"
+                    value={formData.sortOrder}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.sortOrder ? 'error' : ''}`}
+                    placeholder="Optional — lower numbers appear first"
+                    disabled={submitting}
+                  />
+                  {errors.sortOrder ? <span className="form-error">{errors.sortOrder}</span> : null}
+                </div>
+
+                {errors.submit ? <p className="form-error">{errors.submit}</p> : null}
+
+                <div className="color-modal-footer">
                   <button
                     type="button"
                     className="btn-secondary"

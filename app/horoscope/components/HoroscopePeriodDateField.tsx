@@ -27,9 +27,12 @@ interface HoroscopePeriodDateFieldProps {
   endDate: string;
   onChange: (next: { startDate: string; endDate: string }) => void;
   className?: string;
+  /** Hide helper hints / range footers (list toolbar). */
+  compact?: boolean;
 }
 
 const selectClass = 'form-input text-sm py-1.5 h-9';
+const selectClassCompact = 'form-input hl-period-select';
 
 /**
  * Period picker (stores AD start_date / end_date on API):
@@ -44,9 +47,11 @@ export function HoroscopePeriodDateField({
   endDate,
   onChange,
   className = '',
+  compact = false,
 }: HoroscopePeriodDateFieldProps) {
   const [bsReady, setBsReady] = useState(false);
   const [calendars, setCalendars] = useState<NepaliCalendarResponse[]>([]);
+  const fieldClass = compact ? selectClassCompact : selectClass;
 
   useEffect(() => {
     let cancelled = false;
@@ -174,11 +179,13 @@ export function HoroscopePeriodDateField({
           : 'Year';
 
   return (
-    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-semibold text-black dark:text-white">{title}</span>
-        <span className="text-[10px] horoscope-muted shrink-0">{periodDateHint(horoscopeType)}</span>
-      </div>
+    <div className={`flex flex-col ${compact ? 'gap-0' : 'gap-1.5'} min-w-0 ${className}`}>
+      {!compact ? (
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-xs font-semibold horoscope-key text-black dark:text-white">{title}</span>
+          <span className="text-[10px] horoscope-muted shrink-0">{periodDateHint(horoscopeType)}</span>
+        </div>
+      ) : null}
 
       {horoscopeType === 'DAILY' ? (
         <>
@@ -190,7 +197,7 @@ export function HoroscopePeriodDateField({
               if (ad) applyDaily(ad);
             }}
             placeholder="Select date"
-            className={selectClass}
+            className={fieldClass}
             options={{
               dateFormat: 'YYYY-MM-DD',
               language: 'nepali',
@@ -201,7 +208,7 @@ export function HoroscopePeriodDateField({
               showEnglishDateSubscript: false,
             }}
           />
-          {displayBs ? (
+          {!compact && displayBs ? (
             <p className="text-[10px] horoscope-muted">
               Stored as one day · <span className="font-medium text-black dark:text-white">{displayBs}</span>
             </p>
@@ -211,9 +218,15 @@ export function HoroscopePeriodDateField({
 
       {horoscopeType === 'WEEKLY' ? (
         <>
-          <div className="grid grid-cols-3 gap-2">
+          <div
+            className={
+              compact
+                ? 'grid grid-cols-[6.75rem_6.25rem_minmax(4.5rem,5.5rem)] gap-1.5'
+                : 'grid grid-cols-3 gap-2'
+            }
+          >
             <select
-              className={selectClass}
+              className={fieldClass}
               aria-label="Year"
               value={selection.year}
               onChange={(e) => applyWeekly(Number(e.target.value), selection.month, weekValue)}
@@ -225,7 +238,7 @@ export function HoroscopePeriodDateField({
               ))}
             </select>
             <select
-              className={selectClass}
+              className={fieldClass}
               aria-label="Month"
               value={selection.month}
               onChange={(e) => applyWeekly(selection.year, Number(e.target.value), weekValue)}
@@ -237,25 +250,26 @@ export function HoroscopePeriodDateField({
               ))}
             </select>
             <select
-              className={selectClass}
+              className={fieldClass}
               aria-label="Week"
               value={weekValue}
               onChange={(e) => applyWeekly(selection.year, selection.month, Number(e.target.value))}
             >
               {Array.from({ length: maxWeek }, (_, i) => i + 1).map((w) => (
                 <option key={w} value={w}>
-                  {formatBsWeekOptionLabel(selection.year, selection.month, w, monthCalendar)}
+                  {compact
+                    ? `W${w}`
+                    : formatBsWeekOptionLabel(selection.year, selection.month, w, monthCalendar)}
                 </option>
               ))}
             </select>
           </div>
-          {weekResolved ? (
+          {weekResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Week ·{' '}
               <span className="font-medium text-black dark:text-white">{weekResolved.startBs}</span>
               {' → '}
               <span className="font-medium text-black dark:text-white">{weekResolved.endBs}</span>
-              <span className="opacity-70"> (1st–Sat, then Sun–Sat)</span>
             </p>
           ) : null}
         </>
@@ -263,11 +277,12 @@ export function HoroscopePeriodDateField({
 
       {horoscopeType === 'MONTHLY' ? (
         <>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid ${compact ? 'grid-cols-[6.75rem_7.5rem] gap-1.5' : 'grid-cols-2 gap-2'}`}>
             <label className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-[10px] horoscope-muted">Year</span>
+              {!compact ? <span className="text-[10px] horoscope-muted">Year</span> : null}
               <select
-                className={selectClass}
+                className={fieldClass}
+                aria-label="Year"
                 value={selection.year}
                 onChange={(e) => applyMonthly(Number(e.target.value), selection.month)}
               >
@@ -279,9 +294,10 @@ export function HoroscopePeriodDateField({
               </select>
             </label>
             <label className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-[10px] horoscope-muted">Nepali month</span>
+              {!compact ? <span className="text-[10px] horoscope-muted">Nepali month</span> : null}
               <select
-                className={selectClass}
+                className={fieldClass}
+                aria-label="Month"
                 value={selection.month}
                 onChange={(e) => applyMonthly(selection.year, Number(e.target.value))}
               >
@@ -293,13 +309,12 @@ export function HoroscopePeriodDateField({
               </select>
             </label>
           </div>
-          {monthResolved ? (
+          {monthResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Month ·{' '}
               <span className="font-medium text-black dark:text-white">
                 {monthResolved.startBs} → {monthResolved.endBs}
               </span>
-              <span className="opacity-70"> (1st–last day auto)</span>
             </p>
           ) : null}
         </>
@@ -307,10 +322,11 @@ export function HoroscopePeriodDateField({
 
       {horoscopeType === 'YEARLY' ? (
         <>
-          <label className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-[10px] horoscope-muted">Nepali year</span>
+          <label className={`flex flex-col gap-0.5 min-w-0 ${compact ? 'w-[9.5rem]' : ''}`}>
+            {!compact ? <span className="text-[10px] horoscope-muted">Nepali year</span> : null}
             <select
-              className={selectClass}
+              className={fieldClass}
+              aria-label="Year"
               value={selection.year}
               onChange={(e) => applyYearly(Number(e.target.value))}
             >
@@ -321,13 +337,12 @@ export function HoroscopePeriodDateField({
               ))}
             </select>
           </label>
-          {yearResolved ? (
+          {yearResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Year ·{' '}
               <span className="font-medium text-black dark:text-white">
                 {yearResolved.startBs} → {yearResolved.endBs}
               </span>
-              <span className="opacity-70"> (1 Baishakh–last Chaitra)</span>
             </p>
           ) : null}
         </>

@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CloudUpload, Download, FileSpreadsheet, Loader2, Pencil, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react';
+import { CloudUpload, Download, FileSpreadsheet, Loader2, Pencil, Plus, RefreshCw, Save, Send, Trash2, Upload, X } from 'lucide-react';
 import DashboardLayout from '@/app/components/DashboardLayout';
 import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '@/app/components/common/PageHeaderWithInfo';
@@ -32,7 +32,6 @@ import {
   resolvePeriodDatesFromCsvFields,
 } from '@/app/lib/horoscope-date-period';
 import { HoroscopeLanguageTabs } from '@/app/horoscope/components/HoroscopeLanguageTabs';
-import { HoroscopePeriodDateField } from '@/app/horoscope/components/HoroscopePeriodDateField';
 import { HoroscopeColorPicker } from '@/app/horoscope/components/HoroscopeColorPicker';
 import { HoroscopeRatingsPanel } from '@/app/horoscope/components/HoroscopeRatingsPanel';
 import { BsDateText } from '@/app/horoscope/components/BsDateText';
@@ -256,7 +255,8 @@ function entryToMultilangEntry(entry: HoroscopeEntry) {
 function statusTone(message: string): 'success' | 'error' | 'info' {
   if (!message) return 'info';
   if (/fail|error|invalid|http 4|http 5|required|no valid/i.test(message)) return 'error';
-  if (/synced|imported|downloaded|added|updated|created|finished|saved|preview ready/i.test(message)) return 'success';
+  if (/synced|imported|downloaded|added|updated|created|finished|saved|published|preview ready/i.test(message))
+    return 'success';
   return 'info';
 }
 
@@ -284,6 +284,7 @@ export default function AddHoroscopeCsvPage() {
     () => findHoroscopeLanguage(languages, activeLanguage) ?? getBaseHoroscopeLanguage(languages),
     [languages, activeLanguage]
   );
+  const baseLang = useMemo(() => getBaseHoroscopeLanguage(languages), [languages]);
 
   useEffect(() => {
     masterService.language
@@ -686,6 +687,20 @@ export default function AddHoroscopeCsvPage() {
     setCsvMessage(`Sample CSV downloaded for ${activeType} (${periodHint}).`);
   };
 
+  const resolveServerId = async (entry: HoroscopeEntry): Promise<string | undefined> => {
+    if (entry.serverId) return entry.serverId;
+    const res = await horoscopeApi.list({
+      pageNo: 0,
+      pageSize: 1,
+      horoscopeType: entry.horoscopeType,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+      zodiacSign: entry.zodiacSign,
+      status: 'ACTIVE',
+    });
+    return ((res.result ?? res.content ?? []) as HoroscopeResponse[])[0]?.id;
+  };
+
   const handleSaveDraft = async () => {
     if (entries.length === 0) {
       setCsvMessage('No drafts to save. Upload a CSV or add drafts first.');
@@ -704,31 +719,17 @@ export default function AddHoroscopeCsvPage() {
           continue;
         }
         const body = buildHoroscopeRequest(entryToMultilangEntry(entry), languages);
-        const existingId = entry.serverId;
         try {
+          const existingId = entry.serverId ?? (await resolveServerId(entry));
           if (existingId) {
             await horoscopeApi.update(existingId, body);
             idUpdates.set(entry.id, existingId);
-            saved += 1;
           } else {
-            const res = await horoscopeApi.list({
-              pageNo: 0,
-              pageSize: 1,
-              horoscopeType: entry.horoscopeType,
-              startDate: entry.startDate,
-              endDate: entry.endDate,
-              zodiacSign: entry.zodiacSign,
-              status: 'ACTIVE',
-            });
-            const found = ((res.result ?? res.content ?? []) as HoroscopeResponse[])[0];
-            if (found) {
-              await horoscopeApi.update(found.id, body);
-              idUpdates.set(entry.id, found.id);
-            } else {
-              await horoscopeApi.create(body);
-            }
-            saved += 1;
+            await horoscopeApi.create(body);
+            const createdId = await resolveServerId(entry);
+            if (createdId) idUpdates.set(entry.id, createdId);
           }
+          saved += 1;
         } catch (err) {
           rowErrors.push(`${entry.zodiacSign}: ${err instanceof Error ? err.message : 'Save failed'}`);
         }
@@ -747,12 +748,67 @@ export default function AddHoroscopeCsvPage() {
     }
   };
 
+  const handlePublish = async () => {
+    if (entries.length === 0) {
+      setCsvMessage('No drafts to publish. Add or upload drafts first.');
+      return;
+    }
+    setSyncing(true);
+    setCsvMessage('');
+    try {
+      const idUpdates = new Map<string, string>();
+      const rowErrors: string[] = [];
+      for (const entry of entries) {
+        const multilang = entryToMultilangEntry(entry);
+        const validationError = validateHoroscopeMultilangEntry(multilang, languages);
+        if (validationError) {
+          rowErrors.push(`${entry.zodiacSign}: ${validationError}`);
+          continue;
+        }
+        // Persist content and set publishStatus to PUBLISHED (update status on draft)
+        const body = {
+          ...buildHoroscopeRequest({ ...multilang, publishStatus: 'PUBLISHED' }, languages),
+          publishStatus: 'PUBLISHED' as const,
+        };
+        try {
+          let serverId = entry.serverId ?? (await resolveServerId(entry));
+          if (serverId) {
+            await horoscopeApi.update(serverId, body);
+          } else {
+            await horoscopeApi.create(body);
+            serverId = await resolveServerId(entry);
+          }
+          if (!serverId) {
+            rowErrors.push(`${entry.zodiacSign}: Missing server id after save`);
+            continue;
+          }
+          idUpdates.set(entry.id, serverId);
+          await horoscopeApi.changePublishStatus(serverId, 'PUBLISHED');
+        } catch (err) {
+          rowErrors.push(`${entry.zodiacSign}: ${err instanceof Error ? err.message : 'Publish failed'}`);
+        }
+      }
+      setEntries((prev) => prev.map((e) => (idUpdates.has(e.id) ? { ...e, serverId: idUpdates.get(e.id) } : e)));
+      const published = idUpdates.size;
+      setCsvMessage(
+        rowErrors.length > 0
+          ? `Published ${published} with ${rowErrors.length} error(s): ${rowErrors.slice(0, 3).join('; ')}`
+          : `Published ${published} horoscope(s) — status set to PUBLISHED.`
+      );
+      await refreshServerList();
+    } catch (e) {
+      setCsvMessage(e instanceof Error ? e.message : 'Publish failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="horoscope-csv-page space-y-4 max-w-[1400px] text-black dark:text-white">
-        <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Add Horoscope CSV' }]} />
+        <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Add Horoscope' }]} />
         <PageHeaderWithInfo
-          title="Horoscope CSV Manager"
+          title="Add Horoscope"
           infoText="Sample CSV matches the active tab: Daily uses date (BS); Weekly uses bsYear+bsMonth+bsWeek; Monthly uses bsYear+bsMonth; Yearly uses bsYear. Start/end AD dates are calculated on upload. Upload Draft previews rows; Save Draft upserts to NAAD."
         />
 
@@ -788,29 +844,18 @@ export default function AddHoroscopeCsvPage() {
 
             <div className="p-5 space-y-5">
               <div className="space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Period & luck</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">Period & luck</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
                   <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold text-black dark:text-white">Zodiac</span>
+                    <span className="text-xs font-semibold horoscope-key">Zodiac</span>
                     <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input text-sm py-1.5 h-9">
                       {ZODIAC_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
                   </label>
-                  <HoroscopePeriodDateField
-                    horoscopeType={activeType}
-                    startDate={formData.startDate}
-                    endDate={formData.endDate}
-                    onChange={({ startDate, endDate }) => {
-                      setFormData((prev) => ({ ...prev, startDate, endDate }));
-                      if (errors.startDate || errors.endDate) {
-                        setErrors((prev) => ({ ...prev, startDate: '', endDate: '' }));
-                      }
-                    }}
-                  />
                   <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold text-black dark:text-white">Lucky number</span>
+                    <span className="text-xs font-semibold horoscope-key">Lucky number</span>
                     <input
                       name="luckyNumber"
                       value={formData.luckyNumber}
@@ -820,7 +865,7 @@ export default function AddHoroscopeCsvPage() {
                     />
                   </label>
                   <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold text-black dark:text-white">Lucky time</span>
+                    <span className="text-xs font-semibold horoscope-key">Lucky time</span>
                     <input
                       name="luckyTime"
                       value={formData.luckyTime}
@@ -829,10 +874,16 @@ export default function AddHoroscopeCsvPage() {
                       className="form-input text-sm py-1.5 h-9"
                     />
                   </label>
+                  <label className="flex flex-col gap-1 min-w-0">
+                    <span className="text-xs font-semibold horoscope-key">Mood</span>
+                    <input
+                      value={formData.localized.mood[baseLang.uiCode] ?? ''}
+                      onChange={(e) => handleLocalizedChange('mood', baseLang.uiCode, e.target.value)}
+                      placeholder="e.g. Optimistic"
+                      className="form-input text-sm py-1.5 h-9"
+                    />
+                  </label>
                 </div>
-                {(errors.startDate || errors.endDate) && (
-                  <p className="text-[11px] text-red-600">{errors.startDate || errors.endDate}</p>
-                )}
                 <HoroscopeColorPicker
                   value={formData.luckyColor}
                   onChange={(luckyColor) => setFormData((p) => ({ ...p, luckyColor }))}
@@ -840,7 +891,7 @@ export default function AddHoroscopeCsvPage() {
               </div>
 
               <div className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Ratings</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">Ratings</p>
                 <HoroscopeRatingsPanel
                   value={{
                     loveRating: formData.loveRating,
@@ -859,7 +910,7 @@ export default function AddHoroscopeCsvPage() {
 
               <div className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Content</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">Content</p>
                 </div>
                 <HoroscopeLanguageTabs
                   languages={languages}
@@ -875,9 +926,9 @@ export default function AddHoroscopeCsvPage() {
                   role="tabpanel"
                   aria-label={`${activeLangOption.label} content`}
                 >
-                  {FORM_TEXT_FIELDS.map((field) => (
+                  {FORM_TEXT_FIELDS.filter((field) => !activeLangOption.isBase || field !== 'mood').map((field) => (
                     <div key={field} className={field === 'summary' ? 'md:col-span-2' : ''}>
-                      <label className="text-xs font-semibold text-black dark:text-white">{FIELD_LABELS[field]}</label>
+                      <label className="text-xs font-semibold horoscope-key">{FIELD_LABELS[field]}</label>
                       <textarea
                         rows={field === 'summary' ? 3 : 2}
                         value={formData.localized[field][activeLanguage] ?? ''}
@@ -902,6 +953,15 @@ export default function AddHoroscopeCsvPage() {
                 <button type="button" onClick={handleSaveDraft} disabled={syncing} className="btn-secondary btn-small inline-flex items-center gap-1.5">
                   {syncing ? <Loader2 className="animate-spin" size={13} /> : <CloudUpload size={13} />}
                   Save Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={syncing || entries.length === 0}
+                  className="btn-primary btn-small inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {syncing ? <Loader2 className="animate-spin" size={13} /> : <Send size={13} />}
+                  Publish
                 </button>
               </div>
             </div>
@@ -938,6 +998,15 @@ export default function AddHoroscopeCsvPage() {
                 >
                   {syncing ? <Loader2 className="animate-spin" size={12} /> : <CloudUpload size={12} />}
                   Save Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={syncing || entries.length === 0}
+                  className="btn-primary btn-small inline-flex items-center gap-1 text-xs disabled:opacity-50"
+                >
+                  {syncing ? <Loader2 className="animate-spin" size={12} /> : <Send size={12} />}
+                  Publish
                 </button>
                 <button type="button" onClick={() => refreshServerList()} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs" title="Refresh server list">
                   {serverLoading ? <Loader2 className="animate-spin" size={12} /> : <RefreshCw size={12} />}
@@ -1007,6 +1076,7 @@ export default function AddHoroscopeCsvPage() {
                         <div className="font-semibold">{h.zodiacSign}</div>
                         <div className="text-[10px] horoscope-muted">
                           <BsDateText startDate={h.startDate} endDate={h.endDate} />
+                          {h.publishStatus ? ` · ${h.publishStatus}` : ''}
                         </div>
                         <div className="truncate">
                           {getHoroscopeTextForLanguage(h, 'summary', activeLangOption) || '—'}

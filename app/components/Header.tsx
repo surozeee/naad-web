@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from './ThemeProvider';
+import { useLocale } from './LocaleProvider';
 import { logout } from '@/app/lib/logout';
 import { getPortalRoleLabel, resolveAuthRole } from '@/app/lib/menu-role';
 import { useAuthProfile } from '@/app/lib/use-auth-profile';
@@ -27,6 +28,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, languages } = useLocale();
   const { profile } = useAuthProfile();
 
   const { displayName, displayEmail, portalRole, initials } = useMemo(() => {
@@ -114,6 +116,37 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
 
           {/* Right side - User actions */}
           <div className="flex items-center gap-3">
+            {/* UI language (Accept-Language) */}
+            <div className="relative inline-flex items-center" title="Language">
+              <span className="sr-only">Language</span>
+              <select
+                value={language}
+                onChange={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLanguage(e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Language"
+                className="appearance-none cursor-pointer rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-black dark:text-white font-bold text-xs tracking-wide pl-2.5 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {languages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.code}
+                  </option>
+                ))}
+              </select>
+              <svg
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 dark:text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}

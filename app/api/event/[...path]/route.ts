@@ -19,7 +19,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   return proxy(request, await params, 'DELETE');
 }
 
-const EVENT_HEADERS = ['id', 'status', 'publishstatus'];
+/** Custom headers the Java event APIs read via @RequestHeader (case-insensitive match). */
+const EVENT_HEADER_ALIASES: Array<{ keys: string[]; forwardAs: string }> = [
+  { keys: ['id'], forwardAs: 'id' },
+  { keys: ['status'], forwardAs: 'status' },
+  { keys: ['publishStatus', 'publishstatus'], forwardAs: 'publishStatus' },
+];
 
 async function proxy(request: NextRequest, params: { path: string[] }, method: string) {
   try {
@@ -32,10 +37,14 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     const contentType = request.headers.get('content-type') || '';
     const isMultipart = contentType.includes('multipart/form-data');
     const forwardHeaders = backendHeaders(request, { includeJsonContentType: !isMultipart });
-    EVENT_HEADERS.forEach((h) => {
-      const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());
-      if (v) forwardHeaders[h] = v;
-    });
+    for (const { keys, forwardAs } of EVENT_HEADER_ALIASES) {
+      let value: string | null = null;
+      for (const key of keys) {
+        value = request.headers.get(key);
+        if (value) break;
+      }
+      if (value) forwardHeaders[forwardAs] = value;
+    }
     let body: BodyInit | undefined;
     if (method !== 'GET' && method !== 'DELETE') {
       if (isMultipart) {

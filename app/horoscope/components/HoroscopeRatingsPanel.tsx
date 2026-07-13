@@ -33,7 +33,7 @@ const CATEGORY_FIELDS = [
   { key: 'luckRating' as const, label: 'Luck' },
 ];
 
-/** Category star ratings + read-only Overall (average of set categories, 0.5 step). */
+/** Category star ratings + read-only Overall (average of set categories, 0.5 step). Two per row. */
 export function HoroscopeRatingsPanel({
   value,
   onChange,
@@ -71,26 +71,59 @@ export function HoroscopeRatingsPanel({
     });
   };
 
+  const rows = [
+    { key: 'overallRating' as const, label: 'Overall', readOnly: true as const, value: overall, hint: 'Auto average' },
+    ...CATEGORY_FIELDS.map((field) => ({
+      key: field.key,
+      label: field.label,
+      readOnly: false as const,
+      value: value[field.key],
+      hint: undefined as string | undefined,
+    })),
+  ];
+
   return (
-    <div className={`rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden ${className}`}>
-      <div className="grid grid-cols-[1fr_auto] gap-x-4 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-600">
+    <div className={`rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden horoscope-ratings-panel ${className}`}>
+      <div className="hidden sm:grid grid-cols-2 border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60">
+        {[0, 1].map((col) => (
+          <div
+            key={col}
+            className={`grid grid-cols-[1fr_auto] gap-x-3 px-3 py-2 ${
+              col === 0 ? 'border-r border-slate-200 dark:border-slate-600' : ''
+            }`}
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Category</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted text-right">
+              Rating
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="sm:hidden grid grid-cols-[1fr_auto] gap-x-3 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-600">
         <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Category</span>
         <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted text-right">Rating</span>
       </div>
-      <div className="px-3">
-        <HoroscopeRatingSelect
-          label="Overall"
-          value={overall}
-          readOnly
-          hint="Auto average of ratings below"
-        />
-        {CATEGORY_FIELDS.map((field) => (
-          <HoroscopeRatingSelect
-            key={field.key}
-            label={field.label}
-            value={value[field.key]}
-            onChange={(next) => setCategory(field.key, next)}
-          />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2">
+        {rows.map((row, index) => (
+          <div
+            key={row.key}
+            className={`px-3 ${
+              index % 2 === 0 ? 'sm:border-r sm:border-slate-200 dark:sm:border-slate-600' : ''
+            }`}
+          >
+            <HoroscopeRatingSelect
+              label={row.label}
+              value={row.value}
+              readOnly={row.readOnly}
+              hint={row.hint}
+              onChange={
+                row.readOnly
+                  ? undefined
+                  : (next) => setCategory(row.key as (typeof CATEGORY_FIELDS)[number]['key'], next)
+              }
+            />
+          </div>
         ))}
       </div>
     </div>

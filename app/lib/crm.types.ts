@@ -202,7 +202,11 @@ export interface HoroscopeListRequest extends CrmListRequest {
   publishStatus?: HoroscopePublishStatusEnum;
   startDate?: string;
   endDate?: string;
+  /** AD YYYY-MM-DD — rows whose period contains this date */
+  referenceDate?: string;
   status?: StatusEnum;
+  /** Backend LanguageEnum code (EN, NE, HI, …). Filters and localizes list results. */
+  language?: LanguageEnumCode;
 }
 
 export interface HoroscopePeriodRequest {

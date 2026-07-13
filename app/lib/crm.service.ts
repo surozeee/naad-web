@@ -123,9 +123,14 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
     },
 
     listActive: async (): Promise<{ data?: T[] }> => {
-      const r = await request<T[] | { data?: T[] }>('GET', `${entityPath}/list-active`, opts());
-      const data = Array.isArray(r) ? r : (r as { data?: T[] }).data;
-      return { data: data ?? [] };
+      const r = await request<T[]>('GET', `${entityPath}/list-active`, opts());
+      const raw =
+        (Array.isArray(r.data) ? r.data : null) ??
+        (Array.isArray((r as unknown as { result?: T[] }).result)
+          ? (r as unknown as { result: T[] }).result
+          : null) ??
+        (Array.isArray(r) ? (r as unknown as T[]) : null);
+      return { data: raw ?? [] };
     },
 
     delete: (id: string) =>

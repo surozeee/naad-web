@@ -253,7 +253,7 @@ export function HoroscopeColorPicker({
   return (
     <div className={`flex flex-col gap-2 min-w-0 ${className}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-black dark:text-white">{label}</span>
+        <span className="text-xs font-semibold horoscope-key text-black dark:text-white">{label}</span>
         <span className="text-[10px] horoscope-muted">
           {loading ? 'Loading…' : `${selected.length}/${max} selected`}
         </span>
