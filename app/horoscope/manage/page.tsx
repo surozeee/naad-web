@@ -29,7 +29,9 @@ import type {
   LanguageEnumCode,
   ZodiacSignEnum,
 } from '@/app/lib/crm.types';
+import { formatIsoDate, resolveHoroscopePeriodDates } from '@/app/lib/horoscope-date-period';
 import { HoroscopeLanguageTabs } from '@/app/horoscope/components/HoroscopeLanguageTabs';
+import { HoroscopePeriodDateField } from '@/app/horoscope/components/HoroscopePeriodDateField';
 
 const ZODIAC_OPTIONS: ZodiacSignEnum[] = [
   'ARIES', 'TAURUS', 'GEMINI', 'CANCER', 'LEO', 'VIRGO',
@@ -38,10 +40,8 @@ const ZODIAC_OPTIONS: ZodiacSignEnum[] = [
 
 const TYPE_TABS: HoroscopeTypeEnum[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
 
-const FIELD_LABELS: Record<HoroscopeTextField, string> = {
-  title: 'Title',
-  summary: 'Overview / Summary',
-  description: 'Description',
+const FIELD_LABELS: Partial<Record<HoroscopeTextField, string>> = {
+  summary: 'Overview',
   love: 'Love & Relationship',
   career: 'Career & Business',
   money: 'Money & Finance',
@@ -53,14 +53,21 @@ const FIELD_LABELS: Record<HoroscopeTextField, string> = {
   mood: 'Mood',
 };
 
-const emptyForm = (): HoroscopeRequest => ({
-  zodiacSign: 'ARIES',
-  horoscopeType: 'DAILY',
-  startDate: new Date().toISOString().slice(0, 10),
-  endDate: new Date().toISOString().slice(0, 10),
-  publishStatus: 'DRAFT',
-  locales: [],
-});
+const FORM_TEXT_FIELDS: HoroscopeTextField[] = HOROSCOPE_TEXT_FIELDS.filter(
+  (f) => f !== 'title' && f !== 'description'
+);
+
+const emptyForm = (type: HoroscopeTypeEnum = 'DAILY'): HoroscopeRequest => {
+  const period = resolveHoroscopePeriodDates(type, formatIsoDate(new Date()));
+  return {
+    zodiacSign: 'ARIES',
+    horoscopeType: type,
+    startDate: period.startDate,
+    endDate: period.endDate,
+    publishStatus: 'DRAFT',
+    locales: [],
+  };
+};
 
 function trimLocale(row: HoroscopeLocaleRequest): HoroscopeLocaleRequest {
   const out: HoroscopeLocaleRequest = { language: row.language };
@@ -122,11 +129,23 @@ export default function HoroscopeManagePage() {
   }, [load]);
 
   const reset = () => {
-    setForm({ ...emptyForm(), horoscopeType: activeType });
+    setForm(emptyForm(activeType));
     setLocales(createEmptyLocalesMap(languages));
     setEditingId(null);
     setActiveLang(getBaseHoroscopeLanguage(languages).uiCode);
   };
+
+  useEffect(() => {
+    setForm((prev) => {
+      const period = resolveHoroscopePeriodDates(activeType, prev.startDate || formatIsoDate(new Date()));
+      return {
+        ...prev,
+        horoscopeType: activeType,
+        startDate: period.startDate,
+        endDate: period.endDate,
+      };
+    });
+  }, [activeType]);
 
   const setEnField = (field: HoroscopeTextField, value: string) => {
     setForm((p) => ({ ...p, [field]: value }));
@@ -181,6 +200,7 @@ export default function HoroscopeManagePage() {
     if (!d) return;
     setEditingId(d.id);
     setActiveType(d.horoscopeType);
+    const period = resolveHoroscopePeriodDates(d.horoscopeType, d.startDate || formatIsoDate(new Date()));
     setForm({
       zodiacSign: d.zodiacSign,
       horoscopeType: d.horoscopeType,
@@ -197,15 +217,14 @@ export default function HoroscopeManagePage() {
       advice: d.advice,
       luckyNumber: d.luckyNumber,
       luckyColor: d.luckyColor,
-      luckyTime: d.luckyTime,
       mood: d.mood,
       loveRating: d.loveRating,
       careerRating: d.careerRating,
       moneyRating: d.moneyRating,
       healthRating: d.healthRating,
       overallRating: d.overallRating,
-      startDate: d.startDate,
-      endDate: d.endDate,
+      startDate: period.startDate,
+      endDate: period.endDate,
       publishStatus: d.publishStatus ?? 'DRAFT',
       locales: d.locales,
     });
@@ -263,7 +282,7 @@ export default function HoroscopeManagePage() {
             {activeLanguage.label} content
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
             <select
               className="form-input"
               value={form.zodiacSign}
@@ -273,8 +292,12 @@ export default function HoroscopeManagePage() {
                 <option key={z} value={z}>{z}</option>
               ))}
             </select>
-            <input type="date" className="form-input" value={form.startDate} onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))} />
-            <input type="date" className="form-input" value={form.endDate} onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))} />
+            <HoroscopePeriodDateField
+              horoscopeType={activeType}
+              startDate={form.startDate}
+              endDate={form.endDate}
+              onChange={({ startDate, endDate }) => setForm((p) => ({ ...p, startDate, endDate }))}
+            />
             <select
               className="form-input"
               value={form.publishStatus ?? 'DRAFT'}
@@ -287,10 +310,9 @@ export default function HoroscopeManagePage() {
           </div>
 
           {activeLanguage.isBase && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <input className="form-input" placeholder="Lucky Number" value={form.luckyNumber ?? ''} onChange={(e) => setForm((p) => ({ ...p, luckyNumber: e.target.value }))} />
               <input className="form-input" placeholder="Lucky Color" value={form.luckyColor ?? ''} onChange={(e) => setForm((p) => ({ ...p, luckyColor: e.target.value }))} />
-              <input className="form-input" placeholder="Lucky Time" value={form.luckyTime ?? ''} onChange={(e) => setForm((p) => ({ ...p, luckyTime: e.target.value }))} />
               <input className="form-input" placeholder="Mood" value={form.mood ?? ''} onChange={(e) => setForm((p) => ({ ...p, mood: e.target.value }))} />
               {(['loveRating', 'careerRating', 'moneyRating', 'healthRating', 'overallRating'] as const).map((r) => (
                 <input
@@ -308,12 +330,12 @@ export default function HoroscopeManagePage() {
           )}
 
           <div className="space-y-3">
-            {HOROSCOPE_TEXT_FIELDS.filter((f) => activeLanguage.isBase || f !== 'mood').map((field) => (
+            {FORM_TEXT_FIELDS.filter((f) => activeLanguage.isBase || f !== 'mood').map((field) => (
               <div key={field}>
                 <label className="text-xs font-medium text-slate-500 mb-1 block">{FIELD_LABELS[field]}</label>
                 <textarea
                   className="form-input w-full"
-                  rows={field === 'title' ? 1 : 2}
+                  rows={field === 'summary' ? 3 : 2}
                   placeholder={FIELD_LABELS[field]}
                   value={getDisplayValue(field)}
                   onChange={(e) => setDisplayValue(field, e.target.value)}
@@ -346,8 +368,7 @@ export default function HoroscopeManagePage() {
                 <tr className="text-left border-b">
                   <th className="py-2 pr-3">Zodiac</th>
                   <th className="py-2 pr-3">Dates</th>
-                  <th className="py-2 pr-3">Title</th>
-                  <th className="py-2 pr-3">Summary</th>
+                  <th className="py-2 pr-3">Overview</th>
                   <th className="py-2 pr-3">Status</th>
                   <th className="py-2">Actions</th>
                 </tr>
@@ -357,10 +378,7 @@ export default function HoroscopeManagePage() {
                   <tr key={x.id} className="border-b">
                     <td className="py-2 pr-3">{x.zodiacSign}</td>
                     <td className="py-2 pr-3 whitespace-nowrap">{x.startDate} → {x.endDate}</td>
-                    <td className="py-2 pr-3 max-w-[200px] truncate">
-                      {getHoroscopeTextForLanguage(x, 'title', activeLanguage) || '—'}
-                    </td>
-                    <td className="py-2 pr-3 max-w-[280px] truncate">
+                    <td className="py-2 pr-3 max-w-[360px] truncate">
                       {getHoroscopeTextForLanguage(x, 'summary', activeLanguage) || '—'}
                     </td>
                     <td className="py-2 pr-3">{x.publishStatus ?? 'DRAFT'}</td>

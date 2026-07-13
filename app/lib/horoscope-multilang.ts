@@ -53,6 +53,14 @@ const LEGACY_UI_BY_BACKEND: Record<string, string> = {
   HI: 'hi',
 };
 
+/** Prefer ISO for UI code; keep NE → np for existing horoscope locale keys. */
+function resolveUiCode(backendCode: string, iso?: string): string {
+  const normalizedIso = String(iso ?? '').trim().toLowerCase();
+  if (normalizedIso === 'ne') return 'np';
+  if (normalizedIso) return normalizedIso;
+  return backendToUiCode(backendCode);
+}
+
 export function backendToUiCode(backendCode: string): string {
   const upper = backendCode.toUpperCase();
   return LEGACY_UI_BY_BACKEND[upper] ?? upper.toLowerCase();
@@ -68,9 +76,10 @@ export function resolveHoroscopeLanguages(
   for (const item of masterItems) {
     const backendCode = String(item.code ?? item.name ?? '').trim().toUpperCase();
     if (!backendCode) continue;
+    const iso = String(item.iso ?? item.isoCode ?? item.iso639 ?? '').trim();
     const label = String(item.name ?? item.code ?? backendCode);
     byBackend.set(backendCode, {
-      uiCode: backendToUiCode(backendCode),
+      uiCode: resolveUiCode(backendCode, iso),
       label,
       backendCode,
       isBase: backendCode === 'EN',

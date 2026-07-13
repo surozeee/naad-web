@@ -23,7 +23,9 @@ import {
   validateHoroscopeMultilangEntry,
 } from '@/app/lib/horoscope-multilang';
 import type { HoroscopeResponse, HoroscopeTypeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
+import { formatIsoDate, resolveHoroscopePeriodDates } from '@/app/lib/horoscope-date-period';
 import { HoroscopeLanguageTabs } from '@/app/horoscope/components/HoroscopeLanguageTabs';
+import { HoroscopePeriodDateField } from '@/app/horoscope/components/HoroscopePeriodDateField';
 
 interface HoroscopeEntry {
   id: string;
@@ -40,7 +42,7 @@ interface HoroscopeEntry {
 
 type HoroscopeFormState = Omit<HoroscopeEntry, 'id' | 'serverId'>;
 
-const STORAGE_KEY = 'horoscope-add-csv-drafts-v4';
+const STORAGE_KEY = 'horoscope-add-csv-drafts-v5';
 const TYPE_TABS: HoroscopeTypeEnum[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
 
 const ZODIAC_OPTIONS: Array<{ value: ZodiacSignEnum; label: string }> = [
@@ -58,10 +60,8 @@ const ZODIAC_OPTIONS: Array<{ value: ZodiacSignEnum; label: string }> = [
   { value: 'PISCES', label: 'Pisces' },
 ];
 
-const FIELD_LABELS: Record<HoroscopeTextField, string> = {
-  title: 'Title',
+const FIELD_LABELS: Partial<Record<HoroscopeTextField, string>> = {
   summary: 'Overview',
-  description: 'Description',
   love: 'Love',
   career: 'Career',
   money: 'Money',
@@ -73,8 +73,10 @@ const FIELD_LABELS: Record<HoroscopeTextField, string> = {
   mood: 'Mood',
 };
 
-const PRIMARY_FIELDS: HoroscopeTextField[] = ['title', 'summary', 'description'];
-const EXTRA_FIELDS = HOROSCOPE_TEXT_FIELDS.filter((f) => !PRIMARY_FIELDS.includes(f));
+/** Form fields shown in UI — title & description removed; Overview (summary) only among those. */
+const FORM_TEXT_FIELDS: HoroscopeTextField[] = HOROSCOPE_TEXT_FIELDS.filter(
+  (f) => f !== 'title' && f !== 'description'
+);
 
 const CSV_BASE_HEADERS = [
   'horoscopeType',
@@ -83,16 +85,15 @@ const CSV_BASE_HEADERS = [
   'endDate',
   'luckyNumber',
   'luckyColor',
-  'luckyTime',
 ] as const;
 
 const CSV_HEADERS = [
   ...CSV_BASE_HEADERS,
-  ...HOROSCOPE_TEXT_FIELDS.flatMap((f) => [`${f}_en`, `${f}_np`, `${f}_hi`]),
+  ...FORM_TEXT_FIELDS.flatMap((f) => [`${f}_en`, `${f}_np`, `${f}_hi`]),
 ] as const;
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return formatIsoDate(new Date());
 }
 
 function createEntryId(): string {
@@ -103,11 +104,11 @@ function createInitialForm(
   type: HoroscopeTypeEnum,
   languages: HoroscopeLanguageOption[] = DEFAULT_HOROSCOPE_LANGUAGES
 ): HoroscopeFormState {
-  const d = todayIso();
+  const period = resolveHoroscopePeriodDates(type, todayIso());
   return {
     horoscopeType: type,
-    startDate: d,
-    endDate: d,
+    startDate: period.startDate,
+    endDate: period.endDate,
     zodiacSign: 'ARIES',
     luckyNumber: '',
     luckyColor: '',
@@ -267,7 +268,15 @@ export default function AddHoroscopeCsvPage() {
   }, [refreshServerList]);
 
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, horoscopeType: activeType }));
+    setFormData((prev) => {
+      const period = resolveHoroscopePeriodDates(activeType, prev.startDate || todayIso());
+      return {
+        ...prev,
+        horoscopeType: activeType,
+        startDate: period.startDate,
+        endDate: period.endDate,
+      };
+    });
   }, [activeType]);
 
   const totals = useMemo(() => {
@@ -288,12 +297,9 @@ export default function AddHoroscopeCsvPage() {
     const items = groupedEntries.find((g) => g.type === activeType)?.items ?? [];
     const counts: Record<string, number> = {};
     for (const lang of languages) {
-      counts[lang.uiCode] = items.filter((entry) => {
-        if (lang.isBase) return Boolean(entry.localized.title[lang.uiCode]?.trim());
-        return Boolean(
-          entry.localized.title[lang.uiCode]?.trim() || entry.localized.summary[lang.uiCode]?.trim()
-        );
-      }).length;
+      counts[lang.uiCode] = items.filter((entry) =>
+        Boolean(entry.localized.summary[lang.uiCode]?.trim())
+      ).length;
     }
     return counts;
   }, [groupedEntries, activeType, languages]);
@@ -310,13 +316,9 @@ export default function AddHoroscopeCsvPage() {
 
   const activeDrafts = useMemo(
     () =>
-      (groupedEntries.find((g) => g.type === activeType)?.items ?? []).filter((entry) => {
-        if (activeLangOption.isBase) return Boolean(entry.localized.title[activeLangOption.uiCode]?.trim());
-        return Boolean(
-          entry.localized.title[activeLangOption.uiCode]?.trim() ||
-            entry.localized.summary[activeLangOption.uiCode]?.trim()
-        );
-      }),
+      (groupedEntries.find((g) => g.type === activeType)?.items ?? []).filter((entry) =>
+        Boolean(entry.localized.summary[activeLangOption.uiCode]?.trim())
+      ),
     [groupedEntries, activeType, activeLangOption]
   );
 
@@ -349,7 +351,7 @@ export default function AddHoroscopeCsvPage() {
   const validateForm = (): boolean => {
     const nextErrors: Record<string, string> = {};
     if (!formData.zodiacSign) nextErrors.zodiacSign = 'Zodiac sign is required';
-    if (!formData.startDate) nextErrors.startDate = 'Start date is required';
+    if (!formData.startDate) nextErrors.startDate = 'Date is required';
     if (!formData.endDate) nextErrors.endDate = 'End date is required';
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -369,7 +371,7 @@ export default function AddHoroscopeCsvPage() {
       ...formData,
       luckyNumber: formData.luckyNumber.trim(),
       luckyColor: formData.luckyColor.trim(),
-      luckyTime: formData.luckyTime.trim(),
+      luckyTime: '',
       serverId: editingId ? entries.find((x) => x.id === editingId)?.serverId : undefined,
     };
     setEntries((prev) => (editingId ? prev.map((item) => (item.id === editingId ? payload : item)) : [payload, ...prev]));
@@ -379,14 +381,15 @@ export default function AddHoroscopeCsvPage() {
 
   const handleEdit = (entry: HoroscopeEntry) => {
     setActiveType(entry.horoscopeType);
+    const period = resolveHoroscopePeriodDates(entry.horoscopeType, entry.startDate || todayIso());
     setFormData({
       horoscopeType: entry.horoscopeType,
-      startDate: entry.startDate,
-      endDate: entry.endDate,
+      startDate: period.startDate,
+      endDate: period.endDate,
       zodiacSign: entry.zodiacSign,
       luckyNumber: entry.luckyNumber,
       luckyColor: entry.luckyColor,
-      luckyTime: entry.luckyTime,
+      luckyTime: '',
       localized: JSON.parse(JSON.stringify(entry.localized)) as HoroscopeLocalizedFields,
     });
     setEditingId(entry.id);
@@ -418,8 +421,10 @@ export default function AddHoroscopeCsvPage() {
         ) as Record<string, string>;
         const horoscopeType = (rowData.horoscopetype ?? rowData.period ?? activeType).toUpperCase() as HoroscopeTypeEnum;
         const zodiacSign = (rowData.zodiacsign ?? '').toUpperCase();
-        const startDate = rowData.startdate ?? todayIso();
-        const endDate = rowData.enddate ?? startDate;
+        const startDateRaw = rowData.startdate ?? todayIso();
+        const period = resolveHoroscopePeriodDates(horoscopeType, startDateRaw);
+        const endDate = rowData.enddate ? rowData.enddate : period.endDate;
+        const startDate = rowData.enddate ? startDateRaw : period.startDate;
         if (!TYPE_TABS.includes(horoscopeType) || !isValidZodiac(zodiacSign)) continue;
         const localized = HOROSCOPE_TEXT_FIELDS.reduce((acc, field) => {
           acc[field] = resolveLocalizedField(rowData, field);
@@ -433,7 +438,7 @@ export default function AddHoroscopeCsvPage() {
           zodiacSign,
           luckyNumber: rowData.luckynumber ?? '',
           luckyColor: rowData.luckycolor ?? rowData.color ?? '',
-          luckyTime: rowData.luckytime ?? '',
+          luckyTime: '',
           localized,
         });
       }
@@ -451,17 +456,16 @@ export default function AddHoroscopeCsvPage() {
   const handleDownloadSample = () => {
     const headerLine = CSV_HEADERS.map(escapeCsvCell).join(',');
     const localized = createEmptyLocalizedFields();
-    localized.title.en = 'A productive day ahead';
     localized.summary.en = 'Today brings fresh energy.';
+    const period = resolveHoroscopePeriodDates(activeType, todayIso());
     const sampleCells = [
       activeType,
       'ARIES',
-      todayIso(),
-      todayIso(),
+      period.startDate,
+      period.endDate,
       '7',
       'Red',
-      '10:00 AM - 12:00 PM',
-      ...HOROSCOPE_TEXT_FIELDS.flatMap((f) => [
+      ...FORM_TEXT_FIELDS.flatMap((f) => [
         localized[f].en,
         localized[f].np,
         localized[f].hi,
@@ -598,18 +602,30 @@ export default function AddHoroscopeCsvPage() {
             </div>
 
             <div className="p-4 space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input text-sm py-1.5 col-span-2 md:col-span-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-start">
+                <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input text-sm py-1.5">
                   {ZODIAC_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
-                <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange} className="form-input text-sm py-1.5" title="Start date" />
-                <input type="date" name="endDate" value={formData.endDate} onChange={handleInputChange} className="form-input text-sm py-1.5" title="End date" />
+                <HoroscopePeriodDateField
+                  horoscopeType={activeType}
+                  startDate={formData.startDate}
+                  endDate={formData.endDate}
+                  onChange={({ startDate, endDate }) => {
+                    setFormData((prev) => ({ ...prev, startDate, endDate }));
+                    if (errors.startDate || errors.endDate) {
+                      setErrors((prev) => ({ ...prev, startDate: '', endDate: '' }));
+                    }
+                  }}
+                  className="sm:col-span-1"
+                />
                 <input name="luckyNumber" value={formData.luckyNumber} onChange={handleInputChange} placeholder="Lucky #" className="form-input text-sm py-1.5" />
                 <input name="luckyColor" value={formData.luckyColor} onChange={handleInputChange} placeholder="Color" className="form-input text-sm py-1.5" />
-                <input name="luckyTime" value={formData.luckyTime} onChange={handleInputChange} placeholder="Time" className="form-input text-sm py-1.5" />
               </div>
+              {(errors.startDate || errors.endDate) && (
+                <p className="text-[11px] text-red-600 -mt-2">{errors.startDate || errors.endDate}</p>
+              )}
 
               <HoroscopeLanguageTabs
                 languages={languages}
@@ -625,11 +641,11 @@ export default function AddHoroscopeCsvPage() {
                 role="tabpanel"
                 aria-label={`${activeLangOption.label} content`}
               >
-                {HOROSCOPE_TEXT_FIELDS.map((field) => (
-                  <div key={field} className={field === 'description' || field === 'summary' ? 'md:col-span-2' : ''}>
+                {FORM_TEXT_FIELDS.map((field) => (
+                  <div key={field} className={field === 'summary' ? 'md:col-span-2' : ''}>
                     <label className="text-[11px] font-semibold text-black dark:text-white">{FIELD_LABELS[field]}</label>
                     <textarea
-                      rows={field === 'title' ? 1 : field === 'description' || field === 'summary' ? 2 : 1}
+                      rows={field === 'summary' ? 3 : 1}
                       value={formData.localized[field][activeLanguage] ?? ''}
                       onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
                       className="form-input w-full mt-1 text-sm py-2 min-h-[2.25rem]"
@@ -717,7 +733,7 @@ export default function AddHoroscopeCsvPage() {
                           <div className="font-semibold">{entry.zodiacSign}</div>
                           <div className="text-[10px] horoscope-muted">{entry.startDate} → {entry.endDate}</div>
                           <div className="truncate">
-                            {entry.localized.title[activeLangOption.uiCode] || '—'}
+                            {entry.localized.summary[activeLangOption.uiCode] || '—'}
                           </div>
                         </div>
                         <div className="flex shrink-0 gap-0.5">
@@ -744,7 +760,7 @@ export default function AddHoroscopeCsvPage() {
                         <div className="font-semibold">{h.zodiacSign}</div>
                         <div className="text-[10px] horoscope-muted">{h.startDate} → {h.endDate}</div>
                         <div className="truncate">
-                          {getHoroscopeTextForLanguage(h, 'title', activeLangOption) || '—'}
+                          {getHoroscopeTextForLanguage(h, 'summary', activeLangOption) || '—'}
                         </div>
                       </li>
                     ))}

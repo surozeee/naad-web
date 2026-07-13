@@ -103,7 +103,11 @@ export type LocalUnitTypeListRequest = MasterListRequest;
 // ---- Language ----
 export interface LanguageRequest {
   name: string;
-  code?: string;
+  /** Backend LanguageEnum / ISO 639-1 style code (e.g. EN, NE, HI). */
+  code: string;
+  nativeName: string;
+  direction: 'LTR' | 'RTL';
+  isDefault?: boolean;
   status?: StatusEnum;
 }
 export type LanguageListRequest = MasterListRequest;
