@@ -447,6 +447,34 @@ export default function AddHoroscopeCsvPage() {
     refreshServerList();
   }, [refreshServerList]);
 
+  // Keep local draft cards in sync with server publish status
+  useEffect(() => {
+    if (!serverRows.length) return;
+    setEntries((prev) => {
+      let changed = false;
+      const next = prev.map((entry) => {
+        const match = entry.serverId
+          ? serverRows.find((h) => h.id === entry.serverId)
+          : serverRows.find(
+              (h) =>
+                h.zodiacSign === entry.zodiacSign &&
+                h.horoscopeType === entry.horoscopeType &&
+                h.startDate === entry.startDate &&
+                h.endDate === entry.endDate
+            );
+        if (!match?.publishStatus) return entry;
+        if (entry.serverId === match.id && entry.publishStatus === match.publishStatus) return entry;
+        changed = true;
+        return {
+          ...entry,
+          serverId: match.id,
+          publishStatus: match.publishStatus,
+        };
+      });
+      return changed ? next : prev;
+    });
+  }, [serverRows]);
+
   useEffect(() => {
     setFormData((prev) => {
       const period = resolveHoroscopePeriodDates(activeType, prev.startDate || todayIso());
@@ -499,33 +527,42 @@ export default function AddHoroscopeCsvPage() {
     [groupedEntries, activeType]
   );
 
-  const activeDraftIdSet = useMemo(() => new Set(activeDrafts.map((e) => e.id)), [activeDrafts]);
+  const publishableDrafts = useMemo(
+    () => activeDrafts.filter((e) => resolveDraftDisplayStatus(e) !== 'PUBLISHED'),
+    [activeDrafts]
+  );
+  const publishableDraftIdSet = useMemo(
+    () => new Set(publishableDrafts.map((e) => e.id)),
+    [publishableDrafts]
+  );
   const selectedVisibleIds = useMemo(
-    () => selectedDraftIds.filter((id) => activeDraftIdSet.has(id)),
-    [selectedDraftIds, activeDraftIdSet]
+    () => selectedDraftIds.filter((id) => publishableDraftIdSet.has(id)),
+    [selectedDraftIds, publishableDraftIdSet]
   );
   const allVisibleSelected =
-    activeDrafts.length > 0 && selectedVisibleIds.length === activeDrafts.length;
+    publishableDrafts.length > 0 && selectedVisibleIds.length === publishableDrafts.length;
 
-  // Drop stale selections when tab/language/draft list changes
+  // Drop stale / published selections when list changes
   useEffect(() => {
-    setSelectedDraftIds((prev) => prev.filter((id) => activeDraftIdSet.has(id)));
-  }, [activeDraftIdSet]);
+    setSelectedDraftIds((prev) => prev.filter((id) => publishableDraftIdSet.has(id)));
+  }, [publishableDraftIdSet]);
 
   const toggleDraftSelected = (id: string) => {
+    if (!publishableDraftIdSet.has(id)) return;
     setSelectedDraftIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
   const toggleSelectAllDrafts = () => {
+    if (publishableDrafts.length === 0) return;
     if (allVisibleSelected) {
-      setSelectedDraftIds((prev) => prev.filter((id) => !activeDraftIdSet.has(id)));
+      setSelectedDraftIds((prev) => prev.filter((id) => !publishableDraftIdSet.has(id)));
       return;
     }
     setSelectedDraftIds((prev) => {
       const next = new Set(prev);
-      for (const entry of activeDrafts) next.add(entry.id);
+      for (const entry of publishableDrafts) next.add(entry.id);
       return [...next];
     });
   };
@@ -578,6 +615,7 @@ export default function AddHoroscopeCsvPage() {
 
   const handleAddOrUpdate = () => {
     if (!validateForm()) return;
+    const existing = editingId ? entries.find((x) => x.id === editingId) : undefined;
     const payload: HoroscopeEntry = {
       id: editingId ?? createEntryId(),
       ...formData,
@@ -586,7 +624,8 @@ export default function AddHoroscopeCsvPage() {
       luckyTime: formData.luckyTime.trim(),
       overallRating: computeOverallRating(formData),
       localized: mergeLocalizedWithLanguages(formData.localized, languages),
-      serverId: editingId ? entries.find((x) => x.id === editingId)?.serverId : undefined,
+      serverId: existing?.serverId,
+      publishStatus: existing?.publishStatus ?? 'DRAFT',
     };
     setEntries((prev) => (editingId ? prev.map((item) => (item.id === editingId ? payload : item)) : [payload, ...prev]));
     setCsvMessage(editingId ? 'Draft updated.' : 'Draft added. Use Save Draft to store on the server.');
@@ -676,6 +715,7 @@ export default function AddHoroscopeCsvPage() {
           travelRating: parseOptionalRating(rowData.travelrating),
           luckRating: parseOptionalRating(rowData.luckrating),
           overallRating: undefined,
+          publishStatus: 'DRAFT',
           localized,
         };
         entry.overallRating = computeOverallRating(entry);
@@ -875,7 +915,13 @@ export default function AddHoroscopeCsvPage() {
           rowErrors.push(`${entry.zodiacSign}: ${err instanceof Error ? err.message : 'Save failed'}`);
         }
       }
-      setEntries((prev) => prev.map((e) => (idUpdates.has(e.id) ? { ...e, serverId: idUpdates.get(e.id) } : e)));
+      setEntries((prev) =>
+        prev.map((e) =>
+          idUpdates.has(e.id)
+            ? { ...e, serverId: idUpdates.get(e.id), publishStatus: 'DRAFT' as const }
+            : e
+        )
+      );
       setCsvMessage(
         rowErrors.length > 0
           ? `Saved ${saved} draft(s) with ${rowErrors.length} error(s): ${rowErrors.slice(0, 3).join('; ')}`
@@ -929,7 +975,11 @@ export default function AddHoroscopeCsvPage() {
         }
       }
       setEntries((prev) =>
-        prev.map((e) => (idUpdates.has(e.id) ? { ...e, serverId: idUpdates.get(e.id) } : e))
+        prev.map((e) =>
+          idUpdates.has(e.id)
+            ? { ...e, serverId: idUpdates.get(e.id), publishStatus: 'PUBLISHED' as const }
+            : e
+        )
       );
       setSelectedDraftIds((prev) => prev.filter((id) => !publishedIds.has(id)));
       const published = publishedIds.size;
@@ -1195,7 +1245,7 @@ export default function AddHoroscopeCsvPage() {
                   <p className="text-[10px] font-semibold uppercase tracking-wide horoscope-muted">
                     {t('add.localDrafts', { lang: activeLangOption.label })}
                   </p>
-                  {activeDrafts.length > 0 ? (
+                  {publishableDrafts.length > 0 ? (
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="inline-flex items-center gap-1.5 text-[11px] text-black dark:text-white cursor-pointer select-none">
                         <input
@@ -1215,7 +1265,7 @@ export default function AddHoroscopeCsvPage() {
                           (
                           {t('add.selectedCount', {
                             selected: localizeDigits(selectedVisibleIds.length, uiCode),
-                            total: localizeDigits(activeDrafts.length, uiCode),
+                            total: localizeDigits(publishableDrafts.length, uiCode),
                           })}
                           )
                         </span>
@@ -1248,6 +1298,20 @@ export default function AddHoroscopeCsvPage() {
                   <ul className="space-y-1.5">
                     {activeDrafts.map((entry) => {
                       const checked = selectedDraftIds.includes(entry.id);
+                      const status = resolveDraftDisplayStatus(entry);
+                      const canSelect = status !== 'PUBLISHED';
+                      const statusLabel =
+                        status === 'PUBLISHED'
+                          ? t('add.statusPublished')
+                          : status === 'DRAFT'
+                            ? t('add.statusDraft')
+                            : t('add.statusLocal');
+                      const statusClass =
+                        status === 'PUBLISHED'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+                          : status === 'DRAFT'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
                       return (
                       <li
                         key={entry.id}
@@ -1257,15 +1321,44 @@ export default function AddHoroscopeCsvPage() {
                             : 'border-slate-200 dark:border-slate-600'
                         }`}
                       >
-                        <label className="flex items-start gap-2 min-w-0 flex-1 cursor-pointer text-black dark:text-white">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleDraftSelected(entry.id)}
-                            className="mt-0.5 rounded border-slate-300 shrink-0"
-                          />
+                        <div
+                          className={`flex items-start gap-2 min-w-0 flex-1 text-black dark:text-white ${
+                            canSelect ? 'cursor-pointer' : ''
+                          }`}
+                          onClick={canSelect ? () => toggleDraftSelected(entry.id) : undefined}
+                          onKeyDown={
+                            canSelect
+                              ? (e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    toggleDraftSelected(entry.id);
+                                  }
+                                }
+                              : undefined
+                          }
+                          role={canSelect ? 'button' : undefined}
+                          tabIndex={canSelect ? 0 : undefined}
+                        >
+                          {canSelect ? (
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleDraftSelected(entry.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-0.5 rounded border-slate-300 shrink-0"
+                            />
+                          ) : (
+                            <span className="mt-0.5 w-4 shrink-0" aria-hidden />
+                          )}
                           <div className="min-w-0">
-                            <div className="font-semibold">{zodiacName(entry.zodiacSign)}</div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="font-semibold">{zodiacName(entry.zodiacSign)}</span>
+                              <span
+                                className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${statusClass}`}
+                              >
+                                {statusLabel}
+                              </span>
+                            </div>
                             <div className="text-[10px] horoscope-muted">
                               <BsDateText startDate={entry.startDate} endDate={entry.endDate} />
                             </div>
@@ -1273,7 +1366,7 @@ export default function AddHoroscopeCsvPage() {
                               {entry.localized.summary[activeLangOption.uiCode] || '—'}
                             </div>
                           </div>
-                        </label>
+                        </div>
                         <div className="flex shrink-0 gap-0.5">
                           <button type="button" onClick={() => handleEdit(entry)} className="btn-icon-edit p-1"><Pencil size={12} /></button>
                           <button type="button" onClick={() => handleDelete(entry.id)} className="btn-icon-delete p-1"><Trash2 size={12} /></button>
