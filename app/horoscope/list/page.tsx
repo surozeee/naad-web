@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import DashboardLayout from '@/app/components/DashboardLayout';
-import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { HoroscopePeriodDateField } from '@/app/horoscope/components/HoroscopePeriodDateField';
 import { BsDateText } from '@/app/horoscope/components/BsDateText';
 import { horoscopeApi, zodiacSignApi } from '@/app/lib/crm.service';
@@ -38,7 +37,6 @@ import { normalizeUiLanguageCode } from '@/app/lib/ui-language';
 import { translateHoroscope, useHoroscopeI18n } from '@/app/lib/horoscope-i18n';
 import { localizeDigits } from '@/app/lib/nepali-digits';
 import { resolveColorDisplayName } from '@/app/lib/color-i18n';
-import { resolveLanguageDisplayName } from '@/app/lib/language-i18n';
 import { colorApi } from '@/app/lib/master.service';
 import type { ColorResponse } from '@/app/lib/master.types';
 
@@ -105,11 +103,6 @@ const RATING_FIELDS: Array<{
   { key: 'travelRating', labelKey: 'ratings.travel' },
   { key: 'luckRating', labelKey: 'ratings.luck' },
 ];
-
-const META_FIELDS: Array<{
-  key: keyof HoroscopeResponse;
-  labelKey: string;
-}> = [{ key: 'publishStatus', labelKey: 'publishStatus' }];
 
 const TYPE_TABS: Array<{
   type: HoroscopeTypeEnum;
@@ -231,13 +224,9 @@ function resolveZodiacDisplayName(
 }
 
 export default function HoroscopeListPage() {
-  const { language, languages: headerLanguages } = useLocale();
+  const { language } = useLocale();
   const { t, typeLabel, elementLabel, uiCode } = useHoroscopeI18n();
   const backendLanguage = useMemo(() => uiCodeToBackendLanguage(language), [language]);
-  const languageLabel = useMemo(() => {
-    const match = headerLanguages.find((l) => l.code === normalizeUiLanguageCode(language));
-    return match?.label || resolveLanguageDisplayName({ code: language }, language);
-  }, [headerLanguages, language]);
 
   const [horoscopeType, setHoroscopeType] = useState<HoroscopeTypeEnum>('DAILY');
   const [period, setPeriod] = useState(() => resolveHoroscopePeriodDates('DAILY', formatIsoDate(new Date())));
@@ -256,8 +245,6 @@ export default function HoroscopeListPage() {
     }
     return map;
   }, [items]);
-
-  const contentCount = byZodiac.size;
 
   const zodiacLabel = useCallback(
     (sign: ZodiacSignEnum) => resolveZodiacDisplayName(sign, zodiacRows, backendLanguage, uiCode),
@@ -295,6 +282,7 @@ export default function HoroscopeListPage() {
         horoscopeType,
         language: backendLanguage,
         referenceDate: period.startDate,
+        publishStatus: 'PUBLISHED',
         status: 'ACTIVE',
       });
       setItems((res.result ?? res.content ?? []) as HoroscopeResponse[]);
@@ -338,13 +326,6 @@ export default function HoroscopeListPage() {
   return (
     <DashboardLayout>
       <div className="horoscope-list-page hl-page space-y-5">
-        <Breadcrumb
-          items={[
-            { label: t('breadcrumbHoroscope'), href: '/horoscope' },
-            { label: t('breadcrumbList') },
-          ]}
-        />
-
         <header className="hl-page-header">
           <div className="hl-page-header-main">
             <h1 className="hl-page-title">{t('pageTitle')}</h1>
@@ -352,15 +333,6 @@ export default function HoroscopeListPage() {
               {t('pageDesc', { type: typeNameLower })}{' '}
               <BsDateText startDate={period.startDate} endDate={period.endDate} />
             </p>
-          </div>
-          <div className="hl-page-meta">
-            <span className="hl-meta-chip hl-meta-type">{typeName}</span>
-            <span className="hl-meta-chip">{languageLabel}</span>
-            {!loading ? (
-              <span className="hl-meta-chip hl-meta-count">
-                {t('readyCount', { count: localizeDigits(contentCount, uiCode) })}
-              </span>
-            ) : null}
           </div>
         </header>
 
@@ -437,41 +409,11 @@ export default function HoroscopeListPage() {
                         <span className="hl-sign-symbol" aria-hidden>
                           {meta.symbol}
                         </span>
-                        <span className={`hl-sign-status ${hasContent ? 'is-ready' : ''}`}>
-                          {hasContent ? t('ready') : t('empty')}
-                        </span>
                       </div>
                       <div className="hl-sign-name">{zodiacLabel(sign)}</div>
                       <div className="hl-sign-element">{elementLabel(meta.tone)}</div>
                       {hasContent ? (
-                        <>
-                          {row?.overallRating != null ? (
-                            <div className="hl-sign-rating-row">
-                              <RatingStars value={row.overallRating} uiCode={uiCode} />
-                              <span className="hl-sign-rating-num">{formatRating(row.overallRating, uiCode)}</span>
-                            </div>
-                          ) : null}
-                          <p className="hl-sign-summary">{shortText(row?.summary) || t('openReading')}</p>
-                          {(row?.luckyNumber || row?.luckyColor) && (
-                            <div className="hl-sign-tags">
-                              {row.luckyNumber ? (
-                                <span className="hl-sign-tag">
-                                  #{localizeDigits(row.luckyNumber, uiCode)}
-                                </span>
-                              ) : null}
-                              {row.luckyColor ? (
-                                <span className="hl-sign-tag">
-                                  {shortText(
-                                    parseLuckyColors(row.luckyColor)
-                                      .map((n) => resolveColorDisplayName(n, uiCode, colorRows))
-                                      .join(', '),
-                                    18
-                                  )}
-                                </span>
-                              ) : null}
-                            </div>
-                          )}
-                        </>
+                        <p className="hl-sign-summary">{shortText(row?.summary) || t('openReading')}</p>
                       ) : (
                         <p className="hl-sign-empty">{t('noReadingForPeriod')}</p>
                       )}
@@ -639,30 +581,6 @@ export default function HoroscopeListPage() {
                               </section>
                             );
                           })}
-                        </div>
-                      </div>
-
-                      <div className="hl-meta-block">
-                        <h3 className="hl-section-label">{t('recordInfo')}</h3>
-                        <div className="hl-meta-grid">
-                          {META_FIELDS.map((m) => (
-                            <div key={m.key} className="hl-meta-item">
-                              <span className="hl-meta-label">{t(m.labelKey)}</span>
-                              <span className="hl-meta-value">
-                                {selected[m.key] != null && String(selected[m.key]).trim()
-                                  ? String(selected[m.key])
-                                  : '—'}
-                              </span>
-                            </div>
-                          ))}
-                          <div className="hl-meta-item">
-                            <span className="hl-meta-label">{t('created')}</span>
-                            <span className="hl-meta-value">{selected.createdAt || '—'}</span>
-                          </div>
-                          <div className="hl-meta-item">
-                            <span className="hl-meta-label">{t('updated')}</span>
-                            <span className="hl-meta-value">{selected.lastModifiedAt || '—'}</span>
-                          </div>
                         </div>
                       </div>
                     </>

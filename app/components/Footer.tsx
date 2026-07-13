@@ -51,28 +51,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/astrology" className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                  Astrology
-                </Link>
-              </li>
-              <li>
                 <Link href="/palmistry" className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                   Palmistry
                 </Link>
               </li>
               <li>
-                <Link href="/puja" className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                  Puja Services
-                </Link>
-              </li>
-              <li>
                 <Link href="/music" className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                   Spiritual Music
-                </Link>
-              </li>
-              <li>
-                <Link href="/dashboard" className="text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                  Dashboard
                 </Link>
               </li>
             </ul>

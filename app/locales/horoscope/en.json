@@ -137,7 +137,7 @@
     "refreshServer": "Refresh server list",
     "records": "Records",
     "localDrafts": "Local drafts · {lang}",
-    "noLocalDrafts": "No {lang} drafts.",
+    "noLocalDrafts": "No drafts yet. Fill the form and click Add draft.",
     "onServer": "On server · {lang}",
     "loading": "Loading…",
     "noServerRecords": "No server records.",

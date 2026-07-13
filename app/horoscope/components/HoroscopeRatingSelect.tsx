@@ -30,9 +30,10 @@ export function HoroscopeRatingSelect({
 }: HoroscopeRatingSelectProps) {
   const current = value == null || Number.isNaN(value) ? 0 : Number(value);
   const hasValue = value != null && !Number.isNaN(value);
+  const interactive = !readOnly && typeof onChange === 'function';
 
   const pick = (next: number) => {
-    if (readOnly || !onChange) return;
+    if (!interactive || !onChange) return;
     if (hasValue && Math.abs(current - next) < 1e-9) {
       onChange(undefined);
       return;
@@ -42,59 +43,80 @@ export function HoroscopeRatingSelect({
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 min-h-[2.25rem] py-1.5 border-b border-slate-100 dark:border-slate-700/80 last:border-0 ${className}`}
+      className={`flex items-center ${label || hint ? 'justify-between gap-3' : 'justify-end gap-2'} min-h-[2.25rem] py-1.5 border-b border-slate-100 dark:border-slate-700/80 last:border-0 ${className}`}
     >
-      <div className="min-w-0">
-        <div className="text-xs font-semibold text-black dark:text-white">
-          {label}
-          {required ? <span className="text-red-600"> *</span> : null}
+      {label || hint ? (
+        <div className="min-w-0">
+          {label ? (
+            <div className="text-xs font-semibold text-black dark:text-white">
+              {label}
+              {required ? <span className="text-red-600"> *</span> : null}
+            </div>
+          ) : null}
+          {hint ? <p className="text-[10px] horoscope-muted leading-tight">{hint}</p> : null}
         </div>
-        {hint ? <p className="text-[10px] horoscope-muted leading-tight">{hint}</p> : null}
-      </div>
+      ) : null}
 
       <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center" role={readOnly ? 'img' : 'group'} aria-label={`${label} rating`}>
+        <div
+          className="flex items-center gap-0.5"
+          role={readOnly ? 'img' : 'group'}
+          aria-label={`${label} rating`}
+        >
           {[1, 2, 3, 4, 5].map((star) => {
             const fill = hasValue ? starFill(current, star) : 'empty';
-            return (
-              <div key={star} className="relative h-7 w-7">
+            const starVisual = (
+              <>
                 <Star
                   size={18}
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none ${
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${
                     fill === 'empty'
                       ? 'text-slate-300 dark:text-slate-600'
                       : 'text-amber-400'
                   }`}
                   fill={fill === 'full' ? 'currentColor' : 'none'}
                   strokeWidth={1.75}
+                  aria-hidden
                 />
                 {fill === 'half' ? (
-                  <div className="absolute left-0 top-0 h-full w-1/2 overflow-hidden pointer-events-none">
+                  <div className="absolute left-0 top-0 h-full w-1/2 overflow-hidden">
                     <Star
                       size={18}
                       className="absolute left-1 top-1/2 -translate-y-1/2 text-amber-400"
                       fill="currentColor"
                       strokeWidth={1.75}
+                      aria-hidden
                     />
                   </div>
                 ) : null}
-                {!readOnly ? (
-                  <>
-                    <button
-                      type="button"
-                      className="absolute left-0 top-0 h-full w-1/2 z-10 rounded-l-sm hover:bg-amber-400/10"
-                      aria-label={`${label} ${star - 0.5}`}
-                      onClick={() => pick(star - 0.5)}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-0 top-0 h-full w-1/2 z-10 rounded-r-sm hover:bg-amber-400/10"
-                      aria-label={`${label} ${star}`}
-                      onClick={() => pick(star)}
-                    />
-                  </>
-                ) : null}
-              </div>
+              </>
+            );
+
+            if (!interactive) {
+              return (
+                <span key={star} className="relative inline-block h-8 w-8 cursor-default">
+                  {starVisual}
+                </span>
+              );
+            }
+
+            return (
+              <button
+                key={star}
+                type="button"
+                className="relative inline-flex h-8 w-8 items-center justify-center rounded-sm border-0 bg-transparent p-0 cursor-pointer hover:bg-amber-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400/60"
+                aria-label={`${label} ${star}`}
+                title={`${label}: click left half for ${star - 0.5}, right half for ${star}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+                  pick(isLeftHalf ? star - 0.5 : star);
+                }}
+              >
+                {starVisual}
+              </button>
             );
           })}
         </div>

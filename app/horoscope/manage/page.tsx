@@ -131,7 +131,9 @@ export default function HoroscopeManagePage() {
           setActiveLang(getBaseHoroscopeLanguage(resolved).uiCode);
         }
       })
-      .catch(() => setLanguages([]))
+      .catch(() => {
+        /* Keep DEFAULT_HOROSCOPE_LANGUAGES boot state */
+      })
       .finally(() => setLanguagesLoaded(true));
   }, []);
 
@@ -402,7 +404,6 @@ export default function HoroscopeManagePage() {
                 onChange={(luckyColor) => setForm((p) => ({ ...p, luckyColor }))}
               />
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted mb-2">Ratings</p>
                 <HoroscopeRatingsPanel
                   value={{
                     loveRating: form.loveRating,

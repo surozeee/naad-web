@@ -137,7 +137,7 @@
     "refreshServer": "सर्भर सूची रिफ्रेस",
     "records": "रेकर्डहरू",
     "localDrafts": "स्थानीय ड्राफ्ट · {lang}",
-    "noLocalDrafts": "{lang} ड्राफ्ट छैन।",
+    "noLocalDrafts": "अहिलेसम्म ड्राफ्ट छैन। फारम भरेर Add draft थिच्नुहोस्।",
     "onServer": "सर्भरमा · {lang}",
     "loading": "लोड हुँदै…",
     "noServerRecords": "सर्भर रेकर्ड छैन।",

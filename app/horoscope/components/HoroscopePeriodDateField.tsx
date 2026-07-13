@@ -9,6 +9,7 @@ import {
   BS_MONTH_OPTIONS,
   adIsoToBsIso,
   bsIsoToAdIso,
+  bsMonthLabel,
   buildBsYearOptions,
   deriveBsPeriodSelection,
   formatBsWeekOptionLabel,
@@ -258,7 +259,7 @@ export function HoroscopePeriodDateField({
               >
                 {BS_MONTH_OPTIONS.map((m) => (
                   <option key={m.value} value={m.value}>
-                    {m.label}
+                    {bsMonthLabel(m.value, uiCode)}
                   </option>
                 ))}
               </select>
@@ -308,7 +309,7 @@ export function HoroscopePeriodDateField({
               >
                 {BS_MONTH_OPTIONS.map((m) => (
                   <option key={m.value} value={m.value}>
-                    {m.label}
+                    {bsMonthLabel(m.value, uiCode)}
                   </option>
                 ))}
               </select>
@@ -409,7 +410,7 @@ export function HoroscopePeriodDateField({
             >
               {BS_MONTH_OPTIONS.map((m) => (
                 <option key={m.value} value={m.value}>
-                  {m.label}
+                  {bsMonthLabel(m.value, uiCode)}
                 </option>
               ))}
             </select>
@@ -467,7 +468,7 @@ export function HoroscopePeriodDateField({
               >
                 {BS_MONTH_OPTIONS.map((m) => (
                   <option key={m.value} value={m.value}>
-                    {m.label}
+                    {bsMonthLabel(m.value, uiCode)}
                   </option>
                 ))}
               </select>

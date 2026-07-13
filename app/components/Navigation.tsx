@@ -26,9 +26,6 @@ export default function Navigation() {
             <Link href="/horoscope" className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
               Horoscope
             </Link>
-            <Link href="/palmistry" className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              Palmistry
-            </Link>
             {authModal && (
               <>
                 <button

@@ -137,7 +137,7 @@
     "refreshServer": "सर्वर सूची रिफ्रेश",
     "records": "रिकॉर्ड",
     "localDrafts": "स्थानीय ड्राफ्ट · {lang}",
-    "noLocalDrafts": "{lang} ड्राफ्ट नहीं।",
+    "noLocalDrafts": "अभी कोई ड्राफ्ट नहीं। फॉर्म भरें और Add draft दबाएँ।",
     "onServer": "सर्वर पर · {lang}",
     "loading": "लोड हो रहा है…",
     "noServerRecords": "सर्वर रिकॉर्ड नहीं।",

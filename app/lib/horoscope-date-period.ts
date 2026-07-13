@@ -4,19 +4,29 @@ import type { NepaliCalendarResponse } from '@/app/lib/master.types';
 export type BsDateParts = { year: number; month: number; day: number };
 
 export const BS_MONTH_OPTIONS = [
-  { value: 1, label: 'Baishakh' },
-  { value: 2, label: 'Jestha' },
-  { value: 3, label: 'Asar' },
-  { value: 4, label: 'Shrawan' },
-  { value: 5, label: 'Bhadra' },
-  { value: 6, label: 'Ashoj' },
-  { value: 7, label: 'Kartik' },
-  { value: 8, label: 'Mangsir' },
-  { value: 9, label: 'Poush' },
-  { value: 10, label: 'Magh' },
-  { value: 11, label: 'Falgun' },
-  { value: 12, label: 'Chaitra' },
+  { value: 1, label: 'Baishakh', labelNe: 'बैशाख', labelHi: 'बैशाख' },
+  { value: 2, label: 'Jestha', labelNe: 'जेठ', labelHi: 'जेठ' },
+  { value: 3, label: 'Asar', labelNe: 'असार', labelHi: 'असार' },
+  { value: 4, label: 'Shrawan', labelNe: 'साउन', labelHi: 'सावन' },
+  { value: 5, label: 'Bhadra', labelNe: 'भदौ', labelHi: 'भाद्र' },
+  { value: 6, label: 'Ashoj', labelNe: 'असोज', labelHi: 'आश्विन' },
+  { value: 7, label: 'Kartik', labelNe: 'कार्तिक', labelHi: 'कार्तिक' },
+  { value: 8, label: 'Mangsir', labelNe: 'मंसिर', labelHi: 'मंसिर' },
+  { value: 9, label: 'Poush', labelNe: 'पुष', labelHi: 'पौष' },
+  { value: 10, label: 'Magh', labelNe: 'माघ', labelHi: 'माघ' },
+  { value: 11, label: 'Falgun', labelNe: 'फागुन', labelHi: 'फाल्गुन' },
+  { value: 12, label: 'Chaitra', labelNe: 'चैत', labelHi: 'चैत्र' },
 ] as const;
+
+/** BS month display name for UI language (`en` | `ne` | `hi`). */
+export function bsMonthLabel(month: number, uiCode = 'en'): string {
+  const opt = BS_MONTH_OPTIONS.find((m) => m.value === month);
+  if (!opt) return String(month);
+  const code = String(uiCode).toLowerCase();
+  if (code === 'ne' || code === 'np') return opt.labelNe;
+  if (code === 'hi') return opt.labelHi;
+  return opt.label;
+}
 
 const BS_MONTH_DAY_KEYS = [
   'baishakhDay',

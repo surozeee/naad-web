@@ -23,7 +23,7 @@ import {
   type HoroscopeTextField,
   validateHoroscopeMultilangEntry,
 } from '@/app/lib/horoscope-multilang';
-import type { HoroscopeResponse, HoroscopeTypeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
+import type { HoroscopePublishStatusEnum, HoroscopeResponse, HoroscopeTypeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
 import {
   adIsoToBsIso,
   deriveBsPeriodSelection,
@@ -59,9 +59,18 @@ interface HoroscopeEntry {
   luckRating?: number;
   localized: HoroscopeLocalizedFields;
   serverId?: string;
+  publishStatus?: HoroscopePublishStatusEnum;
 }
 
-type HoroscopeFormState = Omit<HoroscopeEntry, 'id' | 'serverId'>;
+type HoroscopeFormState = Omit<HoroscopeEntry, 'id' | 'serverId' | 'publishStatus'>;
+
+type DraftDisplayStatus = 'LOCAL' | 'DRAFT' | 'PUBLISHED';
+
+function resolveDraftDisplayStatus(entry: HoroscopeEntry): DraftDisplayStatus {
+  if (entry.publishStatus === 'PUBLISHED') return 'PUBLISHED';
+  if (entry.serverId || entry.publishStatus === 'DRAFT') return 'DRAFT';
+  return 'LOCAL';
+}
 
 const STORAGE_KEY = 'horoscope-add-csv-drafts-v5';
 const TYPE_TABS: HoroscopeTypeEnum[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
@@ -314,6 +323,26 @@ function entryToMultilangEntry(entry: HoroscopeEntry) {
   };
 }
 
+function mergeLocalizedWithLanguages(
+  existing: HoroscopeLocalizedFields,
+  languages: HoroscopeLanguageOption[]
+): HoroscopeLocalizedFields {
+  const next = createEmptyLocalizedFields(languages);
+  for (const field of HOROSCOPE_TEXT_FIELDS) {
+    const prev = existing?.[field] ?? {};
+    for (const lang of languages) {
+      next[field][lang.uiCode] = prev[lang.uiCode] ?? '';
+    }
+    // Keep any extra keys (e.g. legacy np) that still have content
+    for (const [code, value] of Object.entries(prev)) {
+      if (next[field][code] === undefined && value?.trim()) {
+        next[field][code] = value;
+      }
+    }
+  }
+  return next;
+}
+
 function statusTone(message: string): 'success' | 'error' | 'info' {
   if (!message) return 'info';
   if (/fail|error|invalid|http 4|http 5|required|no valid/i.test(message)) return 'error';
@@ -357,16 +386,21 @@ export default function AddHoroscopeCsvPage() {
         const raw = res?.data;
         const arr = Array.isArray(raw) ? (raw as Array<Record<string, unknown>>) : [];
         const resolved = resolveHoroscopeLanguages(arr);
-        setLanguages(resolved);
         if (resolved.length) {
-          setActiveLanguage(getBaseHoroscopeLanguage(resolved).uiCode);
+          setLanguages(resolved);
+          setActiveLanguage((prev) => {
+            const stillValid = resolved.some((l) => l.uiCode === prev);
+            return stillValid ? prev : getBaseHoroscopeLanguage(resolved).uiCode;
+          });
           setFormData((prev) => ({
             ...prev,
-            localized: createEmptyLocalizedFields(resolved),
+            localized: mergeLocalizedWithLanguages(prev.localized, resolved),
           }));
         }
       })
-      .catch(() => setLanguages([]));
+      .catch(() => {
+        /* Keep boot defaults so the form remains usable offline / if master fails */
+      });
   }, []);
 
   const refreshServerList = useCallback(async () => {
@@ -461,11 +495,8 @@ export default function AddHoroscopeCsvPage() {
   }, [serverRows, languages]);
 
   const activeDrafts = useMemo(
-    () =>
-      (groupedEntries.find((g) => g.type === activeType)?.items ?? []).filter((entry) =>
-        Boolean(entry.localized.summary[activeLangOption.uiCode]?.trim())
-      ),
-    [groupedEntries, activeType, activeLangOption]
+    () => groupedEntries.find((g) => g.type === activeType)?.items ?? [],
+    [groupedEntries, activeType]
   );
 
   const activeDraftIdSet = useMemo(() => new Set(activeDrafts.map((e) => e.id)), [activeDrafts]);
@@ -514,13 +545,17 @@ export default function AddHoroscopeCsvPage() {
   };
 
   const handleLocalizedChange = (field: HoroscopeTextField, lang: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      localized: {
-        ...prev.localized,
-        [field]: { ...prev.localized[field], [lang]: value },
-      },
-    }));
+    setFormData((prev) => {
+      const fieldMap = { ...(prev.localized[field] ?? {}) };
+      fieldMap[lang] = value;
+      return {
+        ...prev,
+        localized: {
+          ...prev.localized,
+          [field]: fieldMap,
+        },
+      };
+    });
     const key = `${field}_${lang}`;
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
   };
@@ -550,10 +585,11 @@ export default function AddHoroscopeCsvPage() {
       luckyColor: formData.luckyColor.trim(),
       luckyTime: formData.luckyTime.trim(),
       overallRating: computeOverallRating(formData),
+      localized: mergeLocalizedWithLanguages(formData.localized, languages),
       serverId: editingId ? entries.find((x) => x.id === editingId)?.serverId : undefined,
     };
     setEntries((prev) => (editingId ? prev.map((item) => (item.id === editingId ? payload : item)) : [payload, ...prev]));
-    setCsvMessage(editingId ? 'Draft updated.' : 'Draft added.');
+    setCsvMessage(editingId ? 'Draft updated.' : 'Draft added. Use Save Draft to store on the server.');
     resetForm();
   };
 
@@ -1033,9 +1069,6 @@ export default function AddHoroscopeCsvPage() {
               </div>
 
               <div className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">
-                  {t('common.ratings')}
-                </p>
                 <HoroscopeRatingsPanel
                   value={{
                     loveRating: formData.loveRating,
@@ -1079,7 +1112,7 @@ export default function AddHoroscopeCsvPage() {
                       </label>
                       <textarea
                         rows={field === 'summary' ? 3 : 2}
-                        value={formData.localized[field][activeLanguage] ?? ''}
+                        value={formData.localized[field]?.[activeLanguage] ?? ''}
                         onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
                         className="form-input w-full mt-1 text-sm py-2"
                         placeholder={t(`common.fields.${field}`)}
@@ -1209,7 +1242,7 @@ export default function AddHoroscopeCsvPage() {
                 </div>
                 {activeDrafts.length === 0 ? (
                   <p className="text-xs horoscope-muted py-2">
-                    {t('add.noLocalDrafts', { lang: activeLangOption.label })}
+                    {t('add.noLocalDrafts')}
                   </p>
                 ) : (
                   <ul className="space-y-1.5">
