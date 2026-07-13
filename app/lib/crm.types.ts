@@ -130,16 +130,19 @@ export interface ZodiacSignListRequest extends CrmListRequest {
 
 // ---- Horoscope (Event-Service) ----
 export type HoroscopeTypeEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
-export type HoroscopePublishStatusEnum = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type HoroscopePublishStatusEnum =
+  | 'DRAFT'
+  | 'SCHEDULED'
+  | 'PUBLISHED'
+  | 'UNPUBLISHED'
+  | 'ARCHIVED';
 
 /** @deprecated Use HoroscopeTypeEnum on horoscope row instead of period FK */
 export type HoroscopePeriodEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'YEARLY';
 
 export interface HoroscopeLocaleRequest {
   language: LanguageEnumCode;
-  title?: string;
   summary?: string;
-  description?: string;
   love?: string;
   career?: string;
   money?: string;
@@ -158,9 +161,7 @@ export interface HoroscopeLocaleResponse extends HoroscopeLocaleRequest {
 export interface HoroscopeRequest {
   zodiacSign: ZodiacSignEnum;
   horoscopeType: HoroscopeTypeEnum;
-  title?: string;
   summary?: string;
-  description?: string;
   love?: string;
   career?: string;
   money?: string;
@@ -177,6 +178,10 @@ export interface HoroscopeRequest {
   careerRating?: number;
   moneyRating?: number;
   healthRating?: number;
+  familyRating?: number;
+  educationRating?: number;
+  travelRating?: number;
+  luckRating?: number;
   overallRating?: number;
   startDate: string;
   endDate: string;

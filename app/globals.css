@@ -797,3 +797,9 @@ body {
   color: #bfdbfe;
   border-color: #1d4ed8;
 }
+.horoscope-csv-page .form-input {
+  border-radius: 0.5rem;
+}
+.horoscope-csv-page textarea.form-input {
+  resize: vertical;
+}

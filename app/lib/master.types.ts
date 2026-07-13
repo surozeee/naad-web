@@ -100,6 +100,27 @@ export interface LocalUnitTypeRequest {
 }
 export type LocalUnitTypeListRequest = MasterListRequest;
 
+// ---- Color (lucky / palette) ----
+export interface ColorRequest {
+  name: string;
+  /** Hex like #DC2626 or DC2626 */
+  hexCode: string;
+  sortOrder?: number;
+}
+
+export interface ColorResponse {
+  id: string;
+  name: string;
+  hexCode: string;
+  isSystem?: boolean;
+  sortOrder?: number;
+  status?: StatusEnum;
+  createdAt?: string;
+  lastModifiedAt?: string;
+}
+
+export type ColorListRequest = MasterListRequest;
+
 // ---- Language ----
 export interface LanguageRequest {
   name: string;

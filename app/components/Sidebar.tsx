@@ -66,6 +66,7 @@ const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
     { label: 'Nepali Calendar Days', href: '/master-setting/general/nepali-calendar' },
     { label: 'General', href: '/master-setting/general', submenu: [
       { label: 'Language', href: '/master-setting/general/language' },
+      { label: 'Color', href: '/master-setting/general/color' },
       { label: 'Country', href: '/master-setting/general/country' }, { label: 'State', href: '/master-setting/general/state' },
       { label: 'District', href: '/master-setting/general/district' }, { label: 'Local Unit Type', href: '/master-setting/general/local-unit-type' },
       { label: 'Local Unit', href: '/master-setting/general/local-unit' },
@@ -132,6 +133,7 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/music/music': 'Music',
   '/music/listen': 'Listen',
   '/master-setting/general/language': 'Language',
+  '/master-setting/general/color': 'Color',
   '/master-setting/general/country': 'Country',
   '/master-setting/general/state': 'State',
   '/master-setting/general/district': 'District',

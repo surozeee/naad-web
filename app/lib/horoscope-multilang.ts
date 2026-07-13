@@ -15,9 +15,7 @@ import type {
 export type HoroscopeUiLanguage = string;
 
 export const HOROSCOPE_TEXT_FIELDS = [
-  'title',
   'summary',
-  'description',
   'love',
   'career',
   'money',
@@ -43,21 +41,68 @@ export interface HoroscopeLanguageOption {
 
 export const DEFAULT_HOROSCOPE_LANGUAGES: HoroscopeLanguageOption[] = [
   { uiCode: 'en', label: 'English', backendCode: 'EN', isBase: true },
-  { uiCode: 'np', label: 'Nepali', backendCode: 'NE', isBase: false },
+  { uiCode: 'ne', label: 'Nepali', backendCode: 'NE', isBase: false },
   { uiCode: 'hi', label: 'Hindi', backendCode: 'HI', isBase: false },
 ];
 
+/** Valid half-star rating values (0.0–5.0 step 0.5). */
+export const HOROSCOPE_RATING_STEPS = [
+  0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
+] as const;
+
+export type HoroscopeRatingValue = (typeof HOROSCOPE_RATING_STEPS)[number];
+
+export function isValidHoroscopeRating(value: number | null | undefined): boolean {
+  if (value == null || Number.isNaN(value)) return true;
+  if (value < 0 || value > 5) return false;
+  return Math.abs(value * 2 - Math.round(value * 2)) < 1e-9;
+}
+
+/** Round to nearest 0.5 within 0–5. */
+export function roundHoroscopeRating(value: number): number {
+  const clamped = Math.min(5, Math.max(0, value));
+  return Math.round(clamped * 2) / 2;
+}
+
+/**
+ * Overall = average of set category ratings, rounded to 0.5.
+ * Returns undefined when no category ratings are set.
+ */
+export function computeOverallRating(ratings: {
+  loveRating?: number | null;
+  careerRating?: number | null;
+  moneyRating?: number | null;
+  healthRating?: number | null;
+  familyRating?: number | null;
+  educationRating?: number | null;
+  travelRating?: number | null;
+  luckRating?: number | null;
+}): number | undefined {
+  const values = [
+    ratings.loveRating,
+    ratings.careerRating,
+    ratings.moneyRating,
+    ratings.healthRating,
+    ratings.familyRating,
+    ratings.educationRating,
+    ratings.travelRating,
+    ratings.luckRating,
+  ].filter((v): v is number => v != null && !Number.isNaN(v));
+  if (!values.length) return undefined;
+  const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+  return roundHoroscopeRating(avg);
+}
+
 const LEGACY_UI_BY_BACKEND: Record<string, string> = {
   EN: 'en',
-  NE: 'np',
+  NE: 'ne',
   HI: 'hi',
 };
 
-/** Prefer ISO for UI code; keep NE → np for existing horoscope locale keys. */
+/** Prefer ISO for UI code; LanguageEnum code lowercased otherwise. */
 function resolveUiCode(backendCode: string, iso?: string): string {
   const normalizedIso = String(iso ?? '').trim().toLowerCase();
-  if (normalizedIso === 'ne') return 'np';
-  if (normalizedIso) return normalizedIso;
+  if (normalizedIso) return normalizedIso === 'np' ? 'ne' : normalizedIso;
   return backendToUiCode(backendCode);
 }
 
@@ -66,31 +111,47 @@ export function backendToUiCode(backendCode: string): string {
   return LEGACY_UI_BY_BACKEND[upper] ?? upper.toLowerCase();
 }
 
-/** Merge master language list with defaults; backend can add languages later. */
+/**
+ * Build horoscope language options from **active Language master list only**.
+ * Pass the API result from language/list-active. Empty list → empty tabs (no hardcoded languages).
+ * Use DEFAULT_HOROSCOPE_LANGUAGES only as a temporary UI boot state before the API returns.
+ */
 export function resolveHoroscopeLanguages(
-  masterItems?: Array<Record<string, unknown>>
+  masterItems?: Array<Record<string, unknown>> | null
 ): HoroscopeLanguageOption[] {
-  if (!masterItems?.length) return DEFAULT_HOROSCOPE_LANGUAGES;
+  if (!masterItems) return DEFAULT_HOROSCOPE_LANGUAGES;
+  if (masterItems.length === 0) return [];
 
   const byBackend = new Map<string, HoroscopeLanguageOption>();
   for (const item of masterItems) {
-    const backendCode = String(item.code ?? item.name ?? '').trim().toUpperCase();
+    const backendCode = String(item.code ?? '').trim().toUpperCase();
     if (!backendCode) continue;
     const iso = String(item.iso ?? item.isoCode ?? item.iso639 ?? '').trim();
-    const label = String(item.name ?? item.code ?? backendCode);
+    const label = String(item.name ?? item.nativeName ?? item.code ?? backendCode);
+    const isDefault = item.isDefault === true || item.isDefault === 'true' || item.isDefault === 1;
     byBackend.set(backendCode, {
       uiCode: resolveUiCode(backendCode, iso),
       label,
       backendCode,
-      isBase: backendCode === 'EN',
+      isBase: isDefault || backendCode === 'EN',
     });
   }
 
-  for (const fallback of DEFAULT_HOROSCOPE_LANGUAGES) {
-    if (!byBackend.has(fallback.backendCode)) byBackend.set(fallback.backendCode, fallback);
+  const list = [...byBackend.values()];
+  if (list.length === 0) return [];
+
+  const hasBase = list.some((l) => l.isBase);
+  if (!hasBase) {
+    const en = list.find((l) => l.backendCode === 'EN');
+    if (en) en.isBase = true;
+    else list[0].isBase = true;
+  } else if (list.filter((l) => l.isBase).length > 1) {
+    const keep = list.find((l) => l.backendCode === 'EN' && l.isBase) ?? list.find((l) => l.isBase)!;
+    for (const l of list) {
+      if (l !== keep) l.isBase = false;
+    }
   }
 
-  const list = [...byBackend.values()];
   list.sort((a, b) => {
     if (a.isBase) return -1;
     if (b.isBase) return 1;
@@ -124,6 +185,10 @@ export interface HoroscopeMultilangEntry {
   careerRating?: number;
   moneyRating?: number;
   healthRating?: number;
+  familyRating?: number;
+  educationRating?: number;
+  travelRating?: number;
+  luckRating?: number;
   overallRating?: number;
   publishStatus?: HoroscopePublishStatusEnum;
   localized: HoroscopeLocalizedFields;
@@ -178,7 +243,7 @@ export function hasHoroscopeTranslation(
   row: HoroscopeResponse,
   lang: HoroscopeLanguageOption
 ): boolean {
-  if (lang.isBase) return Boolean(row.title?.trim() || row.summary?.trim());
+  if (lang.isBase) return Boolean(row.summary?.trim());
   const locale = row.locales?.find(
     (l) => String(l.language).toUpperCase() === String(lang.backendCode).toUpperCase()
   );
@@ -240,9 +305,7 @@ export function buildHoroscopeRequest(
     horoscopeType: entry.horoscopeType,
     startDate: entry.startDate,
     endDate: entry.endDate,
-    title: en.title || undefined,
     summary: en.summary || undefined,
-    description: en.description || undefined,
     love: en.love || undefined,
     career: en.career || undefined,
     money: en.money || undefined,
@@ -259,7 +322,11 @@ export function buildHoroscopeRequest(
     careerRating: entry.careerRating,
     moneyRating: entry.moneyRating,
     healthRating: entry.healthRating,
-    overallRating: entry.overallRating,
+    familyRating: entry.familyRating,
+    educationRating: entry.educationRating,
+    travelRating: entry.travelRating,
+    luckRating: entry.luckRating,
+    overallRating: computeOverallRating(entry),
     publishStatus: entry.publishStatus ?? 'DRAFT',
     locales,
   };
@@ -273,5 +340,26 @@ export function validateHoroscopeMultilangEntry(
   if (!entry.horoscopeType) return 'Horoscope type is required';
   if (!entry.startDate?.trim()) return 'Start date is required';
   if (!entry.endDate?.trim()) return 'End date is required';
+  if (entry.horoscopeType === 'DAILY' && entry.startDate !== entry.endDate) {
+    return 'Daily horoscope start and end dates must be the same';
+  }
+  if (entry.endDate < entry.startDate) return 'End date must not be before start date';
+
+  const ratingFields: Array<[string, number | undefined]> = [
+    ['Love', entry.loveRating],
+    ['Career', entry.careerRating],
+    ['Finance', entry.moneyRating],
+    ['Health', entry.healthRating],
+    ['Family', entry.familyRating],
+    ['Education', entry.educationRating],
+    ['Travel', entry.travelRating],
+    ['Luck', entry.luckRating],
+  ];
+  for (const [label, value] of ratingFields) {
+    if (!isValidHoroscopeRating(value)) {
+      return `${label} rating must be 0.0–5.0 in steps of 0.5`;
+    }
+  }
+  if (!languages.length) return 'No active languages configured';
   return null;
 }

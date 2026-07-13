@@ -25,6 +25,9 @@ import type {
   LocalUnitTypeListRequest,
   LanguageRequest,
   LanguageListRequest,
+  ColorRequest,
+  ColorListRequest,
+  ColorResponse,
   NepaliCalendarRequest,
   NepaliCalendarListRequest,
   NepaliCalendarResponse,
@@ -122,6 +125,7 @@ export const districtApi = crud<unknown, DistrictRequest, DistrictRequest, Distr
 export const localUnitApi = crud<unknown, LocalUnitRequest, LocalUnitRequest, LocalUnitListRequest>('local-unit');
 export const localUnitTypeApi = crud<unknown, LocalUnitTypeRequest, LocalUnitTypeRequest, LocalUnitTypeListRequest>('local-unit-type');
 export const languageApi = crud<unknown, LanguageRequest, LanguageRequest, LanguageListRequest>('language');
+export const colorApi = crud<ColorResponse, ColorRequest, ColorRequest, ColorListRequest>('color');
 export const nepaliCalendarApi = crud<NepaliCalendarResponse, NepaliCalendarRequest, NepaliCalendarRequest, NepaliCalendarListRequest>('nepali-calendar');
 
 export const masterService = {
@@ -133,6 +137,7 @@ export const masterService = {
   localUnit: localUnitApi,
   localUnitType: localUnitTypeApi,
   language: languageApi,
+  color: colorApi,
   nepaliCalendar: nepaliCalendarApi,
 };
 

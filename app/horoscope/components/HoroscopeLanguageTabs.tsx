@@ -24,6 +24,14 @@ export function HoroscopeLanguageTabs({
   variant = 'pills',
   counts,
 }: HoroscopeLanguageTabsProps) {
+  if (!languages.length) {
+    return (
+      <p className={`text-xs text-amber-700 dark:text-amber-300 ${className}`}>
+        No active languages found. Enable languages in Master → Language.
+      </p>
+    );
+  }
+
   if (variant === 'underline') {
     return (
       <div className={`flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-700 ${className}`}>
