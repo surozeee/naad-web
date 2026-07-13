@@ -131,7 +131,7 @@
     "selectDraftsToPublish": "नीचे ड्राफ्ट चुनें, फिर प्रकाशित करें (केवल स्थिति)।",
     "saveDraftBeforePublish": "पहले Save Draft करें — Publish केवल स्थिति अपडेट करता है।",
     "csvImport": "CSV आयात",
-    "csvHint": "नमूना सक्रिय टैब की अवधि कॉलम के अनुसार है। Upload Draft पूर्वावलोकन और start/end गणना करता है। Save Draft ड्राफ्ट upsert करता है। नीचे Publish केवल स्थिति अपडेट करता है।",
+    "csvHint": "UTF-8 CSV। नमूने में EN + नेपाली (summary_ne, love_ne, …) और अन्य सक्रिय भाषाएँ होती हैं। Upload Draft पूर्वावलोकन और start/end गणना करता है। Save Draft ड्राफ्ट upsert करता है। नीचे Publish केवल स्थिति अपडेट करता है।",
     "sample": "नमूना",
     "uploadDraft": "ड्राफ्ट अपलोड",
     "refreshServer": "सर्वर सूची रिफ्रेश",

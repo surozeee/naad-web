@@ -131,7 +131,7 @@
     "selectDraftsToPublish": "Select draft(s) below, then Publish (status only).",
     "saveDraftBeforePublish": "Save Draft first — Publish only updates status.",
     "csvImport": "CSV import",
-    "csvHint": "Sample follows the active tab period columns. Upload Draft previews and calculates start/end. Save Draft upserts drafts to NAAD. Publish (below) updates status only.",
+    "csvHint": "UTF-8 CSV. Sample includes EN + Nepali (summary_ne, love_ne, …) and other active languages. Upload Draft previews and calculates start/end. Save Draft upserts drafts. Publish (below) updates status only.",
     "sample": "Sample",
     "uploadDraft": "Upload Draft",
     "refreshServer": "Refresh server list",

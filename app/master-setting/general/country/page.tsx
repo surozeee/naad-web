@@ -20,15 +20,17 @@ import {
   Flag,
   ImagePlus,
   Info,
+  Languages,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
 import type { SingleValue, MultiValue } from 'react-select';
 import DashboardLayout from '../../../components/DashboardLayout';
 import Breadcrumb from '../../../components/common/Breadcrumb';
+import { ActionTooltip } from '@/app/components/common/ActionTooltip';
 import { getCroppedImg } from '@/app/lib/crop-image';
-import { masterService } from '@/app/lib/master.service';
-import type { StatusEnum } from '@/app/lib/master.types';
+import { masterService, countryLocaleApi } from '@/app/lib/master.service';
+import type { CountryLocaleResponse, StatusEnum } from '@/app/lib/master.types';
 
 interface CurrencyOption {
   id: string;
@@ -58,6 +60,47 @@ interface Country {
   supportingCurrencies?: string[];
   regionId?: string;
   flag?: string;
+  locales: CountryLocaleResponse[];
+}
+
+type LangSelectOption = { value: string; label: string };
+
+function normalizeLanguageEnumCode(raw: unknown, nameHint?: unknown): string | null {
+  const fromCode = String(raw ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  if (fromCode === 'NP' || fromCode === 'NEP' || fromCode === 'NEPALI') return 'NE';
+  if (fromCode === 'ENG' || fromCode === 'ENGLISH') return 'EN';
+  if (fromCode === 'HIN' || fromCode === 'HINDI') return 'HI';
+  if (/^[A-Z]{2,3}$/.test(fromCode)) return fromCode;
+
+  const name = String(nameHint ?? '')
+    .trim()
+    .toLowerCase();
+  if (name === 'nepali' || name === 'नेपाली') return 'NE';
+  if (name === 'english') return 'EN';
+  if (name === 'hindi' || name === 'हिन्दी' || name === 'हिंदी') return 'HI';
+  return null;
+}
+
+function mapApiLocales(raw: unknown): CountryLocaleResponse[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      const o = item as Record<string, unknown>;
+      return {
+        id: o.id != null ? String(o.id) : undefined,
+        language: String(o.language ?? 'EN'),
+        name: String(o.name ?? ''),
+      };
+    })
+    .filter((l) => String(l.language).toUpperCase() !== 'EN');
+}
+
+function localesSummary(locales: CountryLocaleResponse[]): string {
+  if (!locales.length) return '—';
+  return locales.map((l) => `${l.language}: ${l.name}`).join(' · ');
 }
 
 function mapApiToCountry(row: Record<string, unknown>): Country {
@@ -84,6 +127,7 @@ function mapApiToCountry(row: Record<string, unknown>): Country {
     ),
     regionId: region ? String(region.id ?? '') : undefined,
     flag: (row as { flagUrl?: string }).flagUrl != null ? String((row as { flagUrl?: string }).flagUrl) : (row.flag != null ? String(row.flag) : undefined),
+    locales: mapApiLocales(row.locales),
   };
 }
 
@@ -109,7 +153,7 @@ export default function CountrySetup() {
     try {
       const res = await masterService.country.list({
         pageNo: 0,
-        pageSize: 10,
+        pageSize: 500,
         searchKey: searchTerm || undefined,
         sortBy: 'name',
         sortDirection: 'asc',
@@ -152,6 +196,19 @@ export default function CountrySetup() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [localeOnlyMode, setLocaleOnlyMode] = useState(false);
+  const [countryLocalesApi, setCountryLocalesApi] = useState<CountryLocaleResponse[]>([]);
+  const [editingCountryLocaleId, setEditingCountryLocaleId] = useState<string | null>(null);
+  const [localeForm, setLocaleForm] = useState<{ language: string; name: string }>({
+    language: 'NE',
+    name: '',
+  });
+  const [localeLanguageOptions, setLocaleLanguageOptions] = useState<LangSelectOption[]>([]);
+  const [localeLanguagesLoading, setLocaleLanguagesLoading] = useState(false);
+  const [localeSubmitting, setLocaleSubmitting] = useState(false);
+  const [fetchingDetail, setFetchingDetail] = useState(false);
+  const localeLanguageOptionsRef = useRef<LangSelectOption[]>([]);
+  localeLanguageOptionsRef.current = localeLanguageOptions;
 
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
@@ -246,6 +303,11 @@ export default function CountrySetup() {
     });
     setErrors({});
     setEditingId(null);
+    setLocaleOnlyMode(false);
+    setCountryLocalesApi([]);
+    setEditingCountryLocaleId(null);
+    setLocaleForm({ language: 'NE', name: '' });
+    setFetchingDetail(false);
     setCropImageSrc(null);
     setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
     setCompletedCrop(null);
@@ -375,7 +437,193 @@ export default function CountrySetup() {
     [regionSelectOptions, formData.regionId]
   );
 
-  const handleEdit = (country: Country) => {
+  const localeOptionsForCountryModal = useMemo(() => {
+    return localeLanguageOptions;
+  }, [localeLanguageOptions]);
+
+  const handleCountryLocaleLanguageChange = (language: string) => {
+    const code = normalizeLanguageEnumCode(language) ?? language.toUpperCase();
+    if (code === 'EN') return;
+    const existing = countryLocalesApi.find((l) => String(l.language).toUpperCase() === code);
+    if (existing?.id) {
+      setEditingCountryLocaleId(existing.id);
+      setLocaleForm({ language: code, name: existing.name });
+      return;
+    }
+    setEditingCountryLocaleId(null);
+    setLocaleForm({ language: code, name: '' });
+  };
+
+  const refreshCountryLocales = async (countryId: string) => {
+    const list = (await countryLocaleApi.getByCountryId(countryId)).filter(
+      (l) => String(l.language).toUpperCase() !== 'EN'
+    );
+    setCountryLocalesApi(list);
+    return list;
+  };
+
+  const handleAddCountryLocale = async () => {
+    if (!editingId || !localeForm.name.trim()) return;
+    setLocaleSubmitting(true);
+    try {
+      const addedLang = localeForm.language;
+      await countryLocaleApi.create({
+        countryId: editingId,
+        language: normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase(),
+        name: localeForm.name.trim(),
+      });
+      const list = await refreshCountryLocales(editingId);
+      const opts = localeLanguageOptionsRef.current;
+      const savedCodes = new Set(list.map((l) => String(l.language).toUpperCase()));
+      const nextMissing = opts.find((o) => !savedCodes.has(o.value));
+      if (nextMissing) {
+        setEditingCountryLocaleId(null);
+        setLocaleForm({ language: nextMissing.value, name: '' });
+      } else {
+        const match =
+          list.find((l) => String(l.language).toUpperCase() === addedLang.toUpperCase()) ?? list[0];
+        if (match?.id) {
+          setEditingCountryLocaleId(match.id);
+          setLocaleForm({ language: String(match.language), name: match.name });
+        }
+      }
+      lastFetchKeyRef.current = null;
+      await fetchCountries();
+    } catch (err) {
+      await Swal.fire({
+        title: 'Error',
+        text: err instanceof Error ? err.message : 'Failed to add translation',
+        icon: 'error',
+      });
+    } finally {
+      setLocaleSubmitting(false);
+    }
+  };
+
+  const handleUpdateCountryLocale = async () => {
+    if (!editingCountryLocaleId || !editingId || !localeForm.name.trim()) return;
+    setLocaleSubmitting(true);
+    try {
+      await countryLocaleApi.update(editingCountryLocaleId, {
+        countryId: editingId,
+        language: normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase(),
+        name: localeForm.name.trim(),
+      });
+      await refreshCountryLocales(editingId);
+      lastFetchKeyRef.current = null;
+      await fetchCountries();
+    } catch (err) {
+      await Swal.fire({
+        title: 'Error',
+        text: err instanceof Error ? err.message : 'Failed to update translation',
+        icon: 'error',
+      });
+    } finally {
+      setLocaleSubmitting(false);
+    }
+  };
+
+  const handleDeleteCountryLocale = async (localeId: string) => {
+    const result = await Swal.fire({
+      title: 'Remove translation?',
+      text: 'This removes the localized country name for that language.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, remove',
+    });
+    if (!result.isConfirmed || !editingId) return;
+    setLocaleSubmitting(true);
+    try {
+      await countryLocaleApi.delete(localeId);
+      const list = await refreshCountryLocales(editingId);
+      const first = list[0];
+      if (first?.id) {
+        setEditingCountryLocaleId(first.id);
+        setLocaleForm({ language: String(first.language), name: first.name });
+      } else {
+        setEditingCountryLocaleId(null);
+        setLocaleForm({
+          language: localeLanguageOptions[0]?.value ?? 'NE',
+          name: '',
+        });
+      }
+      lastFetchKeyRef.current = null;
+      await fetchCountries();
+    } catch (err) {
+      await Swal.fire({
+        title: 'Error',
+        text: err instanceof Error ? err.message : 'Failed to remove translation',
+        icon: 'error',
+      });
+    } finally {
+      setLocaleSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showAddModal || !localeOnlyMode || !editingId) return;
+    setLocaleLanguagesLoading(true);
+    masterService.language
+      .listActive()
+      .then((res) => {
+        const raw = Array.isArray(res?.data) ? res.data : [];
+        const opts: LangSelectOption[] = [];
+        const seen = new Set<string>();
+        for (const item of raw as Array<Record<string, unknown>>) {
+          const code = normalizeLanguageEnumCode(item.code, item.name ?? item.nativeName);
+          if (!code || code === 'EN' || seen.has(code)) continue;
+          seen.add(code);
+          const name = String(item.nativeName ?? item.name ?? code);
+          opts.push({
+            value: code,
+            label: `${name} (${code})`,
+          });
+        }
+        setLocaleLanguageOptions(opts);
+      })
+      .catch(() => setLocaleLanguageOptions([]))
+      .finally(() => setLocaleLanguagesLoading(false));
+  }, [showAddModal, localeOnlyMode, editingId]);
+
+  useEffect(() => {
+    if (!localeOnlyMode || !showAddModal) return;
+    if (localeLanguageOptions.length === 0) return;
+
+    const saved = new Set(countryLocalesApi.map((l) => String(l.language).toUpperCase()));
+    const firstMissing = localeLanguageOptions.find((o) => !saved.has(o.value));
+
+    if (firstMissing && !editingCountryLocaleId) {
+      setLocaleForm((prev) => {
+        if (prev.language === firstMissing.value && !saved.has(prev.language.toUpperCase())) {
+          return prev;
+        }
+        if (prev.language && !saved.has(prev.language.toUpperCase())) {
+          if (localeLanguageOptions.some((o) => o.value === prev.language)) return prev;
+        }
+        return {
+          language: firstMissing.value,
+          name: '',
+        };
+      });
+      return;
+    }
+
+    if (!firstMissing && countryLocalesApi.length > 0 && !editingCountryLocaleId) {
+      const first = countryLocalesApi[0];
+      if (first?.id) {
+        setEditingCountryLocaleId(first.id);
+        setLocaleForm({ language: String(first.language), name: first.name });
+      }
+    }
+  }, [
+    localeLanguageOptions,
+    localeOnlyMode,
+    showAddModal,
+    countryLocalesApi,
+    editingCountryLocaleId,
+  ]);
+
+  const handleEdit = async (country: Country, openLocales = false) => {
     setFormData({
       name: country.name,
       code: country.code,
@@ -390,6 +638,28 @@ export default function CountrySetup() {
     });
     setEditingId(country.id);
     setShowAddModal(true);
+    setLocaleOnlyMode(openLocales);
+    if (!openLocales) {
+      setCountryLocalesApi([]);
+      setEditingCountryLocaleId(null);
+      setLocaleForm({ language: 'NE', name: '' });
+      return;
+    }
+    setFetchingDetail(true);
+    try {
+      const raw =
+        country.locales?.length > 0 ? country.locales : await countryLocaleApi.getByCountryId(country.id);
+      const list = raw.filter((l) => String(l.language).toUpperCase() !== 'EN');
+      setCountryLocalesApi(list);
+      setEditingCountryLocaleId(null);
+      setLocaleForm({ language: 'NE', name: '' });
+    } catch {
+      setCountryLocalesApi([]);
+      setEditingCountryLocaleId(null);
+      setLocaleForm({ language: 'NE', name: '' });
+    } finally {
+      setFetchingDetail(false);
+    }
   };
 
   const handleOpenFlagPreview = (src: string, name: string) => {
@@ -452,7 +722,8 @@ export default function CountrySetup() {
     country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     country.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     country.isoCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    country.phoneCode.includes(searchTerm)
+    country.phoneCode.includes(searchTerm) ||
+    localesSummary(country.locales).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedCountries = [...filteredCountries].sort((a, b) => {
@@ -604,7 +875,7 @@ export default function CountrySetup() {
                     transform: 'translateY(-50%) rotate(45deg)',
                   }}
                 />
-                Configure countries, regions, currency, and tele codes.
+                Configure countries, regions, currency, tele codes, and <strong>multi-language labels</strong>. English uses the country name.
               </div>
             )}
           </div>
@@ -633,7 +904,7 @@ export default function CountrySetup() {
           <Search size={20} />
           <input
             type="text"
-            placeholder="Search countries by name, code, ISO code, or tele code..."
+            placeholder="Search countries by name, code, ISO code, tele code, or locales..."
             value={searchTerm}
             onChange={handleSearchChange}
             className="search-input"
@@ -649,6 +920,7 @@ export default function CountrySetup() {
               <SortableTh columnKey="code">Code</SortableTh>
               <SortableTh columnKey="isoCode">ISO Code</SortableTh>
               <SortableTh columnKey="phoneCode">Tele Code</SortableTh>
+              <th>Locales</th>
               <SortableTh columnKey="status">Status</SortableTh>
               <SortableTh columnKey="isDefault">Default</SortableTh>
               <th style={{ textTransform: 'capitalize' }}>Actions</th>
@@ -657,13 +929,13 @@ export default function CountrySetup() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
+                <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
                   Loading countries...
                 </td>
               </tr>
             ) : sortedCountries.length === 0 ? (
               <tr>
-                <td colSpan={7} className="empty-state">
+                <td colSpan={8} className="empty-state">
                   <p>No countries found</p>
                 </td>
               </tr>
@@ -725,6 +997,11 @@ export default function CountrySetup() {
                       <span>{country.phoneCode}</span>
                     </div>
                   </td>
+                  <td>
+                    <span style={{ fontSize: 12, color: '#475569' }} title={localesSummary(country.locales)}>
+                      {localesSummary(country.locales)}
+                    </span>
+                  </td>
                   <td
                     style={{ width: 90 }}
                     onClick={(e) => { e.stopPropagation(); handleChangeStatus(country); }}
@@ -752,22 +1029,36 @@ export default function CountrySetup() {
                       </span>
                     )}
                   </td>
-                  <td style={{ width: 100 }} onClick={(e) => e.stopPropagation()}>
+                  <td style={{ width: 130 }} onClick={(e) => e.stopPropagation()}>
                     <div className="action-buttons">
-                      <button 
-                        className="btn-icon-edit" 
-                        title="Edit"
-                        onClick={(e) => { e.stopPropagation(); handleEdit(country); }}
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button 
-                        className="btn-icon-delete" 
-                        title="Delete"
-                        onClick={(e) => { e.stopPropagation(); handleDelete(country.id); }}
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <ActionTooltip text="Edit">
+                        <button
+                          type="button"
+                          className="btn-icon-edit"
+                          onClick={(e) => { e.stopPropagation(); handleEdit(country); }}
+                        >
+                          <Edit size={18} />
+                        </button>
+                      </ActionTooltip>
+                      <ActionTooltip text="Multi-language labels">
+                        <button
+                          type="button"
+                          className="btn-icon-edit"
+                          onClick={(e) => { e.stopPropagation(); handleEdit(country, true); }}
+                          disabled={fetchingDetail}
+                        >
+                          <Languages size={18} />
+                        </button>
+                      </ActionTooltip>
+                      <ActionTooltip text="Delete">
+                        <button
+                          type="button"
+                          className="btn-icon-delete"
+                          onClick={(e) => { e.stopPropagation(); handleDelete(country.id); }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </ActionTooltip>
                     </div>
                   </td>
                 </tr>
@@ -777,7 +1068,7 @@ export default function CountrySetup() {
           {filteredCountries.length > 0 && (
             <tfoot>
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className="pagination-container">
                     <div className="pagination-left">
                       <label htmlFor="items-per-page" className="pagination-label">
@@ -995,7 +1286,268 @@ export default function CountrySetup() {
 
       {/* Add/Edit Country Modal */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => { setShowAddModal(false); resetForm(); }}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (submitting || localeSubmitting) return;
+            setShowAddModal(false);
+            resetForm();
+          }}
+        >
+          {localeOnlyMode ? (
+            <div
+              className="modal-content color-modal color-locale-modal"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="country-locale-modal-title"
+            >
+              <div className="color-modal-header">
+                <div className="color-modal-title-row">
+                  <span className="color-modal-icon" aria-hidden>
+                    <Languages size={18} />
+                  </span>
+                  <div>
+                    <h2 id="country-locale-modal-title">Multi-language labels</h2>
+                    <p className="color-modal-subtitle">
+                      Add translations for non-English languages. English uses the country name.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="color-modal-close"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    resetForm();
+                  }}
+                  aria-label="Close"
+                  disabled={localeSubmitting}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="color-locale-modal-body">
+                {errors.submit ? <div className="form-error">{errors.submit}</div> : null}
+                {fetchingDetail ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                    Loading...
+                  </div>
+                ) : (
+                  <>
+                    <div className="color-locale-subject">
+                      {formData.flag ? (
+                        <img
+                          src={formData.flag}
+                          alt=""
+                          className="color-locale-subject-swatch"
+                          style={{
+                            width: 36,
+                            height: 24,
+                            objectFit: 'cover',
+                            borderRadius: 4,
+                            border: '1px solid #e2e8f0',
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className="color-locale-subject-swatch"
+                          style={{
+                            background: '#eff6ff',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#2563eb',
+                            borderRadius: 10,
+                            width: 36,
+                            height: 36,
+                          }}
+                        >
+                          <Flag size={18} />
+                        </span>
+                      )}
+                      <div className="color-locale-subject-meta">
+                        <div className="color-locale-subject-label">Country</div>
+                        <div className="color-locale-subject-name">
+                          {formData.name?.trim() || '—'}
+                        </div>
+                        <div className="color-locale-subject-hex">
+                          {[formData.code, formData.isoCode].filter(Boolean).join(' · ') || '—'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="color-locale-hint">
+                      Default language (EN) is the country name above. Only add other languages here.
+                    </p>
+
+                    <div className="color-locale-fields">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="country-locale-language">
+                          Language
+                        </label>
+                        <Select<LangSelectOption, false>
+                          inputId="country-locale-language"
+                          isSearchable
+                          options={localeOptionsForCountryModal}
+                          value={
+                            localeOptionsForCountryModal.find(
+                              (o) => o.value === localeForm.language
+                            ) ??
+                            localeLanguageOptions.find((o) => o.value === localeForm.language) ??
+                            null
+                          }
+                          onChange={(opt) => opt && handleCountryLocaleLanguageChange(opt.value)}
+                          isLoading={localeLanguagesLoading}
+                          isDisabled={localeLanguagesLoading || localeSubmitting}
+                          placeholder="Select language..."
+                          noOptionsMessage={() =>
+                            localeLanguagesLoading
+                              ? 'Loading...'
+                              : localeOptionsForCountryModal.length === 0
+                                ? 'No active languages'
+                                : 'No match'
+                          }
+                          classNamePrefix="lang-select"
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              minHeight: 42,
+                              fontSize: 14,
+                              borderRadius: 8,
+                              borderColor: '#e2e8f0',
+                            }),
+                            valueContainer: (base) => ({ ...base, padding: '0 10px' }),
+                            menuPortal: (base) => ({ ...base, zIndex: 1000000 }),
+                          }}
+                          menuPortalTarget={
+                            typeof document !== 'undefined' ? document.body : undefined
+                          }
+                          menuPosition="fixed"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="country-locale-name">
+                          Local name
+                        </label>
+                        <input
+                          id="country-locale-name"
+                          type="text"
+                          value={localeForm.name}
+                          onChange={(e) =>
+                            setLocaleForm((p) => ({ ...p, name: e.target.value }))
+                          }
+                          className="form-input"
+                          placeholder="Name in this language"
+                          disabled={localeSubmitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="color-locale-list-title">Saved translations</div>
+                      <div className="color-locale-list">
+                        {countryLocalesApi.length === 0 ? (
+                          <div className="color-locale-empty">
+                            No translations yet. Choose a language, enter the local name, then save.
+                          </div>
+                        ) : (
+                          countryLocalesApi.map((loc) => {
+                            const isActive =
+                              editingCountryLocaleId != null &&
+                              loc.id != null &&
+                              editingCountryLocaleId === loc.id;
+                            return (
+                              <div
+                                key={loc.id ?? `${loc.language}-${loc.name}`}
+                                className={`color-locale-row${isActive ? ' is-active' : ''}`}
+                              >
+                                <div className="color-locale-row-main">
+                                  <span className="color-locale-lang-badge">
+                                    {String(loc.language)}
+                                  </span>
+                                  <span className="color-locale-row-name">{loc.name}</span>
+                                </div>
+                                <div className="color-locale-row-actions">
+                                  <ActionTooltip text="Edit">
+                                    <button
+                                      type="button"
+                                      className="btn-icon-edit"
+                                      onClick={() =>
+                                        handleCountryLocaleLanguageChange(String(loc.language))
+                                      }
+                                      disabled={localeSubmitting}
+                                    >
+                                      <Edit size={14} />
+                                    </button>
+                                  </ActionTooltip>
+                                  <ActionTooltip text="Remove">
+                                    <button
+                                      type="button"
+                                      className="btn-icon-delete"
+                                      onClick={() => handleDeleteCountryLocale(String(loc.id))}
+                                      disabled={localeSubmitting || !loc.id}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </ActionTooltip>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="color-modal-footer">
+                      {editingCountryLocaleId ? (
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={localeSubmitting}
+                          onClick={() => handleDeleteCountryLocale(editingCountryLocaleId)}
+                        >
+                          <Trash2 size={16} />
+                          <span>Remove</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={localeSubmitting}
+                          onClick={() => {
+                            setShowAddModal(false);
+                            resetForm();
+                          }}
+                        >
+                          Close
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        disabled={localeSubmitting || !localeForm.name.trim()}
+                        onClick={
+                          editingCountryLocaleId ? handleUpdateCountryLocale : handleAddCountryLocale
+                        }
+                      >
+                        <Save size={16} />
+                        <span>
+                          {localeSubmitting
+                            ? 'Saving…'
+                            : editingCountryLocaleId
+                              ? 'Update'
+                              : 'Save'}
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
           <div className="modal-content organization-modal country-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
             <div className="modal-header country-modal-header">
               <h2>{editingId ? 'Edit Country' : 'Add Country'}</h2>
@@ -1265,6 +1817,7 @@ export default function CountrySetup() {
               </div>
             </form>
           </div>
+          )}
         </div>
       )}
 

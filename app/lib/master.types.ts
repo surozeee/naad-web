@@ -43,6 +43,12 @@ export interface CountryLocaleResponse {
   name: string;
 }
 
+export interface CountryLocaleUpsertRequest {
+  countryId: string;
+  language: string;
+  name: string;
+}
+
 export interface CountryResponse {
   id: string;
   name: string;

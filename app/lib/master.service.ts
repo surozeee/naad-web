@@ -12,6 +12,8 @@ import type {
   MasterListRequest,
   CountryRequest,
   CountryListRequest,
+  CountryLocaleResponse,
+  CountryLocaleUpsertRequest,
   RegionListRequest,
   StateRequest,
   StateListRequest,
@@ -194,10 +196,44 @@ export const languageLocaleApi = {
     request<void>('DELETE', `${LANGUAGE_LOCALE_PATH}/delete`, { headers: { id } }),
 };
 
+const COUNTRY_LOCALE_PATH = 'country-locale';
+
+/** Master: /api/v2/master/country-locale/* */
+export const countryLocaleApi = {
+  getByCountryId: async (countryId: string): Promise<CountryLocaleResponse[]> => {
+    const r = await request<CountryLocaleResponse[] | { data?: CountryLocaleResponse[] }>(
+      'POST',
+      `${COUNTRY_LOCALE_PATH}/get-by-country-id`,
+      { body: { countryId } }
+    );
+    const data = Array.isArray(r) ? r : (r as { data?: CountryLocaleResponse[] }).data;
+    return Array.isArray(data) ? data : [];
+  },
+  create: async (body: CountryLocaleUpsertRequest): Promise<CountryLocaleResponse | undefined> => {
+    const r = await request<CountryLocaleResponse>('POST', `${COUNTRY_LOCALE_PATH}/create`, {
+      body: body as object,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (
+    id: string,
+    body: CountryLocaleUpsertRequest
+  ): Promise<CountryLocaleResponse | undefined> => {
+    const r = await request<CountryLocaleResponse>('PUT', `${COUNTRY_LOCALE_PATH}/update`, {
+      body: body as object,
+      headers: { id },
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', `${COUNTRY_LOCALE_PATH}/delete`, { headers: { id } }),
+};
+
 export const nepaliCalendarApi = crud<NepaliCalendarResponse, NepaliCalendarRequest, NepaliCalendarRequest, NepaliCalendarListRequest>('nepali-calendar');
 
 export const masterService = {
   country: countryApi,
+  countryLocale: countryLocaleApi,
   region: regionApi,
   currency: currencyApi,
   state: stateApi,

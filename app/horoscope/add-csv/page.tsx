@@ -107,12 +107,60 @@ const CSV_BASE_HEADERS = [
 
 function buildCsvHeaders(languages: HoroscopeLanguageOption[]): string[] {
   const langCodes = languages.length
-    ? languages.map((l) => l.uiCode)
-    : DEFAULT_HOROSCOPE_LANGUAGES.map((l) => l.uiCode);
+    ? languages.map((l) => csvHeaderLangCode(l))
+    : DEFAULT_HOROSCOPE_LANGUAGES.map((l) => csvHeaderLangCode(l));
   return [
     ...CSV_BASE_HEADERS,
     ...FORM_TEXT_FIELDS.flatMap((f) => langCodes.map((code) => `${f}_${code}`)),
   ];
+}
+
+/** Prefer stable CSV suffixes: en / ne / hi (not np). */
+function csvHeaderLangCode(lang: HoroscopeLanguageOption): string {
+  if (lang.backendCode === 'NE') return 'ne';
+  if (lang.backendCode === 'EN') return 'en';
+  if (lang.backendCode === 'HI') return 'hi';
+  return lang.uiCode.toLowerCase();
+}
+
+function sampleLocalizedText(
+  field: HoroscopeTextField,
+  lang: HoroscopeLanguageOption,
+  zodiac: string,
+  typeLabel: string,
+  isBase: boolean
+): string {
+  if (lang.backendCode === 'NE') {
+    const map: Partial<Record<HoroscopeTextField, string>> = {
+      summary: `${zodiac} ${typeLabel} सारांश — स्पष्ट निर्णय र सकारात्मक ऊर्जा।`,
+      love: 'खुला संवादले सम्बन्ध मजबुत बनाउन सक्छ।',
+      career: 'काममा स्थिर प्रगति अनुकूल देखिन्छ।',
+      money: 'खर्चको योजना सावधानीपूर्वक बनाउनुहोस्।',
+      health: 'आराम र सन्तुलनले स्वास्थ्यलाई सहयोग गर्छ।',
+      family: 'पारिवारिक सहयोग महत्वपूर्ण रहनेछ।',
+      education: 'पढाइमा ध्यान केन्द्रित गर्दा फलदायी हुन्छ।',
+      travel: 'यात्रा योजना बनाउँदा समय मिलाउनुहोस्।',
+      advice: 'धैर्य र सकारात्मक सोच राख्नुहोस्।',
+      mood: 'उत्साहित र सन्तुलित।',
+    };
+    return map[field] ?? `${field} (${lang.label})`;
+  }
+  if (isBase || lang.backendCode === 'EN') {
+    const map: Partial<Record<HoroscopeTextField, string>> = {
+      summary: `${zodiac} ${typeLabel} overview — focused action and confident decisions.`,
+      love: 'Open communication may strengthen your relationships.',
+      career: 'Steady progress at work is favored.',
+      money: 'Plan expenses carefully.',
+      health: 'Rest and balance support wellness.',
+      family: 'Family support remains important.',
+      education: 'Focused study brings good results.',
+      travel: 'Time your travel plans carefully.',
+      advice: 'Stay patient and positive.',
+      mood: 'Upbeat and balanced.',
+    };
+    return map[field] ?? `${field} (${lang.label})`;
+  }
+  return `${field} note (${lang.label}).`;
 }
 
 function todayIso(): string {
@@ -202,16 +250,40 @@ function resolveLocalizedField(
   const fallback = rowData[field] ?? '';
   const out: Record<string, string> = {};
   for (const lang of languages) {
-    out[lang.uiCode] =
-      rowData[`${field}_${lang.uiCode}`] ??
-      (lang.uiCode === 'ne' ? rowData[`${field}_np`] : undefined) ??
-      (lang.isBase ? fallback : '') ??
-      '';
+    const aliases = csvFieldAliases(field, lang);
+    let value = '';
+    for (const key of aliases) {
+      const candidate = rowData[key];
+      if (candidate?.trim()) {
+        value = candidate;
+        break;
+      }
+    }
+    if (!value && lang.isBase) value = fallback;
+    out[lang.uiCode] = value;
   }
   if (!languages.length) {
     out.en = rowData[`${field}_en`] ?? fallback;
   }
   return out;
+}
+
+/** Normalized CSV header keys for a text field + language (supports ne/np aliases). */
+function csvFieldAliases(field: HoroscopeTextField, lang: HoroscopeLanguageOption): string[] {
+  const ui = lang.uiCode.toLowerCase();
+  const backend = lang.backendCode.toLowerCase();
+  const keys = new Set<string>([`${field}_${ui}`, `${field}_${backend}`]);
+  if (lang.backendCode === 'NE' || ui === 'ne' || ui === 'np') {
+    keys.add(`${field}_ne`);
+    keys.add(`${field}_np`);
+    keys.add(`${field}_nepali`);
+  }
+  if (lang.backendCode === 'HI' || ui === 'hi') {
+    keys.add(`${field}_hi`);
+    keys.add(`${field}_hin`);
+    keys.add(`${field}_hindi`);
+  }
+  return [...keys];
 }
 
 function parseOptionalRating(raw?: string): number | undefined {
@@ -642,20 +714,15 @@ export default function AddHoroscopeCsvPage() {
     const sampleLines = sampleZodiacs.map((zodiac, index) => {
       const localized = createEmptyLocalizedFields(languages);
       for (const lang of languages) {
-        localized.summary[lang.uiCode] =
-          lang.uiCode === base.uiCode
-            ? `${zodiac} ${activeType.toLowerCase()} overview — focused action and confident decisions.`
-            : `${zodiac} overview (${lang.label}).`;
-        localized.love[lang.uiCode] =
-          lang.uiCode === base.uiCode
-            ? 'Open communication may strengthen your relationships.'
-            : `Love note (${lang.label}).`;
-        localized.career[lang.uiCode] =
-          lang.uiCode === base.uiCode ? 'Steady progress at work is favored.' : `Career note (${lang.label}).`;
-        localized.money[lang.uiCode] =
-          lang.uiCode === base.uiCode ? 'Plan expenses carefully.' : `Finance note (${lang.label}).`;
-        localized.health[lang.uiCode] =
-          lang.uiCode === base.uiCode ? 'Rest and balance support wellness.' : `Health note (${lang.label}).`;
+        for (const field of FORM_TEXT_FIELDS) {
+          localized[field][lang.uiCode] = sampleLocalizedText(
+            field,
+            lang,
+            zodiac,
+            activeType.toLowerCase(),
+            lang.isBase || lang.uiCode === base.uiCode
+          );
+        }
       }
 
       const dateCol = activeType === 'DAILY' ? dailyBs : '';
@@ -687,7 +754,9 @@ export default function AddHoroscopeCsvPage() {
         '3.5',
         '4.0',
         'DRAFT',
-        ...FORM_TEXT_FIELDS.flatMap((f) => languages.map((lang) => localized[f][lang.uiCode] ?? '')),
+        ...FORM_TEXT_FIELDS.flatMap((f) =>
+          languages.map((lang) => localized[f][lang.uiCode] ?? '')
+        ),
       ];
       return cells.map(escapeCsvCell).join(',');
     });

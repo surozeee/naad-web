@@ -217,47 +217,100 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   useEffect(() => () => clearCloseTimer(), []);
 
   const VIEWPORT_PADDING = 12;
+  const FLYOUT_GAP = 4;
+  const FLYOUT_MIN_WIDTH = 220;
 
-  const adjustSubmenuUpIfNeeded = (el: HTMLElement | null, padding = VIEWPORT_PADDING) => {
+  /** Position a fixed flyout beside an anchor; flip left/right and clamp vertically to the viewport. */
+  const positionFlyoutMenu = (
+    el: HTMLElement | null,
+    anchorRect: DOMRect,
+    options?: { preferRight?: boolean }
+  ) => {
     if (!el) return;
+    const preferRight = options?.preferRight ?? true;
+    const padding = VIEWPORT_PADDING;
+
+    el.classList.add('is-open');
+    el.style.position = 'fixed';
+    el.style.maxHeight = `${Math.max(160, window.innerHeight - padding * 2)}px`;
+    el.style.overflowY = 'auto';
+    el.style.visibility = 'hidden';
+
     const run = () => {
-      const r = el.getBoundingClientRect();
-      if (r.bottom > window.innerHeight - padding) {
-        const newTop = window.innerHeight - el.offsetHeight - padding;
-        el.style.top = `${Math.max(padding, newTop)}px`;
+      const menuWidth = Math.max(el.offsetWidth || FLYOUT_MIN_WIDTH, FLYOUT_MIN_WIDTH);
+      const menuHeight = el.offsetHeight || 0;
+      const spaceRight = window.innerWidth - anchorRect.right - padding;
+      const spaceLeft = anchorRect.left - padding;
+
+      let openRight = preferRight;
+      if (preferRight) {
+        if (spaceRight < menuWidth + FLYOUT_GAP && spaceLeft > spaceRight) openRight = false;
+      } else if (spaceLeft < menuWidth + FLYOUT_GAP && spaceRight > spaceLeft) {
+        openRight = true;
       }
+
+      if (window.innerWidth < 768) {
+        openRight = spaceRight >= spaceLeft;
+      }
+
+      el.classList.toggle('flyout-right', openRight);
+      el.classList.toggle('flyout-left', !openRight);
+
+      if (openRight) {
+        const left = Math.min(
+          anchorRect.right + FLYOUT_GAP,
+          window.innerWidth - menuWidth - padding
+        );
+        el.style.left = `${Math.max(padding, left)}px`;
+      } else {
+        const left = Math.max(padding, anchorRect.left - menuWidth - FLYOUT_GAP);
+        el.style.left = `${left}px`;
+      }
+
+      let top = anchorRect.top;
+      if (top + menuHeight > window.innerHeight - padding) {
+        top = window.innerHeight - menuHeight - padding;
+      }
+      if (top < padding) top = padding;
+      el.style.top = `${top}px`;
+      el.style.visibility = '';
     };
+
     requestAnimationFrame(() => requestAnimationFrame(run));
   };
+
+  const [openNestedKey, setOpenNestedKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!openSubmenuId || collapsed) return;
     const submenu = submenuRefs.current[openSubmenuId];
     if (!submenu) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const r = submenu.getBoundingClientRect();
-        if (r.bottom > window.innerHeight - VIEWPORT_PADDING) {
-          const newTop = window.innerHeight - submenu.offsetHeight - VIEWPORT_PADDING;
-          submenu.style.top = `${Math.max(VIEWPORT_PADDING, newTop)}px`;
-        }
-      });
-    });
+    // Re-clamp if viewport changes while open
+    const onResize = () => {
+      const r = submenu.getBoundingClientRect();
+      // Re-use current left; only fix vertical overflow
+      if (r.bottom > window.innerHeight - VIEWPORT_PADDING) {
+        const newTop = window.innerHeight - submenu.offsetHeight - VIEWPORT_PADDING;
+        submenu.style.top = `${Math.max(VIEWPORT_PADDING, newTop)}px`;
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, [openSubmenuId, collapsed]);
 
   useEffect(() => {
     if (!collapsedOpenId || !collapsed) return;
     const submenu = submenuRefs.current[`collapsed-${collapsedOpenId}`];
     if (!submenu) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const r = submenu.getBoundingClientRect();
-        if (r.bottom > window.innerHeight - VIEWPORT_PADDING) {
-          const newTop = window.innerHeight - submenu.offsetHeight - VIEWPORT_PADDING;
-          submenu.style.top = `${Math.max(VIEWPORT_PADDING, newTop)}px`;
-        }
-      });
-    });
+    const onResize = () => {
+      const r = submenu.getBoundingClientRect();
+      if (r.bottom > window.innerHeight - VIEWPORT_PADDING) {
+        const newTop = window.innerHeight - submenu.offsetHeight - VIEWPORT_PADDING;
+        submenu.style.top = `${Math.max(VIEWPORT_PADDING, newTop)}px`;
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, [collapsedOpenId, collapsed]);
 
   const [menuItems, setMenuItems] = useState<SidebarMenuItem[]>(initialMenuItemsFromStorage);
@@ -349,20 +402,17 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                 <div
                   key={item.id}
                   className="relative group"
-                  onMouseEnter={(e) => {
-                    if (hasSubmenu) {
-                      clearCloseTimer();
-                      setCollapsedOpenId(item.id);
-                      const submenu = submenuRefs.current[`collapsed-${item.id}`];
-                      if (submenu) {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        submenu.style.position = 'fixed';
-                        submenu.style.left = `${rect.right}px`;
-                        submenu.style.top = `${rect.top}px`;
-                        adjustSubmenuUpIfNeeded(submenu);
-                      }
-                    }
-                  }}
+                      onMouseEnter={(e) => {
+                        if (hasSubmenu) {
+                          clearCloseTimer();
+                          setCollapsedOpenId(item.id);
+                          const submenu = submenuRefs.current[`collapsed-${item.id}`];
+                          if (submenu) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            positionFlyoutMenu(submenu, rect, { preferRight: true });
+                          }
+                        }
+                      }}
                   onMouseLeave={() => hasSubmenu && scheduleClose(() => setCollapsedOpenId(null))}
                 >
                   <Link
@@ -487,15 +537,19 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                       onMouseEnter={(e) => {
                         clearCloseTimer();
                         setOpenSubmenuId(item.id);
+                        setOpenNestedKey(null);
                         const submenu = submenuRefs.current[item.id];
                         if (submenu) {
                           const rect = e.currentTarget.getBoundingClientRect();
-                          submenu.style.left = `${rect.right}px`;
-                          submenu.style.top = `${rect.top}px`;
-                          adjustSubmenuUpIfNeeded(submenu);
+                          positionFlyoutMenu(submenu, rect, { preferRight: true });
                         }
                       }}
-                      onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
+                      onMouseLeave={() =>
+                        scheduleClose(() => {
+                          setOpenSubmenuId(null);
+                          setOpenNestedKey(null);
+                        })
+                      }
                     >
                       <span className="mr-3 w-5 text-center">{item.icon}</span>
                       <span className="flex-1 text-sm">{getDisplayLabel(item.href, item.label)}</span>
@@ -505,43 +559,78 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
                       <div 
                         ref={(el) => { submenuRefs.current[item.id] = el; }}
                         className={`sidebar-submenu ${openSubmenuId === item.id ? 'is-open' : ''}`}
-                        onMouseEnter={() => { clearCloseTimer(); setOpenSubmenuId(item.id); }}
-                        onMouseLeave={() => scheduleClose(() => setOpenSubmenuId(null))}
+                        onMouseEnter={() => {
+                          clearCloseTimer();
+                          setOpenSubmenuId(item.id);
+                        }}
+                        onMouseLeave={() =>
+                          scheduleClose(() => {
+                            setOpenSubmenuId(null);
+                            setOpenNestedKey(null);
+                          })
+                        }
                       >
                         {(item.submenu ?? []).map((subItem, idx) => {
-                          const hasNestedSubmenu = 'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
+                          const hasNestedSubmenu =
+                            'submenu' in subItem && subItem.submenu && subItem.submenu.length > 0;
                           const subItemActive = isActive(subItem.href);
-                          
+                          const nestedKey = `${item.id}-${idx}`;
+
                           return (
                             <div key={idx} className="relative sidebar-submenu-item-wrapper">
                               {hasNestedSubmenu ? (
-                                <div 
-                                  className={`sidebar-submenu-item has-children ${subItemActive ? 'active' : ''}`}
+                                <div
+                                  className={`sidebar-submenu-item has-children ${subItemActive ? 'active' : ''} ${openNestedKey === nestedKey ? 'is-nested-open' : ''}`}
                                   onMouseEnter={(e) => {
-                                    const nestedSubmenu = e.currentTarget.querySelector('.nested-submenu') as HTMLElement;
+                                    clearCloseTimer();
+                                    setOpenNestedKey(nestedKey);
+                                    const nestedSubmenu = e.currentTarget.querySelector(
+                                      '.nested-submenu'
+                                    ) as HTMLElement | null;
                                     if (nestedSubmenu) {
                                       const rect = e.currentTarget.getBoundingClientRect();
-                                      nestedSubmenu.style.left = `${rect.right + 4}px`;
-                                      nestedSubmenu.style.top = `${rect.top}px`;
-                                      adjustSubmenuUpIfNeeded(nestedSubmenu);
+                                      positionFlyoutMenu(nestedSubmenu, rect, {
+                                        preferRight: true,
+                                      });
                                     }
+                                  }}
+                                  onMouseLeave={() => {
+                                    // Keep open briefly so cursor can reach the flyout
+                                    scheduleClose(() => setOpenNestedKey(null));
                                   }}
                                 >
                                   {getDisplayLabel(subItem.href, subItem.label)}
-                                  <span className="text-black dark:text-slate-500 absolute right-3">›</span>
-                                  
-                                  {/* Nested Submenu */}
-                                  <div className="nested-submenu">
-                                    {'submenu' in subItem && subItem.submenu && subItem.submenu.map((nestedItem: { label: string; href: string }, nestedIdx: number) => (
-                                      <Link
-                                        key={nestedIdx}
-                                        href={nestedItem.href}
-                                        prefetch={true}
-                                        className={`nested-submenu-item ${isActive(nestedItem.href) ? 'active' : ''}`}
-                                      >
-                                        {getDisplayLabel(nestedItem.href, nestedItem.label)}
-                                      </Link>
-                                    ))}
+                                  <span className="text-black dark:text-slate-500 absolute right-3">
+                                    ›
+                                  </span>
+
+                                  <div
+                                    className={`nested-submenu ${openNestedKey === nestedKey ? 'is-open' : ''}`}
+                                    onMouseEnter={() => {
+                                      clearCloseTimer();
+                                      setOpenNestedKey(nestedKey);
+                                    }}
+                                    onMouseLeave={() =>
+                                      scheduleClose(() => setOpenNestedKey(null))
+                                    }
+                                  >
+                                    {'submenu' in subItem &&
+                                      subItem.submenu &&
+                                      subItem.submenu.map(
+                                        (
+                                          nestedItem: { label: string; href: string },
+                                          nestedIdx: number
+                                        ) => (
+                                          <Link
+                                            key={nestedIdx}
+                                            href={nestedItem.href}
+                                            prefetch={true}
+                                            className={`nested-submenu-item ${isActive(nestedItem.href) ? 'active' : ''}`}
+                                          >
+                                            {getDisplayLabel(nestedItem.href, nestedItem.label)}
+                                          </Link>
+                                        )
+                                      )}
                                   </div>
                                 </div>
                               ) : (
@@ -604,6 +693,10 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             position: fixed;
             background: #ffffff;
             min-width: 220px;
+            max-width: min(280px, calc(100vw - 24px));
+            max-height: calc(100vh - 24px);
+            overflow-y: auto;
+            overflow-x: hidden;
             border-radius: 8px;
             box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.1);
             display: none;
@@ -611,6 +704,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border: 1px solid #e2e8f0;
             pointer-events: auto;
             margin: 0;
+            overscroll-behavior: contain;
           }
 
           .sidebar-submenu::before {
@@ -623,6 +717,13 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border-style: solid;
             border-width: 8px 8px 8px 0;
             border-color: transparent #ffffff transparent transparent;
+          }
+
+          .sidebar-submenu.flyout-left::before {
+            left: auto;
+            right: -8px;
+            border-width: 8px 0 8px 8px;
+            border-color: transparent transparent transparent #ffffff;
           }
 
           .sidebar-submenu.is-open {
@@ -642,7 +743,8 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             text-decoration: none;
           }
 
-          .sidebar-submenu-item:hover {
+          .sidebar-submenu-item:hover,
+          .sidebar-submenu-item.is-nested-open {
             background: #f1f5f9;
             color: #000000;
             border-left: 3px solid #3b82f6;
@@ -666,6 +768,10 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             position: fixed;
             background: #ffffff;
             min-width: 220px;
+            max-width: min(280px, calc(100vw - 24px));
+            max-height: calc(100vh - 24px);
+            overflow-y: auto;
+            overflow-x: hidden;
             border-radius: 8px;
             box-shadow: 5px 5px 20px rgba(0,0,0,0.1);
             display: none;
@@ -673,6 +779,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border: 1px solid #e2e8f0;
             pointer-events: auto;
             margin: 0;
+            overscroll-behavior: contain;
           }
 
           .nested-submenu::before {
@@ -687,8 +794,14 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border-color: transparent #ffffff transparent transparent;
           }
 
-          .sidebar-submenu-item.has-children:hover .nested-submenu,
-          .nested-submenu:hover {
+          .nested-submenu.flyout-left::before {
+            left: auto;
+            right: -8px;
+            border-width: 8px 0 8px 8px;
+            border-color: transparent transparent transparent #ffffff;
+          }
+
+          .nested-submenu.is-open {
             display: block !important;
           }
 
@@ -733,13 +846,18 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border-color: #475569;
             box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
           }
-          .dark .sidebar-submenu::before {
+          .dark .sidebar-submenu::before,
+          .dark .sidebar-submenu.flyout-right::before {
             border-color: transparent #334155 transparent transparent;
+          }
+          .dark .sidebar-submenu.flyout-left::before {
+            border-color: transparent transparent transparent #334155;
           }
           .dark .sidebar-submenu-item {
             color: #e2e8f0;
           }
-          .dark .sidebar-submenu-item:hover {
+          .dark .sidebar-submenu-item:hover,
+          .dark .sidebar-submenu-item.is-nested-open {
             background: #475569;
             color: white;
             border-left-color: #3b82f6;
@@ -754,8 +872,12 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             border-color: #64748b;
             box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
           }
-          .dark .nested-submenu::before {
+          .dark .nested-submenu::before,
+          .dark .nested-submenu.flyout-right::before {
             border-color: transparent #475569 transparent transparent;
+          }
+          .dark .nested-submenu.flyout-left::before {
+            border-color: transparent transparent transparent #475569;
           }
           .dark .nested-submenu-item {
             color: #e2e8f0;
@@ -780,6 +902,14 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
           aside > nav {
             overflow-y: auto;
             overflow-x: visible;
+          }
+
+          @media (max-width: 767px) {
+            .sidebar-submenu,
+            .nested-submenu {
+              min-width: min(220px, calc(100vw - 24px));
+              max-width: calc(100vw - 24px);
+            }
           }
         `
       }} />
