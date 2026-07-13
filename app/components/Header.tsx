@@ -116,8 +116,8 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
 
           {/* Right side - User actions */}
           <div className="flex items-center gap-3">
-            {/* UI language (Accept-Language) */}
-            <div className="relative inline-flex items-center" title="Language">
+            {/* UI language — full localized name (like color display names) */}
+            <div className="relative inline-flex items-center min-w-[7.5rem]" title="Language">
               <span className="sr-only">Language</span>
               <select
                 value={language}
@@ -128,11 +128,11 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
                 }}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Language"
-                className="appearance-none cursor-pointer rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-black dark:text-white font-bold text-xs tracking-wide pl-2.5 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="appearance-none cursor-pointer rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-black dark:text-white font-semibold text-sm pl-2.5 pr-8 py-1.5 min-w-[7.5rem] max-w-[11rem] focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {languages.map((lang) => (
                   <option key={lang.code} value={lang.code}>
-                    {lang.code}
+                    {lang.label}
                   </option>
                 ))}
               </select>

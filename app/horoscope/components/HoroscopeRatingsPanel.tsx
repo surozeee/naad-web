@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { HoroscopeRatingSelect } from '@/app/horoscope/components/HoroscopeRatingSelect';
 import { computeOverallRating } from '@/app/lib/horoscope-multilang';
+import { useHoroscopeI18n } from '@/app/lib/horoscope-i18n';
 
 export interface HoroscopeCategoryRatings {
   loveRating?: number;
@@ -23,14 +24,14 @@ interface HoroscopeRatingsPanelProps {
 }
 
 const CATEGORY_FIELDS = [
-  { key: 'loveRating' as const, label: 'Love' },
-  { key: 'careerRating' as const, label: 'Career' },
-  { key: 'moneyRating' as const, label: 'Finance' },
-  { key: 'healthRating' as const, label: 'Health' },
-  { key: 'familyRating' as const, label: 'Family' },
-  { key: 'educationRating' as const, label: 'Education' },
-  { key: 'travelRating' as const, label: 'Travel' },
-  { key: 'luckRating' as const, label: 'Luck' },
+  { key: 'loveRating' as const, labelKey: 'common.ratingLabels.love' },
+  { key: 'careerRating' as const, labelKey: 'common.ratingLabels.career' },
+  { key: 'moneyRating' as const, labelKey: 'common.ratingLabels.money' },
+  { key: 'healthRating' as const, labelKey: 'common.ratingLabels.health' },
+  { key: 'familyRating' as const, labelKey: 'common.ratingLabels.family' },
+  { key: 'educationRating' as const, labelKey: 'common.ratingLabels.education' },
+  { key: 'travelRating' as const, labelKey: 'common.ratingLabels.travel' },
+  { key: 'luckRating' as const, labelKey: 'common.ratingLabels.luck' },
 ];
 
 /** Category star ratings + read-only Overall (average of set categories, 0.5 step). Two per row. */
@@ -39,6 +40,8 @@ export function HoroscopeRatingsPanel({
   onChange,
   className = '',
 }: HoroscopeRatingsPanelProps) {
+  const { t } = useHoroscopeI18n();
+
   const overall = useMemo(
     () =>
       computeOverallRating({
@@ -72,10 +75,16 @@ export function HoroscopeRatingsPanel({
   };
 
   const rows = [
-    { key: 'overallRating' as const, label: 'Overall', readOnly: true as const, value: overall, hint: 'Auto average' },
+    {
+      key: 'overallRating' as const,
+      label: t('common.overall'),
+      readOnly: true as const,
+      value: overall,
+      hint: t('add.autoAverage'),
+    },
     ...CATEGORY_FIELDS.map((field) => ({
       key: field.key,
-      label: field.label,
+      label: t(field.labelKey),
       readOnly: false as const,
       value: value[field.key],
       hint: undefined as string | undefined,
@@ -92,16 +101,22 @@ export function HoroscopeRatingsPanel({
               col === 0 ? 'border-r border-slate-200 dark:border-slate-600' : ''
             }`}
           >
-            <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Category</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">
+              {t('list.category')}
+            </span>
             <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted text-right">
-              Rating
+              {t('list.rating')}
             </span>
           </div>
         ))}
       </div>
       <div className="sm:hidden grid grid-cols-[1fr_auto] gap-x-3 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-600">
-        <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">Category</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted text-right">Rating</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted">
+          {t('list.category')}
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider horoscope-muted text-right">
+          {t('list.rating')}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2">

@@ -251,28 +251,21 @@ export function hasHoroscopeTranslation(
   return HOROSCOPE_TEXT_FIELDS.some((f) => Boolean(locale[f]?.trim()));
 }
 
-function pickField(value: string, fallback: string): string | undefined {
-  const trimmed = value.trim();
-  if (trimmed) return trimmed;
-  const fb = fallback.trim();
-  return fb || undefined;
-}
-
 function hasLocaleContent(row: HoroscopeLocaleRequest): boolean {
   return HOROSCOPE_TEXT_FIELDS.some((f) => Boolean(row[f]?.trim()));
 }
 
+/** Locale rows carry only that language's text — never copy base/EN as a fallback. */
 function buildLocaleRow(
   language: LanguageEnumCode,
   uiCode: string,
-  localized: HoroscopeLocalizedFields,
-  en: Record<HoroscopeTextField, string>
+  localized: HoroscopeLocalizedFields
 ): HoroscopeLocaleRequest | null {
   const row: HoroscopeLocaleRequest = { language };
   let hasContent = false;
 
   for (const field of HOROSCOPE_TEXT_FIELDS) {
-    const value = pickField(localized[field][uiCode] ?? '', en[field]);
+    const value = (localized[field][uiCode] ?? '').trim();
     if (value) {
       row[field] = value;
       hasContent = true;
@@ -282,29 +275,48 @@ function buildLocaleRow(
   return hasContent ? row : null;
 }
 
+function isIsoDate(value: string | undefined | null): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+}
+
 /** Maps UI/CSV entry to backend HoroscopeRequest (base language + locale rows). */
 export function buildHoroscopeRequest(
   entry: HoroscopeMultilangEntry,
   languages: HoroscopeLanguageOption[] = DEFAULT_HOROSCOPE_LANGUAGES
 ): HoroscopeRequest {
-  const base = getBaseHoroscopeLanguage(languages);
+  const langs = languages.length ? languages : DEFAULT_HOROSCOPE_LANGUAGES;
+  const base = getBaseHoroscopeLanguage(langs);
   const en = HOROSCOPE_TEXT_FIELDS.reduce((acc, field) => {
     acc[field] = (entry.localized[field][base.uiCode] ?? '').trim();
     return acc;
   }, {} as Record<HoroscopeTextField, string>);
 
   const locales: HoroscopeLocaleRequest[] = [];
-  for (const lang of languages) {
+  for (const lang of langs) {
     if (lang.isBase) continue;
-    const row = buildLocaleRow(lang.backendCode, lang.uiCode, entry.localized, en);
+    const backendCode = String(lang.backendCode ?? '')
+      .trim()
+      .toUpperCase();
+    if (!/^[A-Z]{2,3}$/.test(backendCode)) continue;
+    const row = buildLocaleRow(backendCode, lang.uiCode, entry.localized);
     if (row && hasLocaleContent(row)) locales.push(row);
   }
+
+  const sanitizeRating = (value?: number | null): number | undefined => {
+    if (value == null || Number.isNaN(Number(value))) return undefined;
+    const n = Number(value);
+    if (!isValidHoroscopeRating(n)) return roundHoroscopeRating(n);
+    return n;
+  };
+
+  const startDate = isIsoDate(entry.startDate) ? entry.startDate.trim() : entry.startDate;
+  const endDate = isIsoDate(entry.endDate) ? entry.endDate.trim() : entry.endDate;
 
   return {
     zodiacSign: entry.zodiacSign,
     horoscopeType: entry.horoscopeType,
-    startDate: entry.startDate,
-    endDate: entry.endDate,
+    startDate,
+    endDate,
     summary: en.summary || undefined,
     love: en.love || undefined,
     career: en.career || undefined,
@@ -318,15 +330,15 @@ export function buildHoroscopeRequest(
     luckyNumber: entry.luckyNumber.trim() || undefined,
     luckyColor: entry.luckyColor.trim() || undefined,
     luckyTime: entry.luckyTime.trim() || undefined,
-    loveRating: entry.loveRating,
-    careerRating: entry.careerRating,
-    moneyRating: entry.moneyRating,
-    healthRating: entry.healthRating,
-    familyRating: entry.familyRating,
-    educationRating: entry.educationRating,
-    travelRating: entry.travelRating,
-    luckRating: entry.luckRating,
-    overallRating: computeOverallRating(entry),
+    loveRating: sanitizeRating(entry.loveRating),
+    careerRating: sanitizeRating(entry.careerRating),
+    moneyRating: sanitizeRating(entry.moneyRating),
+    healthRating: sanitizeRating(entry.healthRating),
+    familyRating: sanitizeRating(entry.familyRating),
+    educationRating: sanitizeRating(entry.educationRating),
+    travelRating: sanitizeRating(entry.travelRating),
+    luckRating: sanitizeRating(entry.luckRating),
+    // overallRating is derived server-side from category ratings
     publishStatus: entry.publishStatus ?? 'DRAFT',
     locales,
   };

@@ -957,6 +957,241 @@ body {
   border-top-color: #334155;
 }
 
+/* Color Setup — Multi-language labels modal (overrides datepicker .modal-header gradient) */
+.color-locale-modal {
+  max-width: 520px;
+  width: 92vw;
+  max-height: min(90vh, 720px);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+.color-locale-modal .color-modal-header {
+  background: #ffffff !important;
+  color: inherit !important;
+  padding: 20px 56px 16px 24px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  flex-shrink: 0;
+}
+.color-locale-modal .color-modal-header h2 {
+  color: #0f172a !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+.color-locale-modal .color-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s, color 0.15s;
+}
+.color-locale-modal .color-modal-close:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #334155;
+}
+.color-locale-modal .color-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.color-locale-modal-body {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.color-locale-subject {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.color-locale-subject-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+.color-locale-subject-meta {
+  min-width: 0;
+}
+.color-locale-subject-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+.color-locale-subject-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+.color-locale-subject-hex {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #64748b;
+  margin-top: 2px;
+}
+.color-locale-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.color-locale-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.color-locale-fields .form-group {
+  margin: 0;
+}
+.color-locale-fields .form-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+.color-locale-list-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 8px;
+}
+.color-locale-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.color-locale-empty {
+  font-size: 0.8125rem;
+  color: #64748b;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  text-align: center;
+}
+.color-locale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+.color-locale-row.is-active {
+  border-color: #93c5fd;
+  background: #f8fbff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+.color-locale-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.color-locale-lang-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.color-locale-row-name {
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.color-locale-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.color-locale-modal .color-modal-footer {
+  margin-top: 0;
+}
+.dark .color-locale-modal {
+  background: #0f172a;
+}
+.dark .color-locale-modal .color-modal-header {
+  background: #0f172a !important;
+  border-bottom-color: #334155 !important;
+}
+.dark .color-locale-modal .color-modal-header h2 {
+  color: #f8fafc !important;
+}
+.dark .color-locale-modal .color-modal-close {
+  background: #1e293b;
+  color: #94a3b8;
+}
+.dark .color-locale-subject,
+.dark .color-locale-hint,
+.dark .color-locale-empty {
+  background: #1e293b;
+  border-color: #334155;
+}
+.dark .color-locale-subject-name,
+.dark .color-locale-row-name {
+  color: #f8fafc;
+}
+.dark .color-locale-row {
+  background: #0f172a;
+  border-color: #334155;
+}
+.dark .color-locale-row.is-active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: #3b82f6;
+}
+.dark .color-locale-lang-badge {
+  background: #334155;
+  color: #e2e8f0;
+}
+
 /* Horoscope list / readings */
 .horoscope-list-page {
   color: #0f172a;
@@ -1112,6 +1347,9 @@ body {
 .hl-filter-period {
   width: auto;
   max-width: none;
+  /* Keep toolbar height stable when switching Daily/Weekly/Monthly/Yearly controls */
+  min-height: 36px;
+  justify-content: center;
 }
 .hl-filter-lang {
   width: 140px;
@@ -1159,23 +1397,35 @@ select.hl-period-select {
   font-size: 0.875rem;
   color: #64748b;
 }
-.hl-refresh-bar {
+/* Inline in toolbar — never inserts a content row (avoids layout jump on tab click). */
+.hl-toolbar-filters {
+  position: relative;
+}
+.hl-refresh-indicator {
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  padding: 6px 10px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #000000;
+  color: #0f172a;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
+  pointer-events: none;
+  z-index: 1;
 }
-.dark .hl-refresh-bar {
-  color: #ffffff;
+.dark .hl-refresh-indicator {
+  color: #f8fafc;
   background: #1e293b;
   border-color: #334155;
+}
+.hl-refresh-bar {
+  display: none;
 }
 .hl-grid {
   display: grid;

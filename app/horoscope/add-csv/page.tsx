@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CloudUpload, Download, FileSpreadsheet, Loader2, Pencil, Plus, RefreshCw, Save, Send, Trash2, Upload, X } from 'lucide-react';
+import { CloudUpload, Download, FileSpreadsheet, Loader2, Pencil, Plus, Save, Send, Trash2, Upload, X } from 'lucide-react';
 import DashboardLayout from '@/app/components/DashboardLayout';
 import Breadcrumb from '@/app/components/common/Breadcrumb';
 import { PageHeaderWithInfo } from '@/app/components/common/PageHeaderWithInfo';
@@ -35,6 +35,9 @@ import { HoroscopeLanguageTabs } from '@/app/horoscope/components/HoroscopeLangu
 import { HoroscopeColorPicker } from '@/app/horoscope/components/HoroscopeColorPicker';
 import { HoroscopeRatingsPanel } from '@/app/horoscope/components/HoroscopeRatingsPanel';
 import { BsDateText } from '@/app/horoscope/components/BsDateText';
+import { HoroscopePeriodDateField } from '@/app/horoscope/components/HoroscopePeriodDateField';
+import { useHoroscopeI18n } from '@/app/lib/horoscope-i18n';
+import { localizeDigits } from '@/app/lib/nepali-digits';
 
 interface HoroscopeEntry {
   id: string;
@@ -63,33 +66,20 @@ type HoroscopeFormState = Omit<HoroscopeEntry, 'id' | 'serverId'>;
 const STORAGE_KEY = 'horoscope-add-csv-drafts-v5';
 const TYPE_TABS: HoroscopeTypeEnum[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
 
-const ZODIAC_OPTIONS: Array<{ value: ZodiacSignEnum; label: string }> = [
-  { value: 'ARIES', label: 'Aries' },
-  { value: 'TAURUS', label: 'Taurus' },
-  { value: 'GEMINI', label: 'Gemini' },
-  { value: 'CANCER', label: 'Cancer' },
-  { value: 'LEO', label: 'Leo' },
-  { value: 'VIRGO', label: 'Virgo' },
-  { value: 'LIBRA', label: 'Libra' },
-  { value: 'SCORPIO', label: 'Scorpio' },
-  { value: 'SAGITTARIUS', label: 'Sagittarius' },
-  { value: 'CAPRICORN', label: 'Capricorn' },
-  { value: 'AQUARIUS', label: 'Aquarius' },
-  { value: 'PISCES', label: 'Pisces' },
+const ZODIAC_OPTIONS: ZodiacSignEnum[] = [
+  'ARIES',
+  'TAURUS',
+  'GEMINI',
+  'CANCER',
+  'LEO',
+  'VIRGO',
+  'LIBRA',
+  'SCORPIO',
+  'SAGITTARIUS',
+  'CAPRICORN',
+  'AQUARIUS',
+  'PISCES',
 ];
-
-const FIELD_LABELS: Partial<Record<HoroscopeTextField, string>> = {
-  summary: 'Overview',
-  love: 'Love & Relationships',
-  career: 'Career & Business',
-  money: 'Finance & Wealth',
-  health: 'Health & Wellness',
-  family: 'Family & Social Life',
-  education: 'Education & Growth',
-  travel: 'Travel & Relocation',
-  advice: 'Guidance',
-  mood: 'Mood',
-};
 
 const FORM_TEXT_FIELDS: HoroscopeTextField[] = [...HOROSCOPE_TEXT_FIELDS];
 
@@ -201,7 +191,7 @@ function escapeCsvCell(value: string): string {
 }
 
 function isValidZodiac(value: string): value is ZodiacSignEnum {
-  return ZODIAC_OPTIONS.some((item) => item.value === value);
+  return (ZODIAC_OPTIONS as string[]).includes(value);
 }
 
 function resolveLocalizedField(
@@ -262,6 +252,7 @@ function statusTone(message: string): 'success' | 'error' | 'info' {
 
 
 export default function AddHoroscopeCsvPage() {
+  const { t, typeLabel, zodiacName, uiCode } = useHoroscopeI18n();
   const [languages, setLanguages] = useState<HoroscopeLanguageOption[]>(DEFAULT_HOROSCOPE_LANGUAGES);
   const [activeType, setActiveType] = useState<HoroscopeTypeEnum>('DAILY');
   const [formData, setFormData] = useState<HoroscopeFormState>(() => createInitialForm('DAILY'));
@@ -278,6 +269,7 @@ export default function AddHoroscopeCsvPage() {
   const [csvPreviewRows, setCsvPreviewRows] = useState<HoroscopeEntry[]>([]);
   const [csvPreviewFileName, setCsvPreviewFileName] = useState('');
   const [csvPreviewError, setCsvPreviewError] = useState('');
+  const [selectedDraftIds, setSelectedDraftIds] = useState<string[]>([]);
   const uploadDraftInputRef = useRef<HTMLInputElement | null>(null);
 
   const activeLangOption = useMemo(
@@ -404,6 +396,37 @@ export default function AddHoroscopeCsvPage() {
     [groupedEntries, activeType, activeLangOption]
   );
 
+  const activeDraftIdSet = useMemo(() => new Set(activeDrafts.map((e) => e.id)), [activeDrafts]);
+  const selectedVisibleIds = useMemo(
+    () => selectedDraftIds.filter((id) => activeDraftIdSet.has(id)),
+    [selectedDraftIds, activeDraftIdSet]
+  );
+  const allVisibleSelected =
+    activeDrafts.length > 0 && selectedVisibleIds.length === activeDrafts.length;
+
+  // Drop stale selections when tab/language/draft list changes
+  useEffect(() => {
+    setSelectedDraftIds((prev) => prev.filter((id) => activeDraftIdSet.has(id)));
+  }, [activeDraftIdSet]);
+
+  const toggleDraftSelected = (id: string) => {
+    setSelectedDraftIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllDrafts = () => {
+    if (allVisibleSelected) {
+      setSelectedDraftIds((prev) => prev.filter((id) => !activeDraftIdSet.has(id)));
+      return;
+    }
+    setSelectedDraftIds((prev) => {
+      const next = new Set(prev);
+      for (const entry of activeDrafts) next.add(entry.id);
+      return [...next];
+    });
+  };
+
   const activeServerRows = useMemo(
     () =>
       activeLangOption.isBase
@@ -490,6 +513,7 @@ export default function AddHoroscopeCsvPage() {
 
   const handleDelete = (id: string) => {
     setEntries((prev) => prev.filter((item) => item.id !== id));
+    setSelectedDraftIds((prev) => prev.filter((x) => x !== id));
     if (editingId === id) resetForm();
     setCsvMessage('Draft removed.');
   };
@@ -702,31 +726,43 @@ export default function AddHoroscopeCsvPage() {
   };
 
   const handleSaveDraft = async () => {
-    if (entries.length === 0) {
-      setCsvMessage('No drafts to save. Upload a CSV or add drafts first.');
+    const toSave = entries.filter((e) => e.horoscopeType === activeType);
+    if (toSave.length === 0) {
+      setCsvMessage('No drafts to save on this tab. Upload a CSV or add drafts first.');
       return;
     }
+    if (syncing) return;
     setSyncing(true);
     setCsvMessage('');
     try {
       const idUpdates = new Map<string, string>();
       const rowErrors: string[] = [];
       let saved = 0;
-      for (const entry of entries) {
-        const validationError = validateHoroscopeMultilangEntry(entryToMultilangEntry(entry), languages);
+      for (const entry of toSave) {
+        const period = resolveHoroscopePeriodDates(entry.horoscopeType, entry.startDate || todayIso());
+        const normalizedEntry: HoroscopeEntry = {
+          ...entry,
+          startDate: entry.startDate?.trim() || period.startDate,
+          endDate: entry.endDate?.trim() || period.endDate,
+        };
+        if (normalizedEntry.horoscopeType === 'DAILY') {
+          normalizedEntry.endDate = normalizedEntry.startDate;
+        }
+        const multilang = entryToMultilangEntry(normalizedEntry);
+        const validationError = validateHoroscopeMultilangEntry(multilang, languages);
         if (validationError) {
           rowErrors.push(`${entry.zodiacSign}: ${validationError}`);
           continue;
         }
-        const body = buildHoroscopeRequest(entryToMultilangEntry(entry), languages);
+        const body = buildHoroscopeRequest({ ...multilang, publishStatus: 'DRAFT' }, languages);
         try {
-          const existingId = entry.serverId ?? (await resolveServerId(entry));
+          const existingId = entry.serverId ?? (await resolveServerId(normalizedEntry));
           if (existingId) {
             await horoscopeApi.update(existingId, body);
             idUpdates.set(entry.id, existingId);
           } else {
             await horoscopeApi.create(body);
-            const createdId = await resolveServerId(entry);
+            const createdId = await resolveServerId(normalizedEntry);
             if (createdId) idUpdates.set(entry.id, createdId);
           }
           saved += 1;
@@ -749,51 +785,53 @@ export default function AddHoroscopeCsvPage() {
   };
 
   const handlePublish = async () => {
-    if (entries.length === 0) {
-      setCsvMessage('No drafts to publish. Add or upload drafts first.');
+    const selectedSet = new Set(selectedVisibleIds);
+    const toPublish = activeDrafts.filter((e) => selectedSet.has(e.id));
+    if (toPublish.length === 0) {
+      setCsvMessage(t('add.selectDraftsToPublish'));
       return;
     }
+    if (syncing) return;
     setSyncing(true);
     setCsvMessage('');
     try {
+      const publishedIds = new Set<string>();
       const idUpdates = new Map<string, string>();
       const rowErrors: string[] = [];
-      for (const entry of entries) {
-        const multilang = entryToMultilangEntry(entry);
-        const validationError = validateHoroscopeMultilangEntry(multilang, languages);
-        if (validationError) {
-          rowErrors.push(`${entry.zodiacSign}: ${validationError}`);
-          continue;
-        }
-        // Persist content and set publishStatus to PUBLISHED (update status on draft)
-        const body = {
-          ...buildHoroscopeRequest({ ...multilang, publishStatus: 'PUBLISHED' }, languages),
-          publishStatus: 'PUBLISHED' as const,
-        };
+      for (const entry of toPublish) {
         try {
-          let serverId = entry.serverId ?? (await resolveServerId(entry));
-          if (serverId) {
-            await horoscopeApi.update(serverId, body);
-          } else {
-            await horoscopeApi.create(body);
-            serverId = await resolveServerId(entry);
+          const period = resolveHoroscopePeriodDates(entry.horoscopeType, entry.startDate || todayIso());
+          const normalizedEntry: HoroscopeEntry = {
+            ...entry,
+            startDate: entry.startDate?.trim() || period.startDate,
+            endDate: entry.endDate?.trim() || period.endDate,
+          };
+          if (normalizedEntry.horoscopeType === 'DAILY') {
+            normalizedEntry.endDate = normalizedEntry.startDate;
           }
+
+          // Status-only: must already exist on server (Save Draft first). No create/update.
+          let serverId = entry.serverId ?? (await resolveServerId(normalizedEntry));
           if (!serverId) {
-            rowErrors.push(`${entry.zodiacSign}: Missing server id after save`);
+            rowErrors.push(`${entry.zodiacSign}: ${t('add.saveDraftBeforePublish')}`);
             continue;
           }
-          idUpdates.set(entry.id, serverId);
           await horoscopeApi.changePublishStatus(serverId, 'PUBLISHED');
+          publishedIds.add(entry.id);
+          idUpdates.set(entry.id, serverId);
         } catch (err) {
           rowErrors.push(`${entry.zodiacSign}: ${err instanceof Error ? err.message : 'Publish failed'}`);
         }
       }
-      setEntries((prev) => prev.map((e) => (idUpdates.has(e.id) ? { ...e, serverId: idUpdates.get(e.id) } : e)));
-      const published = idUpdates.size;
+      setEntries((prev) =>
+        prev.map((e) => (idUpdates.has(e.id) ? { ...e, serverId: idUpdates.get(e.id) } : e))
+      );
+      setSelectedDraftIds((prev) => prev.filter((id) => !publishedIds.has(id)));
+      const published = publishedIds.size;
       setCsvMessage(
         rowErrors.length > 0
           ? `Published ${published} with ${rowErrors.length} error(s): ${rowErrors.slice(0, 3).join('; ')}`
-          : `Published ${published} horoscope(s) — status set to PUBLISHED.`
+          : `Published ${published} — status set to PUBLISHED.`
       );
       await refreshServerList();
     } catch (e) {
@@ -806,25 +844,29 @@ export default function AddHoroscopeCsvPage() {
   return (
     <DashboardLayout>
       <div className="horoscope-csv-page space-y-4 max-w-[1400px] text-black dark:text-white">
-        <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Add Horoscope' }]} />
-        <PageHeaderWithInfo
-          title="Add Horoscope"
-          infoText="Sample CSV matches the active tab: Daily uses date (BS); Weekly uses bsYear+bsMonth+bsWeek; Monthly uses bsYear+bsMonth; Yearly uses bsYear. Start/end AD dates are calculated on upload. Upload Draft previews rows; Save Draft upserts to NAAD."
+        <Breadcrumb
+          items={[
+            { label: t('common.horoscope'), href: '/horoscope' },
+            { label: t('add.breadcrumbAdd') },
+          ]}
         />
+        <PageHeaderWithInfo title={t('add.pageTitle')} infoText={t('add.infoText')} />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-1 border-b border-slate-200 dark:border-slate-600">
-            {TYPE_TABS.map((t) => (
+            {TYPE_TABS.map((tabType) => (
               <button
-                key={t}
+                key={tabType}
                 type="button"
                 className={`horoscope-tab px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors ${
-                  activeType === t ? 'is-active' : 'border-transparent hover:text-black dark:hover:text-white'
+                  activeType === tabType ? 'is-active' : 'border-transparent hover:text-black dark:hover:text-white'
                 }`}
-                onClick={() => setActiveType(t)}
+                onClick={() => setActiveType(tabType)}
               >
-                {t.charAt(0) + t.slice(1).toLowerCase()}
-                <span className="ml-1 text-[10px] opacity-70">({totals.find((x) => x.type === t)?.count ?? 0})</span>
+                {typeLabel(tabType)}
+                <span className="ml-1 text-[10px] opacity-70">
+                  ({localizeDigits(totals.find((x) => x.type === tabType)?.count ?? 0, uiCode)})
+                </span>
               </button>
             ))}
           </div>
@@ -838,51 +880,82 @@ export default function AddHoroscopeCsvPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
           <section className="horoscope-panel rounded-xl overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-sm font-semibold text-black dark:text-white">{editingId ? 'Edit draft' : 'New draft'}</h2>
-              <span className="text-[11px] font-medium uppercase tracking-wide horoscope-muted">{activeType.toLowerCase()}</span>
+              <h2 className="text-sm font-semibold text-black dark:text-white">
+                {editingId ? t('add.editDraft') : t('add.newDraft')}
+              </h2>
+              <span className="text-[11px] font-medium uppercase tracking-wide horoscope-muted">
+                {typeLabel(activeType)}
+              </span>
             </div>
 
             <div className="p-5 space-y-5">
               <div className="space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">Period & luck</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">
+                  {t('add.periodAndLuck')}
+                </p>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <label className="flex flex-col gap-1 min-w-[9rem] w-[9.5rem] shrink-0">
+                      <span className="text-xs font-semibold horoscope-key">{t('add.zodiac')}</span>
+                      <select
+                        name="zodiacSign"
+                        value={formData.zodiacSign}
+                        onChange={handleInputChange}
+                        className="form-input text-sm py-1.5 h-9"
+                      >
+                        {ZODIAC_OPTIONS.map((sign) => (
+                          <option key={sign} value={sign}>
+                            {zodiacName(sign)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <HoroscopePeriodDateField
+                      inline
+                      horoscopeType={activeType}
+                      startDate={formData.startDate}
+                      endDate={formData.endDate}
+                      onChange={({ startDate, endDate }) =>
+                        setFormData((prev) => ({ ...prev, startDate, endDate }))
+                      }
+                    />
+                  </div>
+                  {errors.startDate || errors.endDate ? (
+                    <p className="text-[11px] text-red-600 -mt-1">
+                      {errors.startDate || errors.endDate}
+                    </p>
+                  ) : null}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
                   <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold horoscope-key">Zodiac</span>
-                    <select name="zodiacSign" value={formData.zodiacSign} onChange={handleInputChange} className="form-input text-sm py-1.5 h-9">
-                      {ZODIAC_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold horoscope-key">Lucky number</span>
+                    <span className="text-xs font-semibold horoscope-key">{t('common.luckyNumber')}</span>
                     <input
                       name="luckyNumber"
                       value={formData.luckyNumber}
                       onChange={handleInputChange}
-                      placeholder="e.g. 7"
+                      placeholder={t('add.placeholderLuckyNumber')}
                       className="form-input text-sm py-1.5 h-9"
                     />
                   </label>
                   <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold horoscope-key">Lucky time</span>
+                    <span className="text-xs font-semibold horoscope-key">{t('common.luckyTime')}</span>
                     <input
                       name="luckyTime"
                       value={formData.luckyTime}
                       onChange={handleInputChange}
-                      placeholder="e.g. Morning"
+                      placeholder={t('add.placeholderLuckyTime')}
                       className="form-input text-sm py-1.5 h-9"
                     />
                   </label>
                   <label className="flex flex-col gap-1 min-w-0">
-                    <span className="text-xs font-semibold horoscope-key">Mood</span>
+                    <span className="text-xs font-semibold horoscope-key">{t('common.mood')}</span>
                     <input
                       value={formData.localized.mood[baseLang.uiCode] ?? ''}
                       onChange={(e) => handleLocalizedChange('mood', baseLang.uiCode, e.target.value)}
-                      placeholder="e.g. Optimistic"
+                      placeholder={t('add.placeholderMood')}
                       className="form-input text-sm py-1.5 h-9"
                     />
                   </label>
+                </div>
                 </div>
                 <HoroscopeColorPicker
                   value={formData.luckyColor}
@@ -891,7 +964,9 @@ export default function AddHoroscopeCsvPage() {
               </div>
 
               <div className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">Ratings</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">
+                  {t('common.ratings')}
+                </p>
                 <HoroscopeRatingsPanel
                   value={{
                     loveRating: formData.loveRating,
@@ -910,7 +985,9 @@ export default function AddHoroscopeCsvPage() {
 
               <div className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">Content</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider horoscope-key">
+                    {t('common.content')}
+                  </p>
                 </div>
                 <HoroscopeLanguageTabs
                   languages={languages}
@@ -928,13 +1005,15 @@ export default function AddHoroscopeCsvPage() {
                 >
                   {FORM_TEXT_FIELDS.filter((field) => !activeLangOption.isBase || field !== 'mood').map((field) => (
                     <div key={field} className={field === 'summary' ? 'md:col-span-2' : ''}>
-                      <label className="text-xs font-semibold horoscope-key">{FIELD_LABELS[field]}</label>
+                      <label className="text-xs font-semibold horoscope-key">
+                        {t(`common.fields.${field}`)}
+                      </label>
                       <textarea
                         rows={field === 'summary' ? 3 : 2}
                         value={formData.localized[field][activeLanguage] ?? ''}
                         onChange={(e) => handleLocalizedChange(field, activeLanguage, e.target.value)}
                         className="form-input w-full mt-1 text-sm py-2"
-                        placeholder={FIELD_LABELS[field]}
+                        placeholder={t(`common.fields.${field}`)}
                       />
                       {errors[`${field}_${activeLanguage}`] ? (
                         <p className="text-[11px] text-red-600 mt-0.5">{errors[`${field}_${activeLanguage}`]}</p>
@@ -947,21 +1026,14 @@ export default function AddHoroscopeCsvPage() {
               <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
                 <button type="button" onClick={handleAddOrUpdate} className="btn-primary btn-small inline-flex items-center gap-1.5">
                   {editingId ? <Save size={13} /> : <Plus size={13} />}
-                  {editingId ? 'Update draft' : 'Add draft'}
+                  {editingId ? t('add.updateDraft') : t('add.addDraft')}
                 </button>
-                <button type="button" onClick={resetForm} className="btn-secondary btn-small">Reset</button>
+                <button type="button" onClick={resetForm} className="btn-secondary btn-small">
+                  {t('add.reset')}
+                </button>
                 <button type="button" onClick={handleSaveDraft} disabled={syncing} className="btn-secondary btn-small inline-flex items-center gap-1.5">
                   {syncing ? <Loader2 className="animate-spin" size={13} /> : <CloudUpload size={13} />}
-                  Save Draft
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePublish}
-                  disabled={syncing || entries.length === 0}
-                  className="btn-primary btn-small inline-flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {syncing ? <Loader2 className="animate-spin" size={13} /> : <Send size={13} />}
-                  Publish
+                  {t('add.saveDraft')}
                 </button>
               </div>
             </div>
@@ -971,17 +1043,15 @@ export default function AddHoroscopeCsvPage() {
             <div className="horoscope-panel rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <FileSpreadsheet size={16} className="text-black dark:text-white" />
-                <h2 className="text-sm font-semibold text-black dark:text-white">CSV import</h2>
+                <h2 className="text-sm font-semibold text-black dark:text-white">{t('add.csvImport')}</h2>
               </div>
-              <p className="text-xs horoscope-muted mb-3">
-                Sample follows the active tab period columns. Upload Draft previews and calculates start/end. Save Draft upserts drafts to NAAD.
-              </p>
+              <p className="text-xs horoscope-muted mb-3">{t('add.csvHint')}</p>
               <div className="flex flex-wrap gap-1.5">
                 <button type="button" onClick={handleDownloadSample} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs">
-                  <Download size={12} /> Sample
+                  <Download size={12} /> {t('add.sample')}
                 </button>
                 <label className="btn-primary btn-small inline-flex items-center gap-1 cursor-pointer text-xs">
-                  <Upload size={12} /> Upload Draft
+                  <Upload size={12} /> {t('add.uploadDraft')}
                   <input
                     ref={uploadDraftInputRef}
                     type="file"
@@ -997,26 +1067,14 @@ export default function AddHoroscopeCsvPage() {
                   className="btn-secondary btn-small inline-flex items-center gap-1 text-xs disabled:opacity-50"
                 >
                   {syncing ? <Loader2 className="animate-spin" size={12} /> : <CloudUpload size={12} />}
-                  Save Draft
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePublish}
-                  disabled={syncing || entries.length === 0}
-                  className="btn-primary btn-small inline-flex items-center gap-1 text-xs disabled:opacity-50"
-                >
-                  {syncing ? <Loader2 className="animate-spin" size={12} /> : <Send size={12} />}
-                  Publish
-                </button>
-                <button type="button" onClick={() => refreshServerList()} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs" title="Refresh server list">
-                  {serverLoading ? <Loader2 className="animate-spin" size={12} /> : <RefreshCw size={12} />}
+                  {t('add.saveDraft')}
                 </button>
               </div>
             </div>
 
             <div className="horoscope-panel rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-sm font-semibold text-black dark:text-white">Records</h2>
+                <h2 className="text-sm font-semibold text-black dark:text-white">{t('add.records')}</h2>
               </div>
 
               <div className="px-3 pt-2">
@@ -1031,49 +1089,116 @@ export default function AddHoroscopeCsvPage() {
               </div>
 
               <div className="max-h-[280px] overflow-y-auto px-4 pb-3" role="tabpanel">
-                <p className="text-[10px] font-semibold uppercase tracking-wide horoscope-muted py-2">
-                  Local drafts · {activeLangOption.label}
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide horoscope-muted">
+                    {t('add.localDrafts', { lang: activeLangOption.label })}
+                  </p>
+                  {activeDrafts.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="inline-flex items-center gap-1.5 text-[11px] text-black dark:text-white cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          ref={(el) => {
+                            if (el) {
+                              el.indeterminate =
+                                selectedVisibleIds.length > 0 && !allVisibleSelected;
+                            }
+                          }}
+                          onChange={toggleSelectAllDrafts}
+                          className="rounded border-slate-300"
+                        />
+                        <span>{t('add.selectAll')}</span>
+                        <span className="horoscope-muted font-normal">
+                          (
+                          {t('add.selectedCount', {
+                            selected: localizeDigits(selectedVisibleIds.length, uiCode),
+                            total: localizeDigits(activeDrafts.length, uiCode),
+                          })}
+                          )
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handlePublish}
+                        disabled={syncing || selectedVisibleIds.length === 0}
+                        className="btn-primary btn-small inline-flex items-center gap-1 text-xs disabled:opacity-50"
+                        title={
+                          selectedVisibleIds.length === 0
+                            ? t('add.selectDraftsToPublish')
+                            : t('add.publishSelected')
+                        }
+                      >
+                        {syncing ? <Loader2 className="animate-spin" size={12} /> : <Send size={12} />}
+                        {t('add.publish')}
+                        {selectedVisibleIds.length > 0
+                          ? ` (${localizeDigits(selectedVisibleIds.length, uiCode)})`
+                          : ''}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
                 {activeDrafts.length === 0 ? (
-                  <p className="text-xs horoscope-muted py-2">No {activeLangOption.label} drafts.</p>
+                  <p className="text-xs horoscope-muted py-2">
+                    {t('add.noLocalDrafts', { lang: activeLangOption.label })}
+                  </p>
                 ) : (
                   <ul className="space-y-1.5">
-                    {activeDrafts.map((entry) => (
+                    {activeDrafts.map((entry) => {
+                      const checked = selectedDraftIds.includes(entry.id);
+                      return (
                       <li
                         key={entry.id}
-                        className="flex items-start justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                        className={`flex items-start justify-between gap-2 rounded-lg border px-2.5 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                          checked
+                            ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-950/30'
+                            : 'border-slate-200 dark:border-slate-600'
+                        }`}
                       >
-                        <div className="min-w-0 text-black dark:text-white">
-                          <div className="font-semibold">{entry.zodiacSign}</div>
-                          <div className="text-[10px] horoscope-muted">
-                            <BsDateText startDate={entry.startDate} endDate={entry.endDate} />
+                        <label className="flex items-start gap-2 min-w-0 flex-1 cursor-pointer text-black dark:text-white">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleDraftSelected(entry.id)}
+                            className="mt-0.5 rounded border-slate-300 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-semibold">{zodiacName(entry.zodiacSign)}</div>
+                            <div className="text-[10px] horoscope-muted">
+                              <BsDateText startDate={entry.startDate} endDate={entry.endDate} />
+                            </div>
+                            <div className="truncate">
+                              {entry.localized.summary[activeLangOption.uiCode] || '—'}
+                            </div>
                           </div>
-                          <div className="truncate">
-                            {entry.localized.summary[activeLangOption.uiCode] || '—'}
-                          </div>
-                        </div>
+                        </label>
                         <div className="flex shrink-0 gap-0.5">
                           <button type="button" onClick={() => handleEdit(entry)} className="btn-icon-edit p-1"><Pencil size={12} /></button>
                           <button type="button" onClick={() => handleDelete(entry.id)} className="btn-icon-delete p-1"><Trash2 size={12} /></button>
                         </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
 
                 <p className="text-[10px] font-semibold uppercase tracking-wide horoscope-muted pt-3 pb-2 border-t border-slate-200 dark:border-slate-700 mt-2">
-                  On server · {activeLangOption.label}
-                  <span className="ml-1 font-normal normal-case">({serverLangCounts[activeLangOption.uiCode] ?? 0})</span>
+                  {t('add.onServer', { lang: activeLangOption.label })}
+                  <span className="ml-1 font-normal normal-case">
+                    ({localizeDigits(serverLangCounts[activeLangOption.uiCode] ?? 0, uiCode)})
+                  </span>
                 </p>
                 {serverLoading ? (
-                  <p className="text-xs horoscope-muted py-1">Loading…</p>
+                  <p className="text-xs horoscope-muted py-1">{t('add.loading')}</p>
                 ) : activeServerRows.length === 0 ? (
-                  <p className="text-xs horoscope-muted py-1">No server records.</p>
+                  <p className="text-xs horoscope-muted py-1">{t('add.noServerRecords')}</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {activeServerRows.map((h) => (
                       <li key={h.id} className="rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-2 text-xs text-black dark:text-white">
-                        <div className="font-semibold">{h.zodiacSign}</div>
+                        <div className="font-semibold">
+                          {h.zodiacSign ? zodiacName(h.zodiacSign as ZodiacSignEnum) : '—'}
+                        </div>
                         <div className="text-[10px] horoscope-muted">
                           <BsDateText startDate={h.startDate} endDate={h.endDate} />
                           {h.publishStatus ? ` · ${h.publishStatus}` : ''}
@@ -1099,12 +1224,15 @@ export default function AddHoroscopeCsvPage() {
             >
               <div className="modal-header">
                 <div>
-                  <h2 className="text-base font-semibold">Upload Draft — CSV preview</h2>
+                  <h2 className="text-base font-semibold">{t('add.previewTitle')}</h2>
                   <p className="text-xs horoscope-muted mt-0.5">
-                    {csvPreviewFileName || 'CSV file'} · {csvPreviewRows.length} row(s) · period dates calculated to AD
+                    {t('add.previewMeta', {
+                      file: csvPreviewFileName || 'CSV',
+                      count: localizeDigits(csvPreviewRows.length, uiCode),
+                    })}
                   </p>
                 </div>
-                <button type="button" className="modal-close" onClick={cancelUploadDraft} aria-label="Close">
+                <button type="button" className="modal-close" onClick={cancelUploadDraft} aria-label={t('add.close')}>
                   <X size={18} />
                 </button>
               </div>
@@ -1117,13 +1245,13 @@ export default function AddHoroscopeCsvPage() {
                       <thead>
                         <tr>
                           <th>#</th>
-                          <th>Type</th>
-                          <th>Zodiac</th>
-                          <th>Period (BS)</th>
-                          <th>Lucky #</th>
-                          <th>Color</th>
-                          <th>Overall</th>
-                          <th>Overview</th>
+                          <th>{t('add.colType')}</th>
+                          <th>{t('add.colZodiac')}</th>
+                          <th>{t('add.colPeriod')}</th>
+                          <th>{t('add.colLucky')}</th>
+                          <th>{t('add.colColor')}</th>
+                          <th>{t('add.colOverall')}</th>
+                          <th>{t('add.colOverview')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1131,17 +1259,25 @@ export default function AddHoroscopeCsvPage() {
                           const base = getBaseHoroscopeLanguage(languages);
                           return (
                             <tr key={row.id}>
-                              <td>{idx + 1}</td>
-                              <td>{row.horoscopeType}</td>
-                              <td className="font-semibold">{row.zodiacSign}</td>
+                              <td>{localizeDigits(idx + 1, uiCode)}</td>
+                              <td>{typeLabel(row.horoscopeType)}</td>
+                              <td className="font-semibold">{zodiacName(row.zodiacSign)}</td>
                               <td>
                                 <BsDateText startDate={row.startDate} endDate={row.endDate} />
                               </td>
-                              <td>{row.luckyNumber || '—'}</td>
+                              <td>
+                                {row.luckyNumber
+                                  ? localizeDigits(row.luckyNumber, uiCode)
+                                  : '—'}
+                              </td>
                               <td className="max-w-[8rem] truncate" title={row.luckyColor}>
                                 {row.luckyColor || '—'}
                               </td>
-                              <td>{row.overallRating != null ? Number(row.overallRating).toFixed(1) : '—'}</td>
+                              <td>
+                                {row.overallRating != null
+                                  ? localizeDigits(Number(row.overallRating).toFixed(1), uiCode)
+                                  : '—'}
+                              </td>
                               <td className="max-w-[14rem] truncate" title={row.localized.summary[base.uiCode] || ''}>
                                 {row.localized.summary[base.uiCode] || '—'}
                               </td>
@@ -1155,7 +1291,7 @@ export default function AddHoroscopeCsvPage() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={cancelUploadDraft}>
-                  Cancel
+                  {t('add.cancel')}
                 </button>
                 <button
                   type="button"
@@ -1164,7 +1300,9 @@ export default function AddHoroscopeCsvPage() {
                   disabled={!csvPreviewRows.length}
                 >
                   <Upload size={14} />
-                  Add {csvPreviewRows.length} to drafts
+                  {t('add.confirmUploadCount', {
+                    count: localizeDigits(csvPreviewRows.length, uiCode),
+                  })}
                 </button>
               </div>
             </div>

@@ -36,7 +36,24 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     const url = backendUrl(backendPath);
     const contentType = request.headers.get('content-type') || '';
     const isMultipart = contentType.includes('multipart/form-data');
-    const forwardHeaders = backendHeaders(request, { includeJsonContentType: !isMultipart });
+    let body: BodyInit | undefined;
+    if (method !== 'GET' && method !== 'DELETE') {
+      if (isMultipart) {
+        body = await request.formData();
+      } else {
+        try {
+          const text = await request.text();
+          body = text.length > 0 ? text : undefined;
+        } catch {
+          body = undefined;
+        }
+      }
+    }
+    // Only force JSON Content-Type when there is a JSON body (header-only PATCH must not send it).
+    const hasJsonBody = !isMultipart && typeof body === 'string' && body.length > 0;
+    const forwardHeaders = backendHeaders(request, {
+      includeJsonContentType: hasJsonBody,
+    });
     for (const { keys, forwardAs } of EVENT_HEADER_ALIASES) {
       let value: string | null = null;
       for (const key of keys) {
@@ -45,22 +62,10 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
       }
       if (value) forwardHeaders[forwardAs] = value;
     }
-    let body: BodyInit | undefined;
-    if (method !== 'GET' && method !== 'DELETE') {
-      if (isMultipart) {
-        body = await request.formData();
-      } else {
-        try {
-          body = await request.text();
-        } catch {
-          body = undefined;
-        }
-      }
-    }
     const res = await backendFetch(url, {
       method,
       headers: forwardHeaders,
-      body: body || undefined,
+      body,
     });
     const responseContentType = res.headers.get('content-type') || '';
     if (responseContentType.includes('application/json')) {

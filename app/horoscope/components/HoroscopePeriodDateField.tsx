@@ -20,6 +20,9 @@ import {
   resolveBsYearPeriod,
   resolveHoroscopePeriodDates,
 } from '@/app/lib/horoscope-date-period';
+import { useLocale } from '@/app/components/LocaleProvider';
+import { localizeDigits } from '@/app/lib/nepali-digits';
+import { normalizeUiLanguageCode } from '@/app/lib/ui-language';
 
 interface HoroscopePeriodDateFieldProps {
   horoscopeType: HoroscopeTypeEnum;
@@ -29,6 +32,11 @@ interface HoroscopePeriodDateFieldProps {
   className?: string;
   /** Hide helper hints / range footers (list toolbar). */
   compact?: boolean;
+  /**
+   * Peer fields in one horizontal row (same label/input height as Zodiac).
+   * Daily: Date · Weekly: Year+Month+Week · Monthly: Year+Month · Yearly: Year
+   */
+  inline?: boolean;
 }
 
 const selectClass = 'form-input text-sm py-1.5 h-9';
@@ -48,10 +56,15 @@ export function HoroscopePeriodDateField({
   onChange,
   className = '',
   compact = false,
+  inline = false,
 }: HoroscopePeriodDateFieldProps) {
+  const { language } = useLocale();
+  const uiCode = normalizeUiLanguageCode(language);
+  const useNepaliNumbers = uiCode === 'ne';
+  const d = (value: string | number) => localizeDigits(value, uiCode);
   const [bsReady, setBsReady] = useState(false);
   const [calendars, setCalendars] = useState<NepaliCalendarResponse[]>([]);
-  const fieldClass = compact ? selectClassCompact : selectClass;
+  const fieldClass = compact || inline ? (compact ? selectClassCompact : selectClass) : selectClass;
 
   useEffect(() => {
     let cancelled = false;
@@ -178,6 +191,156 @@ export function HoroscopePeriodDateField({
           ? 'Month'
           : 'Year';
 
+  const labelClass = 'text-xs font-semibold horoscope-key text-black dark:text-white';
+  const rangeHint =
+    horoscopeType === 'WEEKLY' && weekResolved
+      ? `${d(weekResolved.startBs)} → ${d(weekResolved.endBs)}`
+      : horoscopeType === 'MONTHLY' && monthResolved
+        ? `${d(monthResolved.startBs)} → ${d(monthResolved.endBs)}`
+        : horoscopeType === 'YEARLY' && yearResolved
+          ? `${d(yearResolved.startBs)} → ${d(yearResolved.endBs)}`
+          : horoscopeType === 'DAILY' && displayBs
+            ? d(displayBs)
+            : '';
+
+  if (inline) {
+    return (
+      <>
+        {horoscopeType === 'DAILY' ? (
+          <label className="flex flex-col gap-1 min-w-[10rem] flex-1">
+            <span className={labelClass}>{title}</span>
+            <NepaliDatepicker
+              key={`bs-daily-inline-${bsReady ? 'ready' : 'loading'}`}
+              value={displayBs}
+              onChange={(value) => {
+                const ad = bsIsoToAdIso(value);
+                if (ad) applyDaily(ad);
+              }}
+              placeholder="Select date"
+              className={fieldClass}
+              options={{
+                dateFormat: 'YYYY-MM-DD',
+                language: 'nepali',
+                dateType: 'BS',
+                autoClose: true,
+                showToday: true,
+                useEnglishNumbers: !useNepaliNumbers,
+                showEnglishDateSubscript: false,
+              }}
+            />
+          </label>
+        ) : null}
+
+        {horoscopeType === 'WEEKLY' ? (
+          <>
+            <label className="flex flex-col gap-1 min-w-[6.5rem]">
+              <span className={labelClass}>Year</span>
+              <select
+                className={fieldClass}
+                aria-label="Year"
+                value={selection.year}
+                onChange={(e) => applyWeekly(Number(e.target.value), selection.month, weekValue)}
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {d(y)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 min-w-[7rem] flex-1">
+              <span className={labelClass}>Month</span>
+              <select
+                className={fieldClass}
+                aria-label="Month"
+                value={selection.month}
+                onChange={(e) => applyWeekly(selection.year, Number(e.target.value), weekValue)}
+              >
+                {BS_MONTH_OPTIONS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 min-w-[7.5rem] flex-1">
+              <span className={labelClass}>Week</span>
+              <select
+                className={fieldClass}
+                aria-label="Week"
+                value={weekValue}
+                onChange={(e) => applyWeekly(selection.year, selection.month, Number(e.target.value))}
+              >
+                {Array.from({ length: maxWeek }, (_, i) => i + 1).map((w) => (
+                  <option key={w} value={w}>
+                    {d(formatBsWeekOptionLabel(selection.year, selection.month, w, monthCalendar))}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        ) : null}
+
+        {horoscopeType === 'MONTHLY' ? (
+          <>
+            <label className="flex flex-col gap-1 min-w-[6.5rem]">
+              <span className={labelClass}>Year</span>
+              <select
+                className={fieldClass}
+                aria-label="Year"
+                value={selection.year}
+                onChange={(e) => applyMonthly(Number(e.target.value), selection.month)}
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {d(y)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 min-w-[8rem] flex-1">
+              <span className={labelClass}>Nepali month</span>
+              <select
+                className={fieldClass}
+                aria-label="Month"
+                value={selection.month}
+                onChange={(e) => applyMonthly(selection.year, Number(e.target.value))}
+              >
+                {BS_MONTH_OPTIONS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        ) : null}
+
+        {horoscopeType === 'YEARLY' ? (
+          <label className="flex flex-col gap-1 min-w-[8rem]">
+            <span className={labelClass}>Nepali year</span>
+            <select
+              className={fieldClass}
+              aria-label="Year"
+              value={selection.year}
+              onChange={(e) => applyYearly(Number(e.target.value))}
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {d(y)} BS
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        {rangeHint ? (
+          <p className={`basis-full text-[10px] horoscope-muted -mt-1 mb-0 ${className}`}>{rangeHint}</p>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <div className={`flex flex-col ${compact ? 'gap-0' : 'gap-1.5'} min-w-0 ${className}`}>
       {!compact ? (
@@ -204,13 +367,14 @@ export function HoroscopePeriodDateField({
               dateType: 'BS',
               autoClose: true,
               showToday: true,
-              useEnglishNumbers: true,
+              useEnglishNumbers: !useNepaliNumbers,
               showEnglishDateSubscript: false,
             }}
           />
           {!compact && displayBs ? (
             <p className="text-[10px] horoscope-muted">
-              Stored as one day · <span className="font-medium text-black dark:text-white">{displayBs}</span>
+              Stored as one day ·{' '}
+              <span className="font-medium text-black dark:text-white">{d(displayBs)}</span>
             </p>
           ) : null}
         </>
@@ -233,7 +397,7 @@ export function HoroscopePeriodDateField({
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
-                  {y}
+                  {d(y)}
                 </option>
               ))}
             </select>
@@ -258,8 +422,8 @@ export function HoroscopePeriodDateField({
               {Array.from({ length: maxWeek }, (_, i) => i + 1).map((w) => (
                 <option key={w} value={w}>
                   {compact
-                    ? `W${w}`
-                    : formatBsWeekOptionLabel(selection.year, selection.month, w, monthCalendar)}
+                    ? `W${d(w)}`
+                    : d(formatBsWeekOptionLabel(selection.year, selection.month, w, monthCalendar))}
                 </option>
               ))}
             </select>
@@ -267,9 +431,9 @@ export function HoroscopePeriodDateField({
           {weekResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Week ·{' '}
-              <span className="font-medium text-black dark:text-white">{weekResolved.startBs}</span>
+              <span className="font-medium text-black dark:text-white">{d(weekResolved.startBs)}</span>
               {' → '}
-              <span className="font-medium text-black dark:text-white">{weekResolved.endBs}</span>
+              <span className="font-medium text-black dark:text-white">{d(weekResolved.endBs)}</span>
             </p>
           ) : null}
         </>
@@ -288,7 +452,7 @@ export function HoroscopePeriodDateField({
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>
-                    {y}
+                    {d(y)}
                   </option>
                 ))}
               </select>
@@ -313,7 +477,7 @@ export function HoroscopePeriodDateField({
             <p className="text-[10px] horoscope-muted">
               Month ·{' '}
               <span className="font-medium text-black dark:text-white">
-                {monthResolved.startBs} → {monthResolved.endBs}
+                {d(monthResolved.startBs)} → {d(monthResolved.endBs)}
               </span>
             </p>
           ) : null}
@@ -332,7 +496,7 @@ export function HoroscopePeriodDateField({
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
-                  {y} BS
+                  {d(y)} BS
                 </option>
               ))}
             </select>
@@ -341,7 +505,7 @@ export function HoroscopePeriodDateField({
             <p className="text-[10px] horoscope-muted">
               Year ·{' '}
               <span className="font-medium text-black dark:text-white">
-                {yearResolved.startBs} → {yearResolved.endBs}
+                {d(yearResolved.startBs)} → {d(yearResolved.endBs)}
               </span>
             </p>
           ) : null}

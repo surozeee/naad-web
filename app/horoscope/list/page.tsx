@@ -35,7 +35,12 @@ import { formatIsoDate, resolveHoroscopePeriodDates } from '@/app/lib/horoscope-
 import { HOROSCOPE_LUCKY_COLORS, parseLuckyColors } from '@/app/horoscope/components/HoroscopeColorPicker';
 import { useLocale } from '@/app/components/LocaleProvider';
 import { normalizeUiLanguageCode } from '@/app/lib/ui-language';
-import { translateHoroscopeList, useHoroscopeListI18n } from '@/app/horoscope/list/i18n';
+import { translateHoroscope, useHoroscopeI18n } from '@/app/lib/horoscope-i18n';
+import { localizeDigits } from '@/app/lib/nepali-digits';
+import { resolveColorDisplayName } from '@/app/lib/color-i18n';
+import { resolveLanguageDisplayName } from '@/app/lib/language-i18n';
+import { colorApi } from '@/app/lib/master.service';
+import type { ColorResponse } from '@/app/lib/master.types';
 
 type ElementTone = 'fire' | 'earth' | 'air' | 'water';
 
@@ -123,9 +128,9 @@ function shortText(value?: string | null, max = 72): string {
   return `${text.slice(0, max).trimEnd()}…`;
 }
 
-function formatRating(value?: number | null): string {
+function formatRating(value?: number | null, uiCode?: string): string {
   if (value == null || Number.isNaN(Number(value))) return '—';
-  return Number(value).toFixed(1);
+  return localizeDigits(Number(value).toFixed(1), uiCode);
 }
 
 function luckyColorHex(name: string): string | null {
@@ -133,21 +138,30 @@ function luckyColorHex(name: string): string | null {
   return match?.hex ?? null;
 }
 
-function LuckyColorDisplay({ value }: { value?: string | null }) {
+function LuckyColorDisplay({
+  value,
+  uiCode,
+  colorRows,
+}: {
+  value?: string | null;
+  uiCode?: string;
+  colorRows?: ColorResponse[];
+}) {
   const colors = parseLuckyColors(value);
   if (!colors.length) return <span>—</span>;
   return (
     <span className="hl-lucky-colors">
       {colors.map((name) => {
         const hex = luckyColorHex(name);
+        const label = resolveColorDisplayName(name, uiCode, colorRows);
         return (
-          <span key={name} className="hl-lucky-color-chip" title={name}>
+          <span key={name} className="hl-lucky-color-chip" title={label}>
             <span
               className="hl-lucky-color-swatch"
               style={{ backgroundColor: hex || '#94a3b8' }}
               aria-hidden
             />
-            <span>{name}</span>
+            <span>{label}</span>
           </span>
         );
       })}
@@ -155,12 +169,12 @@ function LuckyColorDisplay({ value }: { value?: string | null }) {
   );
 }
 
-function RatingStars({ value }: { value?: number | null }) {
+function RatingStars({ value, uiCode }: { value?: number | null; uiCode?: string }) {
   const n = value == null || Number.isNaN(Number(value)) ? 0 : Number(value);
   const full = Math.floor(n);
   const half = n - full >= 0.5;
   return (
-    <span className="hl-stars" aria-label={`${formatRating(value)} of 5`}>
+    <span className="hl-stars" aria-label={`${formatRating(value, uiCode)} of 5`}>
       {Array.from({ length: 5 }, (_, i) => {
         const on = i < full || (i === full && half);
         return <Star key={i} size={12} className={on ? 'is-on' : ''} fill={on ? 'currentColor' : 'none'} />;
@@ -206,29 +220,30 @@ function resolveZodiacDisplayName(
   if (localized) return localized;
 
   // 2) JSON file name for UI language
-  const fromJson = translateHoroscopeList(uiCode, `zodiac.${sign}`).trim();
+  const fromJson = translateHoroscope(uiCode, `zodiac.${sign}`).trim();
   if (fromJson && fromJson !== `zodiac.${sign}`) return fromJson;
 
   // 3) Default: EN locale → entity name → English JSON
   const enName = findLocaleName(row?.locales, 'EN');
   if (enName) return enName;
   if (row?.name?.trim()) return row.name.trim();
-  return translateHoroscopeList('en', `zodiac.${sign}`);
+  return translateHoroscope('en', `zodiac.${sign}`);
 }
 
 export default function HoroscopeListPage() {
   const { language, languages: headerLanguages } = useLocale();
-  const { t, typeLabel, elementLabel, uiCode } = useHoroscopeListI18n();
+  const { t, typeLabel, elementLabel, uiCode } = useHoroscopeI18n();
   const backendLanguage = useMemo(() => uiCodeToBackendLanguage(language), [language]);
   const languageLabel = useMemo(() => {
     const match = headerLanguages.find((l) => l.code === normalizeUiLanguageCode(language));
-    return match?.label || backendLanguage;
-  }, [headerLanguages, language, backendLanguage]);
+    return match?.label || resolveLanguageDisplayName({ code: language }, language);
+  }, [headerLanguages, language]);
 
   const [horoscopeType, setHoroscopeType] = useState<HoroscopeTypeEnum>('DAILY');
   const [period, setPeriod] = useState(() => resolveHoroscopePeriodDates('DAILY', formatIsoDate(new Date())));
   const [items, setItems] = useState<HoroscopeResponse[]>([]);
   const [zodiacRows, setZodiacRows] = useState<ZodiacSignResponse[]>([]);
+  const [colorRows, setColorRows] = useState<ColorResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSign, setSelectedSign] = useState<ZodiacSignEnum | null>(null);
@@ -258,6 +273,15 @@ export default function HoroscopeListPage() {
     }
   }, []);
 
+  const loadColorNames = useCallback(async () => {
+    try {
+      const res = await colorApi.listActive();
+      setColorRows(Array.isArray(res?.data) ? (res.data as ColorResponse[]) : []);
+    } catch {
+      setColorRows([]);
+    }
+  }, []);
+
   const loadList = useCallback(async () => {
     const isInitial = !initialLoadDone.current;
     if (isInitial) setLoading(true);
@@ -279,7 +303,7 @@ export default function HoroscopeListPage() {
       if (isInitial) {
         await Swal.fire({
           icon: 'error',
-          text: e instanceof Error ? e.message : translateHoroscopeList(uiCode, 'loadError'),
+          text: e instanceof Error ? e.message : translateHoroscope(uiCode, 'list.loadError'),
         });
         setItems([]);
       }
@@ -292,6 +316,10 @@ export default function HoroscopeListPage() {
   useEffect(() => {
     void loadZodiacNames();
   }, [loadZodiacNames]);
+
+  useEffect(() => {
+    void loadColorNames();
+  }, [loadColorNames]);
 
   useEffect(() => {
     void loadList();
@@ -330,13 +358,13 @@ export default function HoroscopeListPage() {
             <span className="hl-meta-chip">{languageLabel}</span>
             {!loading ? (
               <span className="hl-meta-chip hl-meta-count">
-                {t('readyCount', { count: contentCount })}
+                {t('readyCount', { count: localizeDigits(contentCount, uiCode) })}
               </span>
             ) : null}
           </div>
         </header>
 
-        <section className="hl-toolbar">
+        <section className={`hl-toolbar${refreshing ? ' is-refreshing' : ''}`}>
           <div className="hl-type-tabs" role="tablist" aria-label={t('periodTabsAria')}>
             {TYPE_TABS.map((tab) => {
               const Icon = tab.icon;
@@ -367,6 +395,16 @@ export default function HoroscopeListPage() {
                 onChange={setPeriod}
               />
             </div>
+            {refreshing ? (
+              <span
+                className="hl-refresh-indicator"
+                aria-live="polite"
+                aria-label={t('updating')}
+                title={t('updating')}
+              >
+                <Loader2 className="animate-spin" size={14} />
+              </span>
+            ) : null}
           </div>
         </section>
 
@@ -378,14 +416,10 @@ export default function HoroscopeListPage() {
         )}
 
         {!loading && (
-          <div className={refreshing ? 'opacity-60 pointer-events-none transition-opacity' : 'transition-opacity'}>
-            {refreshing ? (
-              <div className="hl-refresh-bar" aria-live="polite">
-                <Loader2 className="animate-spin" size={14} />
-                {t('updating')}
-              </div>
-            ) : null}
-
+          <div
+            className={refreshing ? 'opacity-60 pointer-events-none transition-opacity' : 'transition-opacity'}
+            aria-busy={refreshing}
+          >
             {!selectedSign && (
               <div className="hl-grid">
                 {ZODIAC_ORDER.map((sign) => {
@@ -413,18 +447,27 @@ export default function HoroscopeListPage() {
                         <>
                           {row?.overallRating != null ? (
                             <div className="hl-sign-rating-row">
-                              <RatingStars value={row.overallRating} />
-                              <span className="hl-sign-rating-num">{formatRating(row.overallRating)}</span>
+                              <RatingStars value={row.overallRating} uiCode={uiCode} />
+                              <span className="hl-sign-rating-num">{formatRating(row.overallRating, uiCode)}</span>
                             </div>
                           ) : null}
                           <p className="hl-sign-summary">{shortText(row?.summary) || t('openReading')}</p>
                           {(row?.luckyNumber || row?.luckyColor) && (
                             <div className="hl-sign-tags">
                               {row.luckyNumber ? (
-                                <span className="hl-sign-tag">#{row.luckyNumber}</span>
+                                <span className="hl-sign-tag">
+                                  #{localizeDigits(row.luckyNumber, uiCode)}
+                                </span>
                               ) : null}
                               {row.luckyColor ? (
-                                <span className="hl-sign-tag">{shortText(row.luckyColor, 18)}</span>
+                                <span className="hl-sign-tag">
+                                  {shortText(
+                                    parseLuckyColors(row.luckyColor)
+                                      .map((n) => resolveColorDisplayName(n, uiCode, colorRows))
+                                      .join(', '),
+                                    18
+                                  )}
+                                </span>
                               ) : null}
                             </div>
                           )}
@@ -481,7 +524,6 @@ export default function HoroscopeListPage() {
                         <span className={`hl-element-pill tone-${selectedMeta.tone}`}>
                           {elementLabel(selectedMeta.tone)}
                         </span>
-                        <span>{languageLabel}</span>
                         <span className="hl-detail-dot">·</span>
                         {selected ? (
                           <BsDateText startDate={selected.startDate} endDate={selected.endDate} />
@@ -511,19 +553,29 @@ export default function HoroscopeListPage() {
                       <div className="hl-stats">
                         <div className="hl-stat">
                           <span className="hl-stat-label">{t('luckyNumber')}</span>
-                          <span className="hl-stat-value">{selected.luckyNumber?.trim() || '—'}</span>
+                          <span className="hl-stat-value">
+                            {selected.luckyNumber?.trim()
+                              ? localizeDigits(selected.luckyNumber.trim(), uiCode)
+                              : '—'}
+                          </span>
                         </div>
                         <div className="hl-stat">
                           <span className="hl-stat-label">{t('luckyColor')}</span>
                           <span className="hl-stat-value">
-                            <LuckyColorDisplay value={selected.luckyColor} />
+                            <LuckyColorDisplay
+                              value={selected.luckyColor}
+                              uiCode={uiCode}
+                              colorRows={colorRows}
+                            />
                           </span>
                         </div>
                         <div className="hl-stat">
                           <span className="hl-stat-label">{t('luckyTime')}</span>
                           <span className="hl-stat-value inline-flex items-center justify-center gap-1.5">
                             <Clock size={14} className="opacity-60" />
-                            {selected.luckyTime?.trim() || '—'}
+                            {selected.luckyTime?.trim()
+                              ? localizeDigits(selected.luckyTime.trim(), uiCode)
+                              : '—'}
                           </span>
                         </div>
                         <div className="hl-stat">
@@ -537,8 +589,8 @@ export default function HoroscopeListPage() {
                           <h3 className="hl-section-label">{t('allRatings')}</h3>
                           <div className="hl-overall-badge">
                             <span className="hl-overall-badge-label">{t('overall')}</span>
-                            <RatingStars value={selected.overallRating} />
-                            <span className="hl-overall-badge-num">{formatRating(selected.overallRating)}</span>
+                            <RatingStars value={selected.overallRating} uiCode={uiCode} />
+                            <span className="hl-overall-badge-num">{formatRating(selected.overallRating, uiCode)}</span>
                           </div>
                         </div>
                         <div className="hl-ratings-table">
@@ -560,8 +612,8 @@ export default function HoroscopeListPage() {
                                 <div key={r.key} className="hl-rating-row">
                                   <span className="hl-rating-label">{t(r.labelKey)}</span>
                                   <span className="hl-rating-stars">
-                                    <RatingStars value={num} />
-                                    <span className="hl-rating-num">{formatRating(num)}</span>
+                                    <RatingStars value={num} uiCode={uiCode} />
+                                    <span className="hl-rating-num">{formatRating(num, uiCode)}</span>
                                   </span>
                                 </div>
                               );

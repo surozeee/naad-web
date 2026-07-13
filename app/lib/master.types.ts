@@ -37,6 +37,27 @@ export interface CountryRequest {
   currencyIds?: string[];
 }
 
+export interface CountryLocaleResponse {
+  id?: string;
+  language: string;
+  name: string;
+}
+
+export interface CountryResponse {
+  id: string;
+  name: string;
+  nationality?: string;
+  iso2?: string;
+  iso3?: string;
+  teleCode?: string;
+  flagUrl?: string;
+  flag?: string;
+  status?: StatusEnum;
+  locales?: CountryLocaleResponse[];
+  createdAt?: string;
+  lastModifiedAt?: string;
+}
+
 export interface CountryListRequest extends MasterListRequest {
   regionId?: string;
 }
@@ -108,6 +129,18 @@ export interface ColorRequest {
   sortOrder?: number;
 }
 
+export interface ColorLocaleResponse {
+  id?: string;
+  language: string;
+  name: string;
+}
+
+export interface ColorLocaleUpsertRequest {
+  colorId: string;
+  language: string;
+  name: string;
+}
+
 export interface ColorResponse {
   id: string;
   name: string;
@@ -117,6 +150,8 @@ export interface ColorResponse {
   status?: StatusEnum;
   createdAt?: string;
   lastModifiedAt?: string;
+  /** Per-language display names from color_language. */
+  locales?: ColorLocaleResponse[];
 }
 
 export type ColorListRequest = MasterListRequest;
@@ -131,6 +166,32 @@ export interface LanguageRequest {
   isDefault?: boolean;
   status?: StatusEnum;
 }
+
+export interface LanguageLocaleResponse {
+  id?: string;
+  language: string;
+  name: string;
+}
+
+export interface LanguageLocaleUpsertRequest {
+  languageId: string;
+  language: string;
+  name: string;
+}
+
+export interface LanguageResponse {
+  id: string;
+  name: string;
+  code: string;
+  nativeName?: string;
+  direction?: 'LTR' | 'RTL';
+  isDefault?: boolean;
+  status?: StatusEnum;
+  locales?: LanguageLocaleResponse[];
+  createdAt?: string;
+  lastModifiedAt?: string;
+}
+
 export type LanguageListRequest = MasterListRequest;
 
 // ---- Nepali Calendar ----

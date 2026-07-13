@@ -55,20 +55,43 @@ async function request<T>(
   delete (options as Record<string, unknown>).base;
   const url = `${base}/${path.replace(/^\//, '')}`;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...options.headers,
   };
+  // Only set JSON content-type when there is a body (avoids 400 on header-only PATCH).
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetchWithAuth(url, {
     method,
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     credentials: 'same-origin',
   });
-  const json = (await res.json().catch(() => ({}))) as GlobalResponse<T>;
+  const json = (await res.json().catch(() => ({}))) as GlobalResponse<T> & {
+    data?: unknown;
+  };
   if (!res.ok) {
-    throw new Error(json.message || json.code || `HTTP ${res.status}`);
+    throw new Error(formatApiError(json, res.status));
   }
   return json;
+}
+
+function formatApiError(json: { message?: string; code?: string; data?: unknown }, status: number): string {
+  if (typeof json.message === 'string' && json.message.trim()) return json.message.trim();
+  if (typeof json.code === 'string' && json.code.trim() && json.code !== String(status)) {
+    return json.code.trim();
+  }
+  const data = json.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const parts = Object.entries(data as Record<string, unknown>).flatMap(([field, msgs]) => {
+      if (Array.isArray(msgs)) return msgs.map((m) => `${field}: ${String(m)}`);
+      if (msgs != null) return [`${field}: ${String(msgs)}`];
+      return [];
+    });
+    if (parts.length) return parts.slice(0, 4).join('; ');
+  }
+  if (Array.isArray(data) && data.length) return data.map(String).slice(0, 4).join('; ');
+  return `HTTP ${status}`;
 }
 
 function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = CrmListRequest>(

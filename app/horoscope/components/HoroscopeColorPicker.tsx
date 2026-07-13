@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Plus, X } from 'lucide-react';
 import { colorApi } from '@/app/lib/master.service';
 import type { ColorResponse } from '@/app/lib/master.types';
+import { useLocale } from '@/app/components/LocaleProvider';
+import { resolveColorDisplayName } from '@/app/lib/color-i18n';
+import { useHoroscopeI18n } from '@/app/lib/horoscope-i18n';
 
 /** Fallback palette if Color API is unavailable (matches backend seed). */
 export const HOROSCOPE_LUCKY_COLORS = [
@@ -30,9 +33,11 @@ const MAX_COLORS = 6;
 
 export type LuckyColorSwatch = {
   id?: string;
+  /** Canonical English name stored on horoscope.luckyColor */
   name: string;
   hex: string;
   isSystem?: boolean;
+  locales?: ColorResponse['locales'];
 };
 
 export function parseLuckyColors(value?: string | null): string[] {
@@ -76,6 +81,7 @@ function toSwatches(items: ColorResponse[]): LuckyColorSwatch[] {
     name: c.name,
     hex: normalizeHex(c.hexCode) ?? c.hexCode,
     isSystem: Boolean(c.isSystem),
+    locales: c.locales,
   }));
 }
 
@@ -87,15 +93,19 @@ interface HoroscopeColorPickerProps {
   max?: number;
 }
 
-/** Multi-select lucky color swatches; stored as comma-separated names. Palette from Color master API. */
+/** Multi-select lucky color swatches; stored as comma-separated canonical names. */
 export function HoroscopeColorPicker({
   value,
   onChange,
-  label = 'Lucky colors',
+  label,
   className = '',
   max = MAX_COLORS,
 }: HoroscopeColorPickerProps) {
+  const { language } = useLocale();
+  const { t } = useHoroscopeI18n();
+  const displayLabel = label ?? t('common.luckyColor');
   const [palette, setPalette] = useState<LuckyColorSwatch[]>([]);
+  const [colorRows, setColorRows] = useState<ColorResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -103,6 +113,11 @@ export function HoroscopeColorPicker({
   const [customName, setCustomName] = useState('');
   const [customHex, setCustomHex] = useState('#6366F1');
   const [customError, setCustomError] = useState('');
+
+  const labelFor = useCallback(
+    (canonical: string) => resolveColorDisplayName(canonical, language, colorRows),
+    [language, colorRows]
+  );
 
   const loadPalette = useCallback(async () => {
     setLoading(true);
@@ -112,10 +127,11 @@ export function HoroscopeColorPicker({
       const items = ((res.data ?? []) as ColorResponse[]).filter(
         (c) => !c.status || String(c.status).toUpperCase() === 'ACTIVE'
       );
-      // Only active colors from master — no hardcoded fallback when API succeeds.
+      setColorRows(items);
       setPalette(toSwatches(items));
     } catch {
       setPalette([]);
+      setColorRows([]);
       setLoadError('Could not load active colors');
     } finally {
       setLoading(false);
@@ -206,11 +222,12 @@ export function HoroscopeColorPicker({
     const disabled = !isOn && selected.length >= max;
     const light = isLightHex(color.hex);
     const canRemove = Boolean(color.id && !color.isSystem);
+    const display = labelFor(color.name);
     return (
       <div key={color.id ?? color.name} className="relative group">
         <button
           type="button"
-          title={color.name}
+          title={display}
           disabled={disabled}
           aria-pressed={isOn}
           onClick={() => toggle(color.name)}
@@ -229,14 +246,14 @@ export function HoroscopeColorPicker({
             />
           ) : null}
           <span className="pointer-events-none absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 z-10">
-            {color.name}
+            {display}
           </span>
         </button>
         {canRemove ? (
           <button
             type="button"
-            title={`Remove ${color.name} from palette`}
-            aria-label={`Remove ${color.name} from palette`}
+            title={`Remove ${display} from palette`}
+            aria-label={`Remove ${display} from palette`}
             onClick={(e) => {
               e.stopPropagation();
               void removeFromPalette(color);
@@ -253,7 +270,7 @@ export function HoroscopeColorPicker({
   return (
     <div className={`flex flex-col gap-2 min-w-0 ${className}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold horoscope-key text-black dark:text-white">{label}</span>
+        <span className="text-xs font-semibold horoscope-key text-black dark:text-white">{displayLabel}</span>
         <span className="text-[10px] horoscope-muted">
           {loading ? 'Loading…' : `${selected.length}/${max} selected`}
         </span>
@@ -340,6 +357,7 @@ export function HoroscopeColorPicker({
         <div className="flex flex-wrap gap-1.5 pt-1">
           {selected.map((name) => {
             const swatch = findSwatch(name);
+            const display = labelFor(name);
             return (
               <span
                 key={name}
@@ -349,10 +367,10 @@ export function HoroscopeColorPicker({
                   className="h-3.5 w-3.5 rounded-full border border-black/10 dark:border-white/20 shrink-0"
                   style={{ backgroundColor: swatch?.hex ?? '#64748b' }}
                 />
-                {name}
+                {display}
                 <button
                   type="button"
-                  aria-label={`Remove ${name}`}
+                  aria-label={`Remove ${display}`}
                   onClick={() => remove(name)}
                   className="rounded-full p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700"
                 >

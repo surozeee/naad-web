@@ -25,9 +25,13 @@ import type {
   LocalUnitTypeListRequest,
   LanguageRequest,
   LanguageListRequest,
+  LanguageLocaleResponse,
+  LanguageLocaleUpsertRequest,
   ColorRequest,
   ColorListRequest,
   ColorResponse,
+  ColorLocaleResponse,
+  ColorLocaleUpsertRequest,
   NepaliCalendarRequest,
   NepaliCalendarListRequest,
   NepaliCalendarResponse,
@@ -126,6 +130,70 @@ export const localUnitApi = crud<unknown, LocalUnitRequest, LocalUnitRequest, Lo
 export const localUnitTypeApi = crud<unknown, LocalUnitTypeRequest, LocalUnitTypeRequest, LocalUnitTypeListRequest>('local-unit-type');
 export const languageApi = crud<unknown, LanguageRequest, LanguageRequest, LanguageListRequest>('language');
 export const colorApi = crud<ColorResponse, ColorRequest, ColorRequest, ColorListRequest>('color');
+
+const COLOR_LOCALE_PATH = 'color-locale';
+
+/** Master: /api/v2/master/color-locale/* (same pattern as zodiac-sign-locale). */
+export const colorLocaleApi = {
+  getByColorId: async (colorId: string): Promise<ColorLocaleResponse[]> => {
+    const r = await request<ColorLocaleResponse[] | { data?: ColorLocaleResponse[] }>(
+      'POST',
+      `${COLOR_LOCALE_PATH}/get-by-color-id`,
+      { body: { colorId } }
+    );
+    const data = Array.isArray(r) ? r : (r as { data?: ColorLocaleResponse[] }).data;
+    return Array.isArray(data) ? data : [];
+  },
+  create: async (body: ColorLocaleUpsertRequest): Promise<ColorLocaleResponse | undefined> => {
+    const r = await request<ColorLocaleResponse>('POST', `${COLOR_LOCALE_PATH}/create`, {
+      body: body as object,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (id: string, body: ColorLocaleUpsertRequest): Promise<ColorLocaleResponse | undefined> => {
+    const r = await request<ColorLocaleResponse>('PUT', `${COLOR_LOCALE_PATH}/update`, {
+      body: body as object,
+      headers: { id },
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', `${COLOR_LOCALE_PATH}/delete`, { headers: { id } }),
+};
+
+const LANGUAGE_LOCALE_PATH = 'language-locale';
+
+/** Master: /api/v2/master/language-locale/* */
+export const languageLocaleApi = {
+  getByLanguageId: async (languageId: string): Promise<LanguageLocaleResponse[]> => {
+    const r = await request<LanguageLocaleResponse[] | { data?: LanguageLocaleResponse[] }>(
+      'POST',
+      `${LANGUAGE_LOCALE_PATH}/get-by-language-id`,
+      { body: { languageId } }
+    );
+    const data = Array.isArray(r) ? r : (r as { data?: LanguageLocaleResponse[] }).data;
+    return Array.isArray(data) ? data : [];
+  },
+  create: async (body: LanguageLocaleUpsertRequest): Promise<LanguageLocaleResponse | undefined> => {
+    const r = await request<LanguageLocaleResponse>('POST', `${LANGUAGE_LOCALE_PATH}/create`, {
+      body: body as object,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (
+    id: string,
+    body: LanguageLocaleUpsertRequest
+  ): Promise<LanguageLocaleResponse | undefined> => {
+    const r = await request<LanguageLocaleResponse>('PUT', `${LANGUAGE_LOCALE_PATH}/update`, {
+      body: body as object,
+      headers: { id },
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', `${LANGUAGE_LOCALE_PATH}/delete`, { headers: { id } }),
+};
+
 export const nepaliCalendarApi = crud<NepaliCalendarResponse, NepaliCalendarRequest, NepaliCalendarRequest, NepaliCalendarListRequest>('nepali-calendar');
 
 export const masterService = {
@@ -137,7 +205,9 @@ export const masterService = {
   localUnit: localUnitApi,
   localUnitType: localUnitTypeApi,
   language: languageApi,
+  languageLocale: languageLocaleApi,
   color: colorApi,
+  colorLocale: colorLocaleApi,
   nepaliCalendar: nepaliCalendarApi,
 };
 

@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { ensureOfficialLibrary } from '@/app/components/ui/nepali-datepicker';
 import { adIsoToBsIso } from '@/app/lib/horoscope-date-period';
+import { useLocale } from '@/app/components/LocaleProvider';
+import { localizeDigits } from '@/app/lib/nepali-digits';
 
-/** Display API AD ISO dates as BS only. */
+/** Display API AD ISO dates as BS only (Nepali digits when UI language is Nepali). */
 export function BsDateText({
   startDate,
   endDate,
@@ -14,6 +16,7 @@ export function BsDateText({
   endDate?: string | null;
   className?: string;
 }) {
+  const { language } = useLocale();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -32,10 +35,10 @@ export function BsDateText({
 
   const startBs = ready ? adIsoToBsIso(startDate) : '';
   const endBs = endDate && ready ? adIsoToBsIso(endDate) : '';
-  const label =
+  const raw =
     !endDate || endDate === startDate
       ? startBs || '…'
       : `${startBs || '…'} → ${endBs || '…'}`;
 
-  return <span className={className}>{label}</span>;
+  return <span className={className}>{localizeDigits(raw, language)}</span>;
 }
