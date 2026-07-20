@@ -6,8 +6,28 @@
  */
 
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 console.log('🚀 Starting production build...');
+
+const requiredPackages = ['next', 'next-auth', 'react', 'react-dom'];
+const missing = requiredPackages.filter((name) => {
+  try {
+    require.resolve(name);
+    return false;
+  } catch {
+    const pkgPath = path.join(process.cwd(), 'node_modules', name, 'package.json');
+    return !fs.existsSync(pkgPath);
+  }
+});
+
+if (missing.length) {
+  console.error('❌ Missing required packages:', missing.join(', '));
+  console.error('   Run: npm install');
+  console.error('   Then: npm run build');
+  process.exit(1);
+}
 
 // Set production environment variables
 process.env.NODE_ENV = 'production';
