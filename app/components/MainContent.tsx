@@ -12,6 +12,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
     pathname === '/horoscope' ||
     pathname === '/date-converter' ||
     pathname === '/astrologers' ||
+    Boolean(pathname?.startsWith('/astrologers/')) ||
     pathname === '/book-meeting' ||
     pathname === '/about-us' ||
     pathname === '/faq' ||

@@ -18,7 +18,10 @@ export default function Footer() {
         <div className="naad-footer-grid">
           <div>
             <p className="naad-footer-brand">Naad Official</p>
-            <p>Clear horoscope guidance for everyday decisions — rooted in tradition, written for today.</p>
+            <p>
+              Professional astrology guidance — structured horoscope readings, Nepali calendar tools,
+              and private consultations with trusted practitioners.
+            </p>
           </div>
           <div>
             <h4>Explore</h4>

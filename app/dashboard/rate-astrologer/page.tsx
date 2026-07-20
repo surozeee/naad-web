@@ -12,20 +12,28 @@ import {
 } from '@/app/components/astrologer/AstrologerStarDisplay';
 import { astrologerReviewApi } from '@/app/lib/astrologer-review.service';
 import type { AstrologerPublicProfile, AstrologerReview } from '@/app/lib/astrologer.types';
+import {
+  clearAstrologerIntent,
+  readAstrologerIntent,
+} from '@/app/lib/astrologer-intent';
 import { publicAstrologerApi } from '@/app/lib/public-astrologer';
 
 function RateAstrologerContent() {
   const searchParams = useSearchParams();
-  const preselectId = searchParams.get('astrologerId')?.trim() ?? '';
+  const queryId = searchParams.get('astrologerId')?.trim() ?? '';
 
   const [astrologers, setAstrologers] = useState<AstrologerPublicProfile[]>([]);
   const [myReviews, setMyReviews] = useState<AstrologerReview[]>([]);
-  const [selectedId, setSelectedId] = useState(preselectId);
+  const [selectedId, setSelectedId] = useState(queryId);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const intent = readAstrologerIntent();
+      const preferredId =
+        queryId || (intent?.action === 'rate' ? intent.astrologerId.trim() : '') || '';
+
       const [list, mine] = await Promise.all([
         publicAstrologerApi.listActive({ pageNo: 0, pageSize: 100 }),
         astrologerReviewApi.listMine(),
@@ -34,7 +42,10 @@ function RateAstrologerContent() {
       setAstrologers(list);
       setMyReviews(mine);
       setSelectedId((current) => {
-        if (preselectId && list.some((a) => a.id === preselectId)) return preselectId;
+        if (preferredId && list.some((a) => a.id === preferredId)) {
+          if (intent?.astrologerId === preferredId) clearAstrologerIntent();
+          return preferredId;
+        }
         if (current && list.some((a) => a.id === current)) return current;
         return list[0]?.id ?? '';
       });
@@ -43,7 +54,7 @@ function RateAstrologerContent() {
     } finally {
       setLoading(false);
     }
-  }, [preselectId]);
+  }, [queryId]);
 
   useEffect(() => {
     void loadData();

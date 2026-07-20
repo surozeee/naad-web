@@ -17,26 +17,22 @@ function formatReviewDate(value?: string | null): string {
 export default function AstrologerReviewList({
   astrologerId,
   reviews: reviewsProp,
-  fromSeed: fromSeedProp,
   compact = false,
   limit = PUBLIC_ASTROLOGER_REVIEW_LIMIT,
   mode = 'public',
 }: {
   astrologerId?: string;
   reviews?: AstrologerReview[];
-  fromSeed?: boolean;
   compact?: boolean;
   limit?: number;
   mode?: 'public' | 'auth';
 }) {
   const [reviews, setReviews] = useState<AstrologerReview[]>(reviewsProp ?? []);
   const [loading, setLoading] = useState(reviewsProp == null);
-  const [fromSeed, setFromSeed] = useState(Boolean(fromSeedProp));
 
   useEffect(() => {
     if (reviewsProp != null) {
       setReviews(reviewsProp);
-      setFromSeed(Boolean(fromSeedProp));
       setLoading(false);
       return;
     }
@@ -55,27 +51,10 @@ export default function AstrologerReviewList({
           const rows = await astrologerReviewApi.listByAstrologer(astrologerId);
           if (cancelled) return;
           setReviews(rows.slice(0, limit));
-          setFromSeed(false);
         } else {
-          const res = await fetch(
-            `/api/public/astrologer/${encodeURIComponent(astrologerId)}/reviews?limit=${limit}`,
-            {
-              method: 'GET',
-              headers: { Accept: 'application/json' },
-              cache: 'no-store',
-            }
-          );
-          const json = (await res.json().catch(() => ({}))) as {
-            data?: AstrologerReview[];
-            fromSeed?: boolean;
-          };
+          const rows = await publicAstrologerApi.listReviews(astrologerId, limit);
           if (cancelled) return;
-          setReviews(
-            Array.isArray(json.data)
-              ? json.data
-              : await publicAstrologerApi.listReviews(astrologerId, limit)
-          );
-          setFromSeed(Boolean(json.fromSeed));
+          setReviews(rows);
         }
       } catch {
         if (!cancelled) setReviews([]);
@@ -86,7 +65,7 @@ export default function AstrologerReviewList({
     return () => {
       cancelled = true;
     };
-  }, [astrologerId, reviewsProp, fromSeedProp, limit, mode]);
+  }, [astrologerId, reviewsProp, limit, mode]);
 
   const visible = useMemo(() => {
     const sorted = [...reviews].sort((a, b) => {

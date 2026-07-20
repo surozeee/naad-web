@@ -2,17 +2,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Loader2, Search, UserCircle } from 'lucide-react';
 import Footer from '@/app/components/Footer';
-import AstrologerReviewList from '@/app/components/astrologer/AstrologerReviewList';
 import {
   AstrologerStarDisplay,
   formatAstrologerRating,
 } from '@/app/components/astrologer/AstrologerStarDisplay';
 import { useAuthModal } from '@/app/components/AuthModalContext';
 import type { AstrologerPublicProfile } from '@/app/lib/astrologer.types';
-import { PUBLIC_ASTROLOGER_REVIEW_LIMIT, publicAstrologerApi } from '@/app/lib/public-astrologer';
+import {
+  astrologerDetailPath,
+  intentRedirectPath,
+  saveAstrologerIntent,
+} from '@/app/lib/astrologer-intent';
+import { publicAstrologerApi } from '@/app/lib/public-astrologer';
 
 function AstrologerAvatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
   const [failed, setFailed] = useState(false);
@@ -38,6 +43,7 @@ function AstrologerAvatar({ name, photoUrl }: { name: string; photoUrl?: string 
 }
 
 export default function AstrologersPage() {
+  const router = useRouter();
   const { status } = useSession();
   const authModal = useAuthModal();
   const isAuthed = status === 'authenticated';
@@ -45,7 +51,6 @@ export default function AstrologersPage() {
   const [astrologers, setAstrologers] = useState<AstrologerPublicProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -66,16 +71,23 @@ export default function AstrologersPage() {
   }, [search]);
 
   useEffect(() => {
-    // Wait for session resolve so bearer can be attached when logged in
     if (status === 'loading') return;
     const t = window.setTimeout(() => void loadList(), search ? 300 : 0);
     return () => window.clearTimeout(t);
   }, [loadList, search, status]);
 
-  const handleRate = (astrologerId: string) => {
-    const target = `/dashboard/rate-astrologer?astrologerId=${encodeURIComponent(astrologerId)}`;
+  const goWithAuth = (
+    e: React.MouseEvent,
+    astro: AstrologerPublicProfile,
+    action: 'rate' | 'book'
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const intent = { astrologerId: astro.id, action, name: astro.name };
+    saveAstrologerIntent(intent);
+    const target = intentRedirectPath(intent);
     if (isAuthed) {
-      window.location.href = target;
+      router.push(target);
       return;
     }
     authModal?.openLogin(target);
@@ -84,10 +96,9 @@ export default function AstrologersPage() {
   return (
     <div className="naad-site naad-horoscope-shell">
       <header className="naad-horoscope-intro">
-        <h1>Our astrologers</h1>
-        <p>
-          Meet Naad astrologers, read customer ratings and reviews, and book a personal session when
-          you are ready.
+        <h1>Astrologers</h1>
+        <p className="naad-page-lead">
+          Verified practitioners for private consultations — review ratings and book with confidence.
         </p>
       </header>
 
@@ -103,9 +114,6 @@ export default function AstrologersPage() {
               aria-label="Search astrologers"
             />
           </label>
-          <Link href="/book-meeting" className="naad-btn-ghost naad-astro-book-link">
-            Book a session
-          </Link>
         </div>
 
         {loading ? (
@@ -116,16 +124,15 @@ export default function AstrologersPage() {
         ) : astrologers.length === 0 ? (
           <div className="naad-astro-empty">
             <p>No active astrologers found right now.</p>
-            <Link href="/contact-us" className="naad-btn-ghost">
+            <Link href="/contact-us" className="naad-btn-ghost naad-btn-sm">
               Contact us
             </Link>
           </div>
         ) : (
           <div className="naad-astro-grid">
-            {astrologers.map((astro) => {
-              const expanded = expandedId === astro.id;
-              return (
-                <article key={astro.id} className="naad-astro-card">
+            {astrologers.map((astro) => (
+              <article key={astro.id} className="naad-astro-card">
+                <Link href={astrologerDetailPath(astro.id)} className="naad-astro-card-main">
                   <div className="naad-astro-card-top">
                     <div className="naad-astro-avatar">
                       <AstrologerAvatar name={astro.name} photoUrl={astro.photoUrl} />
@@ -143,34 +150,34 @@ export default function AstrologersPage() {
                       </div>
                     </div>
                   </div>
+                  <span className="naad-astro-card-hint">View profile →</span>
+                </Link>
 
-                  <div className="naad-astro-card-actions">
-                    <button
-                      type="button"
-                      className="naad-btn-ghost"
-                      onClick={() => setExpandedId(expanded ? null : astro.id)}
-                    >
-                      {expanded ? 'Hide reviews' : 'View reviews'}
-                    </button>
-                    <button type="button" className="naad-btn-primary" onClick={() => handleRate(astro.id)}>
-                      Rate astrologer
-                    </button>
-                  </div>
-
-                  <div className={expanded ? 'naad-astro-card-reviews' : 'naad-astro-card-preview'}>
-                    {expanded ? (
-                      <p className="naad-astro-reviews-heading">Latest {PUBLIC_ASTROLOGER_REVIEW_LIMIT} reviews</p>
-                    ) : null}
-                    <AstrologerReviewList
-                      reviews={astro.reviews}
-                      fromSeed={astro.reviewsFromSeed}
-                      compact={!expanded}
-                      limit={PUBLIC_ASTROLOGER_REVIEW_LIMIT}
-                    />
-                  </div>
-                </article>
-              );
-            })}
+                <div className="naad-astro-card-actions">
+                  <button
+                    type="button"
+                    className="naad-btn-primary naad-btn-sm"
+                    onClick={(e) => goWithAuth(e, astro, 'book')}
+                  >
+                    Book
+                  </button>
+                  <button
+                    type="button"
+                    className="naad-btn-ghost naad-btn-sm"
+                    onClick={(e) => goWithAuth(e, astro, 'rate')}
+                  >
+                    Rate
+                  </button>
+                  <Link
+                    href={astrologerDetailPath(astro.id)}
+                    className="naad-btn-ghost naad-btn-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Details
+                  </Link>
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </div>

@@ -16,5 +16,6 @@ export function isPublicMarketingPath(pathname: string | null | undefined): bool
   if (!pathname) return false;
   if ((PUBLIC_MARKETING_PATHS as readonly string[]).includes(pathname)) return true;
   if (pathname.startsWith('/cms/')) return true;
+  if (pathname.startsWith('/astrologers/')) return true;
   return false;
 }

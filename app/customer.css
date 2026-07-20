@@ -346,15 +346,110 @@ html.dark .naad-nav-brand span {
   background: var(--naad-tab-track);
 }
 
-/* —— Theme switch (Cosmic / Celestial / Divine) —— */
-.naad-theme-switch {
+/* —— Theme dropdown (Cosmic / Celestial / Divine) —— */
+.naad-theme-select {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
-  padding: 0.2rem;
+}
+
+.naad-theme-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.15rem;
+  padding: 0.35rem 1.75rem 0.35rem 0.7rem;
   border-radius: 999px;
-  background: var(--naad-tab-track);
   border: 1px solid var(--naad-line);
+  background: var(--naad-bg-elevated);
+  color: var(--naad-fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.naad-theme-select-trigger:hover {
+  border-color: color-mix(in srgb, var(--naad-primary) 40%, var(--naad-line));
+}
+
+.naad-theme-select-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--naad-primary) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.naad-theme-select-label {
+  line-height: 1;
+}
+
+.naad-theme-select-caret {
+  pointer-events: none;
+  position: absolute;
+  right: 0.55rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  color: var(--naad-fg-muted);
+}
+
+.naad-theme-select-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 40;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  border-radius: 0.75rem;
+  border: 1px solid var(--naad-line);
+  background: var(--naad-bg-elevated);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.naad-theme-select-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--naad-fg-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: left;
+}
+
+.naad-theme-select-option:hover {
+  background: var(--naad-tab-track);
+  color: var(--naad-fg);
+}
+
+.naad-theme-select-option.is-active {
+  background: var(--naad-tab-track);
+  color: var(--naad-fg);
+}
+
+.naad-theme-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.naad-theme-dot--cosmic {
+  background: linear-gradient(135deg, #5b3cc4, #f4c430);
+}
+
+.naad-theme-dot--celestial {
+  background: linear-gradient(135deg, #4338ca, #c7d2fe);
+}
+
+.naad-theme-dot--divine {
+  background: linear-gradient(135deg, #ff9933, #ffd700);
 }
 
 .naad-lang-select {
@@ -400,61 +495,13 @@ html.dark .naad-nav-brand span {
   color: var(--naad-fg-muted);
 }
 
-.naad-theme-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.55rem;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--naad-fg-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.naad-theme-btn:hover {
-  color: var(--naad-fg);
-}
-
-.naad-theme-btn.is-active {
-  background: var(--naad-bg-elevated);
-  color: var(--naad-fg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
-.naad-theme-dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.naad-theme-dot--cosmic {
-  background: linear-gradient(135deg, #5b3cc4, #f4c430);
-}
-
-.naad-theme-dot--celestial {
-  background: linear-gradient(135deg, #4338ca, #c7d2fe);
-}
-
-.naad-theme-dot--divine {
-  background: linear-gradient(135deg, #ff9933, #ffd700);
-}
-
-.naad-theme-label {
-  line-height: 1;
-}
-
 @media (max-width: 720px) {
-  .naad-theme-label {
+  .naad-theme-select-label {
     display: none;
   }
 
-  .naad-theme-btn {
-    padding: 0.4rem;
+  .naad-theme-select-trigger {
+    padding: 0.4rem 1.55rem 0.4rem 0.55rem;
   }
 }
 
@@ -937,9 +984,10 @@ html.dark .naad-footer a:hover {
   color: var(--naad-fg);
 }
 
-.naad-horoscope-intro p {
+.naad-horoscope-intro p,
+.naad-page-lead {
   margin: 0;
-  max-width: 34rem;
+  max-width: 36rem;
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--naad-fg-muted);
@@ -1191,6 +1239,181 @@ html.dark .hl-page--public .hl-type-tab.is-active {
 
 html[data-theme='celestial'] .naad-feature-card:hover {
   box-shadow: 0 12px 28px rgba(67, 56, 202, 0.1);
+}
+
+/* —— Homepage content sections —— */
+.naad-home-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.75rem;
+}
+
+@media (min-width: 800px) {
+  .naad-home-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+.naad-home-step {
+  animation: naad-fade-up 0.8s ease both;
+}
+
+.naad-home-step-n {
+  display: block;
+  margin-bottom: 0.85rem;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--naad-accent);
+  letter-spacing: 0.04em;
+}
+
+.naad-home-step h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1.35rem;
+  color: var(--naad-fg);
+}
+
+.naad-home-step p {
+  margin: 0;
+  font-size: 0.9875rem;
+  line-height: 1.6;
+  color: var(--naad-fg-muted);
+}
+
+.naad-zodiac-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .naad-zodiac-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .naad-zodiac-strip {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.naad-zodiac-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 5rem;
+  padding: 0.85rem 0.5rem;
+  border: 1px solid var(--naad-line);
+  border-radius: 0.85rem;
+  background: var(--naad-bg);
+  color: var(--naad-fg);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+  animation: naad-fade-up 0.7s ease both;
+}
+
+.naad-zodiac-chip span {
+  font-size: 1.45rem;
+  line-height: 1;
+  color: var(--naad-accent);
+}
+
+.naad-zodiac-chip em {
+  font-style: normal;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--naad-fg-muted);
+}
+
+.naad-zodiac-chip:hover {
+  border-color: var(--naad-primary);
+  background: var(--naad-bg-muted);
+  transform: translateY(-2px);
+}
+
+.naad-home-pillars {
+  display: grid;
+  gap: 1.75rem;
+}
+
+@media (min-width: 800px) {
+  .naad-home-pillars {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+.naad-home-pillar {
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--naad-line);
+  animation: naad-fade-up 0.8s ease both;
+}
+
+.naad-home-pillar h3 {
+  margin: 1rem 0 0.55rem;
+  font-size: 1.25rem;
+  color: var(--naad-fg);
+}
+
+.naad-home-pillar p {
+  margin: 0;
+  font-size: 0.9875rem;
+  line-height: 1.6;
+  color: var(--naad-fg-muted);
+}
+
+.naad-home-band {
+  padding: 4.5rem 0;
+  background:
+    radial-gradient(ellipse 70% 80% at 15% 20%, color-mix(in srgb, var(--naad-primary) 28%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 70% at 90% 80%, color-mix(in srgb, var(--naad-accent) 22%, transparent), transparent 50%),
+    var(--naad-bg);
+  color: var(--naad-fg);
+  border-top: 1px solid var(--naad-line);
+  border-bottom: 1px solid var(--naad-line);
+}
+
+.naad-home-band-inner {
+  display: grid;
+  gap: 1.75rem;
+  align-items: center;
+}
+
+@media (min-width: 800px) {
+  .naad-home-band-inner {
+    grid-template-columns: 1.4fr auto;
+    gap: 2.5rem;
+  }
+}
+
+.naad-home-band h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.85rem, 3.5vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.naad-home-band p {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--naad-fg-muted);
+}
+
+.naad-home-close .naad-section-head {
+  margin-bottom: 1.5rem;
+}
+
+.naad-home-close .naad-btn-ghost {
+  border-color: var(--naad-line);
+  color: var(--naad-fg);
 }
 
 /* —— Date converter: calendar + convert —— */
@@ -2104,13 +2327,238 @@ html.dark .naad-converter-error {
 .naad-astro-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.45rem;
+}
+
+.naad-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem !important;
+  min-height: 2rem;
+  line-height: 1.2;
+  border-radius: 999px;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
 .naad-astro-card-actions .naad-btn-primary,
 .naad-astro-card-actions .naad-btn-ghost {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.naad-astro-card-main {
+  display: grid;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.naad-astro-card-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--naad-primary);
+}
+
+.naad-astro-card:hover .naad-astro-card-hint {
+  text-decoration: underline;
+}
+
+.naad-astro-detail-page {
+  padding-top: 1.25rem;
+  padding-bottom: 3rem;
+}
+
+.naad-astro-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  color: var(--naad-fg-muted);
+  text-decoration: none;
   font-size: 0.875rem;
-  padding: 0.55rem 1rem;
+  font-weight: 600;
+}
+
+.naad-astro-back:hover {
+  color: var(--naad-primary);
+}
+
+.naad-astro-detail {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.naad-astro-detail-hero {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border: 1px solid var(--naad-line);
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(ellipse 80% 70% at 0% 0%, color-mix(in srgb, var(--naad-primary) 18%, transparent), transparent 55%),
+    var(--naad-bg-elevated);
+}
+
+@media (min-width: 720px) {
+  .naad-astro-detail-hero {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.75rem;
+    padding: 1.75rem 2rem;
+  }
+}
+
+.naad-astro-detail-avatar {
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 1.15rem;
+  overflow: hidden;
+  border: 1px solid var(--naad-line);
+  background: var(--naad-bg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.naad-astro-detail-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.naad-astro-detail-photo-fallback {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--naad-fg-muted);
+}
+
+.naad-astro-detail-photo-fallback span {
+  position: absolute;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--naad-primary);
+}
+
+.naad-astro-detail-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--naad-accent);
+}
+
+.naad-astro-detail-copy h1 {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  line-height: 1.15;
+  color: var(--naad-fg);
+}
+
+.naad-astro-detail-bio {
+  margin: 0.85rem 0 0;
+  max-width: 36rem;
+  color: var(--naad-fg-muted);
+  line-height: 1.6;
+}
+
+.naad-astro-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.15rem;
+}
+
+.naad-astro-detail-panel {
+  padding: 1.35rem 1.4rem;
+  border: 1px solid var(--naad-line);
+  border-radius: 1rem;
+  background: var(--naad-bg-elevated);
+}
+
+.naad-astro-detail-panel h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+  color: var(--naad-fg);
+}
+
+.naad-astro-detail-panel > p {
+  margin: 0;
+  color: var(--naad-fg-muted);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.naad-astro-detail-points {
+  margin: 0.85rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--naad-fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.naad-astro-detail-points li + li {
+  margin-top: 0.35rem;
+}
+
+.naad-astro-detail-footnote {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--naad-fg-muted);
+}
+
+.naad-astro-detail-footnote a {
+  color: var(--naad-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.naad-astro-detail-footnote a:hover {
+  text-decoration: underline;
+}
+
+.naad-book-selected {
+  padding-bottom: 0.25rem;
+}
+
+.naad-book-selected h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.naad-book-selected--empty p {
+  margin: 0 0 0.85rem;
+  color: var(--naad-fg-muted);
+}
+
+.naad-book-selected-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.naad-book-profile-link {
+  display: inline-block;
+  margin-top: 0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--naad-primary);
+  text-decoration: none;
+}
+
+.naad-book-profile-link:hover {
+  text-decoration: underline;
 }
 
 .naad-astro-reviews-heading {

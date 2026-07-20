@@ -7,7 +7,7 @@ import { ForgotPasswordModal } from './auth/ForgotPasswordModal';
 
 type AuthModalContextValue = {
   openLogin: (redirect?: string) => void;
-  openRegister: () => void;
+  openRegister: (redirect?: string) => void;
 };
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -31,7 +31,8 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     setShowLoginModal(true);
   }, []);
 
-  const openRegister = useCallback(() => {
+  const openRegister = useCallback((redirect?: string) => {
+    if (redirect) setLoginRedirect(redirect);
     setShowLoginModal(false);
     setShowForgotPasswordModal(false);
     setShowRegisterModal(true);
