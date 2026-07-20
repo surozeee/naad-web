@@ -13,7 +13,15 @@ export interface LoginBody {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as LoginBody;
+    let body: LoginBody;
+    try {
+      body = (await request.json()) as LoginBody;
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body. Email and password are required.', code: 'INVALID_JSON' },
+        { status: 400 }
+      );
+    }
     const { email, password } = body ?? {};
 
     if (!email || !password) {
@@ -58,14 +66,19 @@ export async function POST(request: Request) {
         (data as { error?: string })?.error ??
         (res.status === 502
           ? 'API gateway error. Check that User-Service and API Gateway are running.'
-          : 'Invalid username and password');
+          : res.status >= 500
+            ? 'Login service returned an error. Check the API / User-Service logs.'
+            : 'Invalid username and password');
       return NextResponse.json(
         {
           ...(typeof data === 'object' && data ? data : {}),
-          message,
+          message:
+            typeof message === 'string' && /^internal server error$/i.test(message.trim())
+              ? 'Backend login failed (500). Verify credentials and that User-Service is healthy.'
+              : message,
           code: (data as { code?: string })?.code ?? `HTTP_${res.status}`,
         },
-        { status: res.status }
+        { status: res.status >= 500 ? 502 : res.status }
       );
     }
 
@@ -81,7 +94,7 @@ export async function POST(request: Request) {
             kind === 'timeout'
               ? 'Connection to the API timed out. Check network or increase API_CONNECT_TIMEOUT_MS.'
               : kind === 'unreachable'
-                ? 'Cannot reach the API from the web server. Set BACKEND_URL / API_INTERNAL_URL.'
+                ? 'Cannot reach the API from the web server. Set BACKEND_URL / API_INTERNAL_URL (and ensure the API is running).'
                 : 'Could not connect to the API. Set BACKEND_URL or NEXT_PUBLIC_API_URL on the server.',
           code:
             kind === 'timeout'
@@ -96,8 +109,15 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
+    const detail = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { message: 'Something went wrong. Please try again later.' },
+      {
+        message:
+          process.env.NODE_ENV === 'development'
+            ? `Login failed: ${detail}`
+            : 'Something went wrong. Please try again later.',
+        code: 'LOGIN_INTERNAL_ERROR',
+      },
       { status: 500 }
     );
   }

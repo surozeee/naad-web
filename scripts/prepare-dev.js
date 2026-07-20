@@ -1,11 +1,23 @@
 /**
  * Ensures .next/dev/types exists before `next dev` (fixes Windows UNKNOWN errno -4094 on routes.d.ts).
+ * Also clears known-corrupt Turbopack auth route metadata that causes login 500s.
  */
 const fs = require('fs');
 const path = require('path');
 
-const devTypesDir = path.join(process.cwd(), '.next', 'dev', 'types');
+const nextDir = path.join(process.cwd(), '.next');
+const devTypesDir = path.join(nextDir, 'dev', 'types');
 const routesFile = path.join(devTypesDir, 'routes.d.ts');
+const corruptLoginMeta = path.join(
+  nextDir,
+  'dev',
+  'server',
+  'app',
+  'api',
+  'auth',
+  'login',
+  '[__metadata_id__]'
+);
 
 function rmDirSafe(dir) {
   if (!fs.existsSync(dir)) return;
@@ -14,6 +26,12 @@ function rmDirSafe(dir) {
   } catch (err) {
     console.warn(`[prepare-dev] Could not remove ${dir}:`, err.message);
   }
+}
+
+// Turbopack sometimes invents api/auth/login/[__metadata_id__] and login returns 500 ENOENT.
+if (fs.existsSync(corruptLoginMeta)) {
+  console.warn('[prepare-dev] Removing corrupt Turbopack login metadata cache…');
+  rmDirSafe(corruptLoginMeta);
 }
 
 rmDirSafe(devTypesDir);

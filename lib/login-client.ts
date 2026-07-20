@@ -27,7 +27,19 @@ export function extractLoginErrorMessage(data: unknown, status: number): string 
     const message = record.message ?? record.error;
     if (typeof message === 'string') {
       const clean = sanitizeMessage(message);
-      if (clean) return clean;
+      if (clean) {
+        // Next.js / Turbopack crash surfaces as generic 500 text — give a usable hint.
+        if (
+          status >= 500 &&
+          (/^internal server error$/i.test(clean) || /^an error occurred/i.test(clean))
+        ) {
+          return (
+            'Login service crashed (HTTP 500). Restart the Next.js app after running npm run clean ' +
+            '(Turbopack cache under .next is often corrupted).'
+          );
+        }
+        return clean;
+      }
     }
     const hint = record.hint;
     if (typeof hint === 'string') {
@@ -55,12 +67,23 @@ export function extractLoginErrorMessage(data: unknown, status: number): string 
     if (status === 503) {
       return 'Login service is temporarily unavailable. Please try again in a moment.';
     }
+    if (status === 500) {
+      const code = typeof record.code === 'string' ? record.code : '';
+      if (code === 'SESSION_COOKIE_FAILED') {
+        return 'Could not create login session. Ensure NEXTAUTH_SECRET is set, then restart the app.';
+      }
+    }
   }
   if (status === 404) {
-    return 'Login API route was not found on this server. Restart the Next.js app (try npm run dev:webpack).';
+    return 'Login API route was not found on this server. Restart the Next.js app (try npm run clean && npm run dev).';
   }
   if (status === 502) {
     return 'API gateway error (502). The web server could not reach the login service.';
+  }
+  if (status === 500) {
+    return (
+      'Login failed (HTTP 500). Run npm run clean, restart the server, and confirm NEXTAUTH_SECRET is set.'
+    );
   }
   if (status === 401) {
     return 'Invalid email or password.';

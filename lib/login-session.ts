@@ -82,8 +82,8 @@ export async function buildLoginSessionResponse(
       {
         message:
           process.env.NODE_ENV === 'development'
-            ? `Session cookie failed: ${detail}`
-            : 'Something went wrong. Please try again later.',
+            ? `Session cookie failed: ${detail}. Set NEXTAUTH_SECRET in .env.local and restart.`
+            : 'Could not create login session. Check NEXTAUTH_SECRET on the server.',
         code: 'SESSION_COOKIE_FAILED',
       },
       { status: 500 }
