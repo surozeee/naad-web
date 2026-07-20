@@ -28,7 +28,13 @@ function countryFromComponents(
 }
 
 function formatPlace(result: google.maps.GeocoderResult | google.maps.places.PlaceResult): string {
-  return result.formatted_address || result.name || 'Selected location';
+  if ('formatted_address' in result && result.formatted_address) {
+    return result.formatted_address;
+  }
+  if ('name' in result && typeof result.name === 'string' && result.name.trim()) {
+    return result.name;
+  }
+  return 'Selected location';
 }
 
 export default function BirthPlaceMapPicker({ value, birthDate, onChange }: Props) {

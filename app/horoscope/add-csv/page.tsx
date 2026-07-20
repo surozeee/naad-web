@@ -281,6 +281,7 @@ export default function AddHoroscopeCsvPage() {
   const [csvPreviewRows, setCsvPreviewRows] = useState<HoroscopeEntry[]>([]);
   const [csvPreviewFileName, setCsvPreviewFileName] = useState('');
   const [csvPreviewError, setCsvPreviewError] = useState('');
+  const [csvPreviewOpen, setCsvPreviewOpen] = useState(false);
   const [selectedDraftIds, setSelectedDraftIds] = useState<string[]>([]);
   const uploadDraftInputRef = useRef<HTMLInputElement | null>(null);
 

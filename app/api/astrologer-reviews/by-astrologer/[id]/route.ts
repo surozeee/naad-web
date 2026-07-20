@@ -41,10 +41,10 @@ function mapReview(raw: Record<string, unknown>, astrologerId: string): Astrolog
  */
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const astrologerId = String(id ?? '').trim();
     if (!astrologerId) {
       return NextResponse.json({ status: 'SUCCESS', data: [] }, { status: 200 });
