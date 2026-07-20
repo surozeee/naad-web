@@ -17,7 +17,7 @@ export default function PublicLanguageSelect() {
       >
         {languages.map((lang) => (
           <option key={lang.code} value={lang.code}>
-            {lang.nativeName || lang.label}
+            {lang.label}
           </option>
         ))}
       </select>
