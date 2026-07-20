@@ -248,23 +248,7 @@ export default function BirthPlaceMapPicker({ value, birthDate, onChange }: Prop
         </div>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude</label>
-          <input
-            value={value.latitude.toFixed(6)}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white font-mono text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude</label>
-          <input
-            value={value.longitude.toFixed(6)}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white font-mono text-sm"
-          />
-        </div>
+      <div className="grid sm:grid-cols-1 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timezone</label>
           <input

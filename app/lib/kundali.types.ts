@@ -72,6 +72,66 @@ export interface KundaliSummary {
   title: string;
 }
 
+export interface DashaPeriod {
+  planetCode: string;
+  planetLabel: string;
+  startDate: string;
+  endDate: string;
+  years: number;
+  current: boolean;
+}
+
+export interface DashaSystem {
+  system: string;
+  moonNakshatra: string;
+  moonNakshatraLabel: string;
+  moonPada: number;
+  balanceYears: number;
+  balanceLord: string;
+  balanceLordLabel: string;
+  currentMahadasha?: DashaPeriod | null;
+  currentAntardasha?: DashaPeriod | null;
+  mahadashas: DashaPeriod[];
+  antardashas: DashaPeriod[];
+}
+
+export interface MangalikInfo {
+  present: boolean;
+  severity: string;
+  marsHouseFromLagna?: number | null;
+  marsHouseFromMoon?: number | null;
+  marsHouseFromVenus?: number | null;
+  marsSign?: string;
+  marsSignLabel?: string;
+  summary: string;
+  notes: string[];
+}
+
+export interface PanchangaInfo {
+  weekday: string;
+  weekdayIndex: number;
+  tithiNumber: number;
+  tithiName: string;
+  paksha: string;
+  yogaNumber: number;
+  yogaName: string;
+  karanaName: string;
+  moonNakshatra: string;
+  moonNakshatraLabel: string;
+  moonPada: number;
+  timingQuality: string;
+  timingSummary: string;
+  guidance: string[];
+}
+
+export interface PlanetDignity {
+  planetCode: string;
+  status: string;
+  signLord?: string | null;
+  signLordLabel?: string | null;
+  note?: string;
+}
+
 export interface KundaliChart {
   name?: string;
   placeName?: string;
@@ -91,4 +151,8 @@ export interface KundaliChart {
   houses: HouseCusp[];
   lagnaSignIndex: number;
   summary: KundaliSummary;
+  dasha?: DashaSystem | null;
+  mangalik?: MangalikInfo | null;
+  panchanga?: PanchangaInfo | null;
+  dignities?: PlanetDignity[] | null;
 }

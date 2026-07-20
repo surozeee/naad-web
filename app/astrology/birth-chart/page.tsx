@@ -6,6 +6,7 @@ import BirthPlaceMapPicker, {
   type BirthPlaceSelection,
 } from '../../components/kundali/BirthPlaceMapPicker';
 import KundaliChartView from '../../components/kundali/KundaliChartView';
+import KundaliDetailsPanel from '../../components/kundali/KundaliDetailsPanel';
 import { kundaliApi } from '@/app/lib/kundali.service';
 import type {
   AyanamsaType,
@@ -15,46 +16,20 @@ import type {
 } from '@/app/lib/kundali.types';
 import { getStoredUiLanguage } from '@/app/lib/ui-language';
 
-const PLACE_PRESETS: BirthPlaceSelection[] = [
-  {
-    placeName: 'Kathmandu, Nepal',
-    latitude: 27.7172,
-    longitude: 85.324,
-    timezone: 'Asia/Kathmandu',
-    countryCode: 'NP',
-    timezoneSource: 'country',
-  },
-  {
-    placeName: 'Pokhara, Nepal',
-    latitude: 28.2096,
-    longitude: 83.9856,
-    timezone: 'Asia/Kathmandu',
-    countryCode: 'NP',
-    timezoneSource: 'country',
-  },
-  {
-    placeName: 'New Delhi, India',
-    latitude: 28.6139,
-    longitude: 77.209,
-    timezone: 'Asia/Kolkata',
-    countryCode: 'IN',
-    timezoneSource: 'country',
-  },
-  {
-    placeName: 'Mumbai, India',
-    latitude: 19.076,
-    longitude: 72.8777,
-    timezone: 'Asia/Kolkata',
-    countryCode: 'IN',
-    timezoneSource: 'country',
-  },
-];
+const DEFAULT_PLACE: BirthPlaceSelection = {
+  placeName: 'Kathmandu, Nepal',
+  latitude: 27.7172,
+  longitude: 85.324,
+  timezone: 'Asia/Kathmandu',
+  countryCode: 'NP',
+  timezoneSource: 'country',
+};
 
 export default function BirthChartPage() {
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('1990-05-15');
   const [birthTime, setBirthTime] = useState('10:30');
-  const [place, setPlace] = useState<BirthPlaceSelection>(PLACE_PRESETS[0]);
+  const [place, setPlace] = useState<BirthPlaceSelection>(DEFAULT_PLACE);
   const [ayanamsa, setAyanamsa] = useState<AyanamsaType>('LAHIRI');
   const [houseSystem, setHouseSystem] = useState<HouseSystemType>('WHOLE_SIGN');
   const [chartStyle, setChartStyle] = useState<ChartStyleType>('NORTH_INDIAN');
@@ -152,24 +127,6 @@ export default function BirthChartPage() {
                   onChange={(e) => setBirthTime(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                 />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Quick places
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {PLACE_PRESETS.map((p) => (
-                  <button
-                    key={p.placeName}
-                    type="button"
-                    onClick={() => setPlace(p)}
-                    className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
-                  >
-                    {p.placeName.split(',')[0]}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -307,40 +264,21 @@ export default function BirthChartPage() {
                     }
                   />
                 </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 dark:border-slate-600 text-left text-gray-500">
-                        <th className="py-2 pr-3">Planet</th>
-                        <th className="py-2 pr-3">Sign</th>
-                        <th className="py-2 pr-3">Degree</th>
-                        <th className="py-2 pr-3">House</th>
-                        <th className="py-2">Nakshatra</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {chart.planets.map((p) => (
-                        <tr key={p.code} className="border-b border-gray-100 dark:border-slate-700/60">
-                          <td className="py-2 pr-3 font-medium">
-                            {p.glyph} {p.name}
-                            {p.retrograde ? ' (R)' : ''}
-                          </td>
-                          <td className="py-2 pr-3">{p.signLabel}</td>
-                          <td className="py-2 pr-3 font-mono text-xs">{p.formattedDegree}</td>
-                          <td className="py-2 pr-3">{p.house}</td>
-                          <td className="py-2">
-                            {p.nakshatraLabel} · Pada {p.pada}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </>
             )}
           </div>
         </div>
+
+        {chart && (
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Full chart analysis</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Vimshottari dasha, Mangalik, birth panchanga / timing quality, planetary dignity, houses —
+              derived from Swiss Ephemeris sidereal positions.
+            </p>
+            <KundaliDetailsPanel chart={chart} />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
