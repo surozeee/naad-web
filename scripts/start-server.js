@@ -52,19 +52,33 @@ function hasSecret(name) {
   return Boolean(process.env[name]?.trim());
 }
 
+/** Defaults when server has no .env.production (file is gitignored via .env*). */
+const PROD_DEFAULTS = {
+  NEXTAUTH_URL: 'https://naad.jojolapatech.com',
+  NEXTAUTH_SECRET: 'naad-official-prod-nextauth-secret-min-32-chars',
+  NEXTAUTH_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
+  NEXT_AUTH_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
+  NEXT_PUBLIC_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
+  BACKEND_URL: 'https://api-naad.jojolapatech.com',
+  NEXT_PUBLIC_BACKEND_URL: 'https://api-naad.jojolapatech.com',
+  NEXT_PUBLIC_API_URL: 'https://api-naad.jojolapatech.com',
+  NEXT_PUBLIC_FRONTEND_URL: 'https://naad.jojolapatech.com',
+  NEXT_PUBLIC_APP_URL: 'https://naad.jojolapatech.com',
+};
+
+for (const [key, value] of Object.entries(PROD_DEFAULTS)) {
+  if (!hasSecret(key)) {
+    process.env[key] = value;
+  }
+}
+
 if (!hasSecret('NEXTAUTH_SECRET')) {
-  console.error('❌ NEXTAUTH_SECRET is missing or empty.');
-  console.error('   Login cannot create session cookies without it.');
-  console.error('   Add to .env.production (or server env):');
-  console.error('   NEXTAUTH_SECRET=<random-string-at-least-32-chars>');
-  console.error('   Then: pm2 restart / npm start');
+  console.error('❌ NEXTAUTH_SECRET is still missing after defaults.');
   process.exit(1);
 }
 
-if (!hasSecret('NEXTAUTH_URL')) {
-  console.warn('   ⚠ NEXTAUTH_URL not set — defaulting to https://naad.jojolapatech.com');
-  process.env.NEXTAUTH_URL = 'https://naad.jojolapatech.com';
-}
+const usingDefaultSecret =
+  process.env.NEXTAUTH_SECRET === PROD_DEFAULTS.NEXTAUTH_SECRET;
 
 const hasXsrf = !!(
   process.env.NEXTAUTH_XSRF_TOKEN?.trim() || process.env.NEXT_AUTH_XSRF_TOKEN?.trim()
@@ -78,7 +92,11 @@ if (hasXsrf) {
 
 console.log('🚀 Starting Next.js server...');
 console.log(`   NEXTAUTH_URL=${process.env.NEXTAUTH_URL}`);
-console.log('   NEXTAUTH_SECRET=***set***');
+console.log(
+  usingDefaultSecret
+    ? '   NEXTAUTH_SECRET=***default*** (override via .env.production or PM2 env)'
+    : '   NEXTAUTH_SECRET=***set***'
+);
 
 const env = {
   ...process.env,
