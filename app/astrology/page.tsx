@@ -9,7 +9,7 @@ export default function AstrologyPage() {
             Astrology
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Explore the cosmic influences and planetary positions that shape your destiny
+            Swiss Ephemeris kundali charts, live planetary positions, and more — calculated in-house with custom SVG rendering.
           </p>
         </div>
 
@@ -18,7 +18,7 @@ export default function AstrologyPage() {
             <div className="text-5xl mb-4">⭐</div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Birth Chart</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Personalized birth chart
+              North / South Indian SVG kundali
             </p>
           </a>
 
