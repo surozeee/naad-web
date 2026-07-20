@@ -11,6 +11,17 @@ NEXTAUTH_XSRF_TOKEN=…
 BACKEND_URL=https://api-naad.jojolapatech.com
 ```
 
+**Production:** `NEXTAUTH_SECRET` and `NEXTAUTH_URL` must be set in `.env.production` (or the process environment).  
+Without `NEXTAUTH_SECRET`, login succeeds at the API but session cookies fail with:  
+`Could not create login session. Check NEXTAUTH_SECRET on the server.`
+
+After changing production env:
+
+```bash
+npm run build
+npm start   # or: pm2 restart naad-web
+```
+
 Login uses `POST /api/auth/login` (sets session cookies). Authenticated calls use `fetchWithAuth` / `authFetch`.
 
 ## Fix "XSRF Token Missing" (403 on user/role/permission pages)

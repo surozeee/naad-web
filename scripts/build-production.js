@@ -29,17 +29,32 @@ if (missing.length) {
   process.exit(1);
 }
 
-// Set production environment variables
+// Set production environment variables (do not overwrite secrets already in the shell)
 process.env.NODE_ENV = 'production';
 process.env.NEXT_PUBLIC_ENVIRONMENT = 'production';
-process.env.BACKEND_URL = 'https://api-naad.jojolapatech.com';
-process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api-naad.jojolapatech.com';
-process.env.NEXT_PUBLIC_FRONTEND_URL = 'https://naad.jojolapatech.com';
-process.env.NEXT_PUBLIC_OAUTH_BASE_URL = 'https://auth-naad.jojolaptech.com';
-process.env.NEXT_AUTH_XSRF_TOKEN = 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=';
+process.env.BACKEND_URL = process.env.BACKEND_URL || 'https://api-naad.jojolapatech.com';
+process.env.NEXT_PUBLIC_BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-naad.jojolapatech.com';
+process.env.NEXT_PUBLIC_FRONTEND_URL =
+  process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://naad.jojolapatech.com';
+process.env.NEXT_PUBLIC_APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || 'https://naad.jojolapatech.com';
+process.env.NEXT_PUBLIC_OAUTH_BASE_URL =
+  process.env.NEXT_PUBLIC_OAUTH_BASE_URL || 'https://auth-naad.jojolaptech.com';
+process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'https://naad.jojolapatech.com';
+process.env.NEXTAUTH_SECRET =
+  process.env.NEXTAUTH_SECRET || 'naad-official-prod-nextauth-secret-min-32-chars';
+process.env.NEXTAUTH_XSRF_TOKEN =
+  process.env.NEXTAUTH_XSRF_TOKEN ||
+  process.env.NEXT_AUTH_XSRF_TOKEN ||
+  'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=';
+process.env.NEXT_AUTH_XSRF_TOKEN =
+  process.env.NEXT_AUTH_XSRF_TOKEN || process.env.NEXTAUTH_XSRF_TOKEN;
+process.env.NEXT_PUBLIC_XSRF_TOKEN =
+  process.env.NEXT_PUBLIC_XSRF_TOKEN || process.env.NEXTAUTH_XSRF_TOKEN;
 process.env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'true';
 process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE = 'false';
-process.env.PORT = '4000';
+process.env.PORT = process.env.PORT || '4000';
 
 console.log('📋 Environment variables set:');
 console.log(`  NODE_ENV: ${process.env.NODE_ENV}`);
@@ -47,7 +62,9 @@ console.log(`  NEXT_PUBLIC_ENVIRONMENT: ${process.env.NEXT_PUBLIC_ENVIRONMENT}`)
 console.log(`  NEXT_PUBLIC_BACKEND_URL: ${process.env.NEXT_PUBLIC_BACKEND_URL}`);
 console.log(`  NEXT_PUBLIC_FRONTEND_URL: ${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
 console.log(`  NEXT_PUBLIC_OAUTH_BASE_URL: ${process.env.NEXT_PUBLIC_OAUTH_BASE_URL}`);
-console.log(`  NEXT_AUTH_XSRF_TOKEN: ${process.env.NEXT_AUTH_XSRF_TOKEN}`);
+console.log(`  NEXTAUTH_URL: ${process.env.NEXTAUTH_URL}`);
+console.log(`  NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '***set***' : '(missing)'}`);
+console.log(`  NEXTAUTH_XSRF_TOKEN: ${process.env.NEXTAUTH_XSRF_TOKEN ? '***set***' : '(missing)'}`);
 console.log(`  PORT: ${process.env.PORT}`);
 
 try {
