@@ -40,6 +40,7 @@ import type {
   HoroscopePeriodListRequest,
   HoroscopePeriodResponse,
   HoroscopeCsvImportResult,
+  HoroscopeTypeEnum,
 } from '@/app/lib/crm.types';
 
 const BASE = '/api/crm';
@@ -275,6 +276,24 @@ export const horoscopeApi = {
       };
     }
     return {};
+  },
+  /**
+   * Download sample CSV for the active type.
+   * DAILY = Shrawan 1–31 × 12 signs; MONTHLY = Shrawan × 12; YEARLY = year × 12 (EN+NE+HI).
+   */
+  downloadSampleCsv: async (horoscopeType: HoroscopeTypeEnum): Promise<{ blob: Blob; filename: string }> => {
+    const res = await fetchWithAuth(
+      `${EVENT_BASE}/horoscope/sample-csv?horoscopeType=${encodeURIComponent(horoscopeType)}`,
+      { method: 'GET', credentials: 'same-origin' }
+    );
+    if (!res.ok) {
+      throw new Error(`Failed to download sample CSV (HTTP ${res.status})`);
+    }
+    const disposition = res.headers.get('content-disposition') || '';
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    const filename = match?.[1] || `horoscope-${horoscopeType.toLowerCase()}-sample.csv`;
+    const blob = await res.blob();
+    return { blob, filename };
   },
 };
 export const horoscopePeriodApi = crud<HoroscopePeriodResponse, HoroscopePeriodRequest, HoroscopePeriodRequest, HoroscopePeriodListRequest>('horoscope-period', EVENT_BASE);

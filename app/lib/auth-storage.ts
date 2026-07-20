@@ -1,3 +1,4 @@
+import type { Session } from 'next-auth';
 import { inferUserTypeFromRoleName } from '@/app/lib/menu-role';
 import type { ProfileApiResponse } from '@/app/lib/profile.service';
 
@@ -106,4 +107,21 @@ export function authProfileFromUserApi(profile: ProfileApiResponse | null | unde
     roles: role ? [role] : [],
     permissions: [],
   };
+}
+
+/** Merge NextAuth session identity into localStorage profile (permissions stay in localStorage). */
+export function syncAuthProfileFromSession(session: Session | null | undefined): void {
+  if (!session?.user) return;
+  const stored = getAuthProfileFromLocalStorage();
+  const user = session.user;
+  saveAuthProfileToLocalStorage({
+    userId: user.id ?? stored?.userId ?? null,
+    name: user.name ?? stored?.name ?? null,
+    email: user.email ?? stored?.email ?? null,
+    userType: user.userType ?? user.roleType ?? stored?.userType ?? null,
+    roleType: user.roleType ?? stored?.roleType ?? null,
+    role: user.role ?? user.roles?.[0] ?? stored?.role ?? null,
+    roles: user.roles?.length ? user.roles : stored?.roles ?? [],
+    permissions: user.permissions?.length ? user.permissions : stored?.permissions ?? [],
+  });
 }

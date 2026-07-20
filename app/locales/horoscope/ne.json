@@ -131,7 +131,7 @@
     "selectDraftsToPublish": "तलका ड्राफ्ट चयन गर्नुहोस्, अनि प्रकाशित गर्नुहोस् (स्थिति मात्र)।",
     "saveDraftBeforePublish": "पहिले Save Draft गर्नुहोस् — Publish ले स्थिति मात्र अपडेट गर्छ।",
     "csvImport": "CSV आयात",
-    "csvHint": "UTF-8 CSV। नमूनामा EN + नेपाली (summary_ne, love_ne, …) र अन्य सक्रिय भाषाहरू हुन्छन्। Upload Draft ले पूर्वावलोकन र start/end गणना गर्छ। Save Draft ले ड्राफ्ट upsert गर्छ। तलको Publish ले स्थिति मात्र अपडेट गर्छ।",
+    "csvHint": "नमूना डाउनलोड गर्नुहोस् — पूर्ण टेम्प्लेट (दैनिक: साउन १–३१ × १२ राशि; मासिक: साउन × १२; वार्षिक: वर्ष × १२) EN, नेपाली, हिन्दी स्तम्भसहित। Upload Draft ले पूर्वावलोकन; Save Draft ले upsert; Publish ले स्थिति मात्र।",
     "sample": "नमूना",
     "uploadDraft": "ड्राफ्ट अपलोड",
     "refreshServer": "सर्भर सूची रिफ्रेस",

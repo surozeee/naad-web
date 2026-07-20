@@ -1,0 +1,45 @@
+---
+description: Authentication and token refresh conventions (NextAuth JWT + backend tokens)
+globs: lib/auth*.ts,lib/login*.ts,lib/set-session.ts,lib/server-refresh-token.ts,lib/clear-session-cookies.ts,app/api/auth/**/*,app/components/auth/**/*,app/components/providers/Session*.tsx,types/next-auth.d.ts
+alwaysApply: false
+---
+
+# Authentication flow
+
+## Architecture
+
+- Login goes through same-origin `POST /api/auth/login` (via `runLoginFlow` / login modal). Do **not** use NextAuth `signIn('credentials')` for the primary UI login path.
+- Backend login: `{API_BASE}/api/v2/public/user/login`
+- Backend refresh: `{API_BASE}/api/v2/public/user/refresh/token`
+- Tokens live in an **HttpOnly** NextAuth JWT session cookie (`next-auth.session-token` / `__Secure-…`). Never store `access_token` / `refresh_token` in `localStorage`.
+- Session cookies are set server-side with `createSessionCookieHeaders` (`lib/set-session.ts`) after login/refresh — skip NextAuth CSRF for that path.
+
+## Token parsing
+
+- Always parse with `parseAuthApiPayload` (`lib/auth-tokens.ts`). Support both camelCase and snake_case.
+- Access TTL: API `expiresIn` and/or JWT `exp`. Refresh TTL: **only** from API (`refreshExpiresIn` etc.). Never invent refresh expiry from the refresh JWT.
+- Cookie/session max-age: prefer refresh TTL → `sessionMaxSeconds` → `NEXTAUTH_SESSION_MAX_SECONDS` → 30-day default.
+
+## Client API calls
+
+- Use `fetchWithAuth` / `authFetch` for authenticated `/api/…` calls. They attach `Authorization: Bearer <access_token>` and XSRF.
+- Proactive refresh only when `accessTokenExpires` is known and near expiry (30s buffer). If TTL is missing, wait for 401 — do not guess.
+- Refresh goes to same-origin `POST /api/auth/refresh` with `{ refreshToken }`. Deduplicate concurrent refreshes.
+- **Refresh failure = immediate logout.** Clear cookies via `/api/auth/logout`, `signOut`, wipe client storage (preserve theme/language), redirect home.
+
+## Route protection
+
+- Edge `proxy.ts` is pass-through (no auth redirects).
+- Protected layouts mount `SessionAuthGuard` (client-side session check).
+
+## Do / Don't
+
+```typescript
+// ❌ BAD — store tokens in localStorage or use signIn for primary login
+localStorage.setItem('access_token', token);
+await signIn('credentials', { email, password });
+
+// ✅ GOOD — same-origin auth routes + authFetch
+await runLoginFlow(email, password, headers);
+await fetchWithAuth('/api/user/profile');
+```

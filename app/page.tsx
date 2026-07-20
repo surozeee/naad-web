@@ -1,16 +1,80 @@
 'use client';
 
-import { Suspense, useEffect } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import Footer from "./components/Footer";
-import { useAuthModal } from "./components/AuthModalContext";
+import { Suspense, useEffect } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import Footer from './components/Footer';
+import { useAuthModal } from './components/AuthModalContext';
+import HeroCosmicVisual from './components/home/HeroCosmicVisual';
+
+const FEATURES: Array<{
+  title: string;
+  description: string;
+  href: string;
+  icon: 'horoscope' | 'date' | 'meeting';
+  cta: string;
+}> = [
+  {
+    title: 'Horoscope',
+    description: 'Daily, monthly, and yearly readings for all twelve zodiac signs.',
+    href: '/horoscope',
+    icon: 'horoscope',
+    cta: 'Open readings',
+  },
+  {
+    title: 'Date converter',
+    description: 'See today’s date and convert between A.D. and Bikram Sambat (B.S.).',
+    href: '/date-converter',
+    icon: 'date',
+    cta: 'Convert dates',
+  },
+  {
+    title: 'Book a meeting',
+    description: 'Schedule a personal session with a trusted Naad astrologer.',
+    href: '/book-meeting',
+    icon: 'meeting',
+    cta: 'Book now',
+  },
+];
+
+function FeatureIcon({ type }: { type: (typeof FEATURES)[number]['icon'] }) {
+  if (type === 'horoscope') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="2" fill="currentColor" />
+        <path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'date') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M8 3.5v3M16 3.5v3M3.5 10h17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="9" cy="14" r="1" fill="currentColor" />
+        <circle cx="12" cy="14" r="1" fill="currentColor" />
+        <circle cx="15" cy="14" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M8 14a4 4 0 118 0v1.5a2.5 2.5 0 01-2.5 2.5h-3A2.5 2.5 0 018 15.5V14z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M4.5 19.5c1.2-2 3.2-3 7.5-3s6.3 1 7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function HomeContent() {
   const searchParams = useSearchParams();
   const authModal = useAuthModal();
 
-  // Open login modal when redirected from protected route (?login=1&redirect=...)
   useEffect(() => {
     if (searchParams.get('login') === '1' && authModal) {
       const redirect = searchParams.get('redirect') || '/dashboard';
@@ -22,118 +86,54 @@ function HomeContent() {
   }, [searchParams, authModal]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section - Full Width (same light/dark gradient as CTA section) */}
-      <section className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 dark:from-purple-900 dark:via-purple-800 dark:to-indigo-900 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <div>
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-white dark:text-white">
-                Welcome to Naad Official
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 text-purple-100 dark:text-white leading-relaxed">
-                Your trusted platform for spiritual guidance, horoscope readings, astrology insights, and divine services.
-                Discover your destiny with ancient wisdom and modern technology.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/horoscope"
-                  className="px-8 py-4 bg-white dark:bg-white/10 text-purple-600 dark:text-white rounded-lg font-semibold text-lg hover:bg-gray-100 dark:hover:bg-white/20 transition-all transform hover:scale-105 shadow-xl dark:border dark:border-white/20"
-                >
-                  View Horoscope
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Overview - Full Width */}
-      <section className="w-full bg-gray-50 dark:bg-gray-900 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-              Our Services
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-              Comprehensive spiritual and mystical services designed to guide you on your journey
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Link href="/horoscope" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-purple-100 dark:border-purple-900 h-full">
-                <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">♈</div>
-                <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400">
-                  Horoscope
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                  Daily, weekly, monthly, and yearly horoscope predictions based on your zodiac sign.
-                </p>
-                <div className="flex items-center text-purple-600 dark:text-purple-400 font-semibold">
-                  View readings <span className="ml-2 group-hover:translate-x-2 transition-transform">→</span>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/palmistry" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-indigo-100 dark:border-indigo-900 h-full">
-                <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">🖐️</div>
-                <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                  Palmistry
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                  Discover what your palms reveal about your personality, relationships, career, and life path.
-                </p>
-                <div className="flex items-center text-indigo-600 dark:text-indigo-400 font-semibold">
-                  Learn More <span className="ml-2 group-hover:translate-x-2 transition-transform">→</span>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/music" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-blue-100 dark:border-blue-900 h-full">
-                <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">🎵</div>
-                <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                  Spiritual Music
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                  Devotional music, mantras, bhajans, and chants for spiritual upliftment and inner peace.
-                </p>
-                <div className="flex items-center text-blue-600 dark:text-blue-400 font-semibold">
-                  Learn More <span className="ml-2 group-hover:translate-x-2 transition-transform">→</span>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section - Full Width */}
-      <section className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 dark:from-purple-900 dark:via-purple-800 dark:to-indigo-900 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white dark:text-white mb-6">
-            Ready to Begin Your Spiritual Journey?
-          </h2>
-          <p className="text-xl text-purple-100 dark:text-white mb-10 leading-relaxed">
-            Join thousands of satisfied customers who trust Naad Official for their spiritual guidance.
+    <div className="naad-site">
+      <section className="naad-hero">
+        <div className="naad-hero-sky" />
+        <HeroCosmicVisual />
+        <div className="naad-hero-content">
+          <h1 className="naad-hero-brand">
+            Naad <em>Official</em>
+          </h1>
+          <p className="naad-hero-lead">
+            Horoscope, calendar tools, and live sessions with astrologers — guidance for everyday
+            clarity.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            {authModal && (
-              <button
-                type="button"
-                onClick={() => authModal.openRegister()}
-                className="px-10 py-4 bg-white dark:bg-white/10 text-purple-600 dark:text-white rounded-lg font-semibold text-lg hover:bg-gray-100 dark:hover:bg-white/20 transition-all transform hover:scale-105 shadow-xl dark:border dark:border-white/20"
-              >
-                Get Started Now
-              </button>
-            )}
-            <Link
-              href="/horoscope"
-              className="px-10 py-4 bg-purple-700/50 dark:bg-purple-500/30 text-white rounded-lg font-semibold text-lg hover:bg-purple-700 dark:hover:bg-purple-500/50 transition-all transform hover:scale-105 border-2 border-white/30"
-            >
-              View Horoscope
+          <div className="naad-hero-actions">
+            <Link href="/horoscope" className="naad-btn-primary">
+              Read today&apos;s horoscope
             </Link>
+            <Link href="/book-meeting" className="naad-btn-ghost">
+              Book an astrologer
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="naad-section">
+        <div className="naad-section-inner">
+          <div className="naad-section-head">
+            <h2>Explore our features</h2>
+            <p>Choose a tool below to open its page and get started.</p>
+          </div>
+          <div className="naad-feature-cards">
+            {FEATURES.map((feature, index) => (
+              <Link
+                key={feature.href}
+                href={feature.href}
+                className="naad-feature-card"
+                style={{ animationDelay: `${0.08 + index * 0.06}s` }}
+              >
+                <span className="naad-feature-card-icon">
+                  <FeatureIcon type={feature.icon} />
+                </span>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+                <span className="naad-feature-card-cta">
+                  {feature.cta}
+                  <span aria-hidden>→</span>
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -145,11 +145,13 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <span className="text-slate-500 dark:text-slate-400">Loading...</span>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="naad-site min-h-screen flex items-center justify-center">
+          <span style={{ color: 'var(--naad-fg-muted)' }}>Loading…</span>
+        </div>
+      }
+    >
       <HomeContent />
     </Suspense>
   );

@@ -25,8 +25,6 @@ import {
 } from '@/app/lib/horoscope-multilang';
 import type { HoroscopePublishStatusEnum, HoroscopeResponse, HoroscopeTypeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
 import {
-  adIsoToBsIso,
-  deriveBsPeriodSelection,
   formatIsoDate,
   resolveHoroscopePeriodDates,
   resolvePeriodDatesFromCsvFields,
@@ -91,86 +89,6 @@ const ZODIAC_OPTIONS: ZodiacSignEnum[] = [
 ];
 
 const FORM_TEXT_FIELDS: HoroscopeTextField[] = [...HOROSCOPE_TEXT_FIELDS];
-
-const CSV_BASE_HEADERS = [
-  'horoscopeType',
-  'zodiacSign',
-  'date', // DAILY: one BS date (YYYY-MM-DD)
-  'bsYear', // WEEKLY / MONTHLY / YEARLY
-  'bsMonth', // WEEKLY / MONTHLY (1–12 or name)
-  'bsWeek', // WEEKLY (1–5)
-  'luckyNumber',
-  'luckyColor',
-  'luckyTime',
-  'overallRating',
-  'loveRating',
-  'careerRating',
-  'financeRating',
-  'healthRating',
-  'familyRating',
-  'educationRating',
-  'travelRating',
-  'luckRating',
-  'status',
-] as const;
-
-function buildCsvHeaders(languages: HoroscopeLanguageOption[]): string[] {
-  const langCodes = languages.length
-    ? languages.map((l) => csvHeaderLangCode(l))
-    : DEFAULT_HOROSCOPE_LANGUAGES.map((l) => csvHeaderLangCode(l));
-  return [
-    ...CSV_BASE_HEADERS,
-    ...FORM_TEXT_FIELDS.flatMap((f) => langCodes.map((code) => `${f}_${code}`)),
-  ];
-}
-
-/** Prefer stable CSV suffixes: en / ne / hi (not np). */
-function csvHeaderLangCode(lang: HoroscopeLanguageOption): string {
-  if (lang.backendCode === 'NE') return 'ne';
-  if (lang.backendCode === 'EN') return 'en';
-  if (lang.backendCode === 'HI') return 'hi';
-  return lang.uiCode.toLowerCase();
-}
-
-function sampleLocalizedText(
-  field: HoroscopeTextField,
-  lang: HoroscopeLanguageOption,
-  zodiac: string,
-  typeLabel: string,
-  isBase: boolean
-): string {
-  if (lang.backendCode === 'NE') {
-    const map: Partial<Record<HoroscopeTextField, string>> = {
-      summary: `${zodiac} ${typeLabel} सारांश — स्पष्ट निर्णय र सकारात्मक ऊर्जा।`,
-      love: 'खुला संवादले सम्बन्ध मजबुत बनाउन सक्छ।',
-      career: 'काममा स्थिर प्रगति अनुकूल देखिन्छ।',
-      money: 'खर्चको योजना सावधानीपूर्वक बनाउनुहोस्।',
-      health: 'आराम र सन्तुलनले स्वास्थ्यलाई सहयोग गर्छ।',
-      family: 'पारिवारिक सहयोग महत्वपूर्ण रहनेछ।',
-      education: 'पढाइमा ध्यान केन्द्रित गर्दा फलदायी हुन्छ।',
-      travel: 'यात्रा योजना बनाउँदा समय मिलाउनुहोस्।',
-      advice: 'धैर्य र सकारात्मक सोच राख्नुहोस्।',
-      mood: 'उत्साहित र सन्तुलित।',
-    };
-    return map[field] ?? `${field} (${lang.label})`;
-  }
-  if (isBase || lang.backendCode === 'EN') {
-    const map: Partial<Record<HoroscopeTextField, string>> = {
-      summary: `${zodiac} ${typeLabel} overview — focused action and confident decisions.`,
-      love: 'Open communication may strengthen your relationships.',
-      career: 'Steady progress at work is favored.',
-      money: 'Plan expenses carefully.',
-      health: 'Rest and balance support wellness.',
-      family: 'Family support remains important.',
-      education: 'Focused study brings good results.',
-      travel: 'Time your travel plans carefully.',
-      advice: 'Stay patient and positive.',
-      mood: 'Upbeat and balanced.',
-    };
-    return map[field] ?? `${field} (${lang.label})`;
-  }
-  return `${field} note (${lang.label}).`;
-}
 
 function todayIso(): string {
   return formatIsoDate(new Date());
@@ -238,13 +156,6 @@ function parseCsvRows(text: string): string[][] {
 
 function normalizeCsvValue(value: string): string {
   return value.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
-}
-
-function escapeCsvCell(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 }
 
 function isValidZodiac(value: string): value is ZodiacSignEnum {
@@ -366,7 +277,7 @@ export default function AddHoroscopeCsvPage() {
   const [serverLoading, setServerLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [draftsHydrated, setDraftsHydrated] = useState(false);
-  const [csvPreviewOpen, setCsvPreviewOpen] = useState(false);
+  const [sampleDownloading, setSampleDownloading] = useState(false);
   const [csvPreviewRows, setCsvPreviewRows] = useState<HoroscopeEntry[]>([]);
   const [csvPreviewFileName, setCsvPreviewFileName] = useState('');
   const [csvPreviewError, setCsvPreviewError] = useState('');
@@ -775,85 +686,31 @@ export default function AddHoroscopeCsvPage() {
     setCsvMessage('Upload cancelled.');
   };
 
-  const handleDownloadSample = () => {
-    if (!languages.length) {
-      setCsvMessage('No active languages. Enable languages in Master before downloading a template.');
-      return;
+  const handleDownloadSample = async () => {
+    if (sampleDownloading) return;
+    setSampleDownloading(true);
+    try {
+      const { blob, filename } = await horoscopeApi.downloadSampleCsv(activeType);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      const periodHint =
+        activeType === 'DAILY'
+          ? 'Shrawan 1–31 × 12 signs (BS date column)'
+          : activeType === 'WEEKLY'
+            ? 'Shrawan week 1 × 12 signs'
+            : activeType === 'MONTHLY'
+              ? 'Shrawan × 12 signs (bsYear + bsMonth)'
+              : 'Current BS year × 12 signs';
+      setCsvMessage(`Sample CSV downloaded for ${activeType} (${periodHint}, EN+NE+HI).`);
+    } catch (e) {
+      setCsvMessage(e instanceof Error ? e.message : 'Failed to download sample CSV.');
+    } finally {
+      setSampleDownloading(false);
     }
-    const headers = buildCsvHeaders(languages);
-    const period = resolveHoroscopePeriodDates(activeType, todayIso());
-    const bsSel = deriveBsPeriodSelection(period.startDate);
-    const dailyBs = adIsoToBsIso(period.startDate) || period.startDate;
-    const base = getBaseHoroscopeLanguage(languages);
-
-    const sampleZodiacs: ZodiacSignEnum[] = ['ARIES', 'TAURUS', 'GEMINI'];
-    const sampleLines = sampleZodiacs.map((zodiac, index) => {
-      const localized = createEmptyLocalizedFields(languages);
-      for (const lang of languages) {
-        for (const field of FORM_TEXT_FIELDS) {
-          localized[field][lang.uiCode] = sampleLocalizedText(
-            field,
-            lang,
-            zodiac,
-            activeType.toLowerCase(),
-            lang.isBase || lang.uiCode === base.uiCode
-          );
-        }
-      }
-
-      const dateCol = activeType === 'DAILY' ? dailyBs : '';
-      const yearCol =
-        activeType === 'WEEKLY' || activeType === 'MONTHLY' || activeType === 'YEARLY'
-          ? String(bsSel.year)
-          : '';
-      const monthCol =
-        activeType === 'WEEKLY' || activeType === 'MONTHLY' ? String(bsSel.month) : '';
-      const weekCol = activeType === 'WEEKLY' ? String(Math.min(5, bsSel.week + (index % 2))) : '';
-
-      const cells = [
-        activeType,
-        zodiac,
-        dateCol,
-        yearCol,
-        monthCol,
-        weekCol,
-        String(3 + index),
-        index === 0 ? 'Red, Gold' : index === 1 ? 'Blue' : 'Green',
-        index === 0 ? '10:30 AM-12:00 PM' : 'Morning',
-        '', // overallRating auto-averaged
-        '3.5',
-        '4.0',
-        '3.5',
-        '4.0',
-        '3.5',
-        '4.5',
-        '3.5',
-        '4.0',
-        'DRAFT',
-        ...FORM_TEXT_FIELDS.flatMap((f) =>
-          languages.map((lang) => localized[f][lang.uiCode] ?? '')
-        ),
-      ];
-      return cells.map(escapeCsvCell).join(',');
-    });
-
-    const csvBody = [`${headers.map(escapeCsvCell).join(',')}`, ...sampleLines].join('\n');
-    const blob = new Blob([`\uFEFF${csvBody}\n`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `horoscope-${activeType.toLowerCase()}-sample.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    const periodHint =
-      activeType === 'DAILY'
-        ? 'date (BS)'
-        : activeType === 'WEEKLY'
-          ? 'bsYear + bsMonth + bsWeek'
-          : activeType === 'MONTHLY'
-            ? 'bsYear + bsMonth'
-            : 'bsYear';
-    setCsvMessage(`Sample CSV downloaded for ${activeType} (${periodHint}).`);
   };
 
   const resolveServerId = async (entry: HoroscopeEntry): Promise<string | undefined> => {
@@ -1199,8 +1056,14 @@ export default function AddHoroscopeCsvPage() {
               </div>
               <p className="text-xs horoscope-muted mb-3">{t('add.csvHint')}</p>
               <div className="flex flex-wrap gap-1.5">
-                <button type="button" onClick={handleDownloadSample} className="btn-secondary btn-small inline-flex items-center gap-1 text-xs">
-                  <Download size={12} /> {t('add.sample')}
+                <button
+                  type="button"
+                  onClick={handleDownloadSample}
+                  disabled={sampleDownloading}
+                  className="btn-secondary btn-small inline-flex items-center gap-1 text-xs disabled:opacity-50"
+                >
+                  {sampleDownloading ? <Loader2 className="animate-spin" size={12} /> : <Download size={12} />}{' '}
+                  {t('add.sample')}
                 </button>
                 <label className="btn-primary btn-small inline-flex items-center gap-1 cursor-pointer text-xs">
                   <Upload size={12} /> {t('add.uploadDraft')}

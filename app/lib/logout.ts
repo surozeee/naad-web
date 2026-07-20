@@ -1,22 +1,10 @@
-import { clearAuthProfileFromLocalStorage } from '@/app/lib/auth-storage';
-import { clearAuthAccessExpiry } from '@/app/lib/auth-session';
+'use client';
 
-const AUTH_COOKIE = 'naad_auth';
-const REFRESH_COOKIE = 'naad_refresh';
+import { performClientLogout } from '@/lib/logout-client';
 
 /**
- * Clear auth cookies and call logout API, then redirect.
+ * Clear NextAuth session + profile, then redirect home.
  */
-export function logout(redirectTo: string = '/'): void {
-  if (typeof window === 'undefined') return;
-  try {
-    clearAuthAccessExpiry();
-    clearAuthProfileFromLocalStorage();
-    document.cookie = `${AUTH_COOKIE}=; path=/; max-age=0`;
-    document.cookie = `${REFRESH_COOKIE}=; path=/; max-age=0`;
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
-  } catch {
-    // ignore
-  }
-  window.location.href = redirectTo;
+export function logout(_redirectTo: string = '/'): void {
+  void performClientLogout(null);
 }

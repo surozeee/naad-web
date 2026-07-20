@@ -1,5 +1,18 @@
 # Environment variables
 
+## NextAuth session (erp-web auth flow)
+
+Tokens live in an **HttpOnly** NextAuth JWT cookie (`next-auth.session-token`). Do not store access/refresh tokens in `localStorage`.
+
+```env
+NEXTAUTH_SECRET=replace-with-a-long-random-secret-min-32-chars
+NEXTAUTH_URL=http://localhost:4000
+NEXTAUTH_XSRF_TOKEN=…
+BACKEND_URL=https://api-naad.jojolapatech.com
+```
+
+Login uses `POST /api/auth/login` (sets session cookies). Authenticated calls use `fetchWithAuth` / `authFetch`.
+
 ## Fix "XSRF Token Missing" (403 on user/role/permission pages)
 
 The app sends the XSRF token as the **`X-XSRF-TOKEN`** header on every API request. Set the token in `.env` using either variable name:

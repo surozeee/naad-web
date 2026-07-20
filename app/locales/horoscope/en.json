@@ -131,7 +131,7 @@
     "selectDraftsToPublish": "Select draft(s) below, then Publish (status only).",
     "saveDraftBeforePublish": "Save Draft first — Publish only updates status.",
     "csvImport": "CSV import",
-    "csvHint": "UTF-8 CSV. Sample includes EN + Nepali (summary_ne, love_ne, …) and other active languages. Upload Draft previews and calculates start/end. Save Draft upserts drafts. Publish (below) updates status only.",
+    "csvHint": "Download Sample for full templates (Daily: Shrawan 1–31 × 12 signs; Monthly: Shrawan × 12; Yearly: year × 12) with EN, Nepali, and Hindi columns. Upload Draft previews rows; Save Draft upserts; Publish updates status only.",
     "sample": "Sample",
     "uploadDraft": "Upload Draft",
     "refreshServer": "Refresh server list",

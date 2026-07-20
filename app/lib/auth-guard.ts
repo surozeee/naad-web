@@ -1,38 +1,15 @@
 /**
- * Auth guard (erp-web style): prevent access without login.
- * Tokens are maintained in cookies (naad_auth, naad_refresh) by the login API.
+ * Auth guard helpers. Session lives in HttpOnly NextAuth JWT cookie —
+ * client cannot read the access token from document.cookie.
  */
 
-const AUTH_COOKIE = 'naad_auth';
-
-function readCookieRawValue(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed.includes('%')) return trimmed;
-  try {
-    return decodeURIComponent(trimmed);
-  } catch {
-    return trimmed;
-  }
-}
-
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name.replace(/[\-.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
-  return match ? readCookieRawValue(match[1]) : null;
-}
-
-/** Client-side access token from naad_auth cookie (for Authorization header). */
-export function getAuthAccessToken(): string | null {
-  const token = getCookie(AUTH_COOKIE);
-  return token?.trim() || null;
-}
+import { getCachedSession } from '@/lib/auth-fetch';
 
 /**
  * Get the redirect URL path for login (with ?login=1&redirect=...).
- * Use with router.replace() so user returns here after login.
  */
 export function getLoginRedirectPath(pathname: string | null): string {
-  const path = (pathname && pathname !== '/') ? pathname : '/dashboard';
+  const path = pathname && pathname !== '/' ? pathname : '/dashboard';
   const params = new URLSearchParams();
   params.set('login', '1');
   params.set('redirect', path);
@@ -40,26 +17,30 @@ export function getLoginRedirectPath(pathname: string | null): string {
 }
 
 /**
- * Check if user has auth token (client-side).
- * Reads access_token from cookie set by login API.
+ * @deprecated Access tokens are HttpOnly — use getSession() / authFetch instead.
+ * Kept for transitional callers; always returns null.
  */
+export function getAuthAccessToken(): string | null {
+  return null;
+}
+
+/** Client-side: whether a NextAuth session cookie appears present (non-HttpOnly check is unreliable). Prefer useSession. */
 export function hasAuthToken(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return !!getCookie(AUTH_COOKIE);
-  } catch {
-    return false;
-  }
+  if (typeof document === 'undefined') return false;
+  return /(?:^|;\s*)(?:__Secure-)?next-auth\.session-token/.test(document.cookie);
 }
 
 /**
- * Require auth: if no token, redirect to login with return URL.
- * Returns true if allowed, false if redirect was triggered.
- * Use in a useEffect in protected layouts.
+ * Require auth via session poll. Prefer SessionAuthGuard in layouts.
  */
 export function requireAuth(pathname: string | null, router: { replace: (url: string) => void }): boolean {
   if (typeof window === 'undefined') return false;
   if (hasAuthToken()) return true;
+  void getCachedSession().then((session) => {
+    if (!session?.user) {
+      router.replace(getLoginRedirectPath(pathname));
+    }
+  });
   router.replace(getLoginRedirectPath(pathname));
   return false;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backendFetch } from '@/app/lib/api-base';
-import { backendHeaders, backendUrl } from '@/app/lib/backend-api';
+import { backendHeadersFromSession, backendUrl } from '@/app/lib/backend-api';
 
 /** Proxy all /api/event/* requests to backend /api/v2/event/*. Forwards method, body, and headers (id, status). */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
@@ -51,7 +51,7 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     }
     // Only force JSON Content-Type when there is a JSON body (header-only PATCH must not send it).
     const hasJsonBody = !isMultipart && typeof body === 'string' && body.length > 0;
-    const forwardHeaders = backendHeaders(request, {
+    const forwardHeaders = await backendHeadersFromSession(request, {
       includeJsonContentType: hasJsonBody,
     });
     for (const { keys, forwardAs } of EVENT_HEADER_ALIASES) {

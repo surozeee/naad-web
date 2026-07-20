@@ -1,43 +1,10 @@
 import { NextResponse } from 'next/server';
-import {
-  API_BASE,
-  backendFetch,
-  getBackendHttpErrorMessage,
-  getBackendNetworkErrorMessage,
-  isBackendNetworkError,
-} from '@/app/lib/api-base';
-import { getServerXsrfToken } from '@/app/lib/get-xsrf';
-import { buildLoginUserPayload } from '@/app/lib/login-user';
+import { buildLoginSessionResponse } from '@/lib/login-session';
+import { classifyBackendFetchError, getServerApiBase } from '@/lib/server-api-base';
+import { serverFetch } from '@/lib/server-fetch';
+import { resolveServerXsrfHeaders } from '@/lib/server-xsrf';
 
-const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
-
-const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  USR007: 'Failed to generate authentication token. Please try again in a moment.',
-  IAM007: 'Your account has been locked due to multiple failed login attempts. Please try again later or contact support.',
-};
-
-function resolveLoginErrorMessage(data: {
-  code?: string;
-  message?: string;
-  error?: string;
-}): string {
-  const code = data?.code?.trim();
-  if (code && AUTH_ERROR_MESSAGES[code]) return AUTH_ERROR_MESSAGES[code];
-  const message = data?.message ?? data?.error;
-  if (message?.trim()) return message.trim();
-  if (code === 'USR007') return AUTH_ERROR_MESSAGES.USR007;
-  return 'Invalid email or password.';
-}
-
-const AUTH_COOKIE = 'naad_auth';
-const REFRESH_COOKIE = 'naad_refresh';
-const COOKIE_OPTIONS = {
-  path: '/',
-  /** Match long-lived refresh token (e.g. 10d); access token is short — see proactive refresh. */
-  maxAge: 60 * 60 * 24 * 10,
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-};
+export const dynamic = 'force-dynamic';
 
 export interface LoginBody {
   email: string;
@@ -56,122 +23,82 @@ export async function POST(request: Request) {
       );
     }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    const xsrf = getServerXsrfToken() || request.headers.get('X-XSRF-TOKEN')?.trim() || undefined;
-    if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
-
-    const loginBody = JSON.stringify({ email: email.trim(), password });
-    let res = await backendFetch(LOGIN_URL, {
-      method: 'POST',
-      headers,
-      body: loginBody,
-    });
-
-    let data = (await res.json().catch(() => ({}))) as {
-      status?: string;
-      code?: string;
-      message?: string;
-      error?: string;
-      data?: {
-        accessToken?: string;
-        access_token?: string;
-        refreshToken?: string;
-        refresh_token?: string;
-        user?: Record<string, unknown>;
-      };
-    };
-
-    if (data?.status === 'FAILED' && data?.code === 'USR007' && !res.ok) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      res = await backendFetch(LOGIN_URL, {
-        method: 'POST',
-        headers,
-        body: loginBody,
-      });
-      data = (await res.json().catch(() => ({}))) as typeof data;
-    }
-
-    if (data?.status === 'FAILED') {
-      const message = resolveLoginErrorMessage(data);
-      const status =
-        data.code === 'USR007' ? 503 : res.status === 401 || res.status === 403 ? 401 : res.ok ? 401 : res.status;
-      console.error('[Auth] Login backend error:', res.status, LOGIN_URL, data);
-      return NextResponse.json({ message, code: data?.code }, { status });
-    }
-
-    if (!res.ok) {
-      const message = getBackendHttpErrorMessage(
-        res.status,
-        LOGIN_URL,
-        data?.message ?? data?.error
-      );
-      console.error('[Auth] Login backend error:', res.status, LOGIN_URL, data);
+    const API_BASE = getServerApiBase();
+    if (!API_BASE) {
       return NextResponse.json(
-        { message, code: data?.code },
-        { status: res.status === 404 ? 502 : res.status }
-      );
-    }
-
-    const access_token =
-      data.data?.accessToken ?? data.data?.access_token ?? '';
-    const refresh_token =
-      data.data?.refreshToken ?? data.data?.refresh_token ?? '';
-
-    if (!access_token) {
-      return NextResponse.json(
-        { message: 'Invalid response from authentication service.' },
+        {
+          message:
+            'API base not configured on the server. Set BACKEND_URL or NEXT_PUBLIC_API_URL, then rebuild or restart the app.',
+          code: 'API_NOT_CONFIGURED',
+        },
         { status: 502 }
       );
     }
 
-    const userData = (data.data?.user ?? {}) as Record<string, unknown>;
-    const enrichedUser = buildLoginUserPayload(userData, email.trim());
-    const enrichedData = {
-      ...data,
-      data: {
-        ...data.data,
-        user: enrichedUser,
-      },
-    };
-
-    const response = NextResponse.json(enrichedData);
-
-    response.cookies.set(AUTH_COOKIE, access_token, COOKIE_OPTIONS);
-    if (refresh_token) {
-      response.cookies.set(REFRESH_COOKIE, refresh_token, COOKIE_OPTIONS);
+    const { headers } = await resolveServerXsrfHeaders(API_BASE);
+    if (process.env.NODE_ENV === 'development' && !headers['X-XSRF-TOKEN']) {
+      console.warn(
+        '[Auth] No XSRF token for login; set NEXTAUTH_XSRF_TOKEN or ensure backend sets XSRF-TOKEN on GET.'
+      );
     }
 
-    let xsrfValue: string | null = null;
-    const setCookies =
-      typeof (res.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
-        ? (res.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
-        : res.headers.get('set-cookie')
-          ? [res.headers.get('set-cookie')!]
-          : [];
-    for (const raw of setCookies) {
-      const c = raw.trim();
-      const xsrfMatch = /^XSRF-TOKEN=(.+?)(?:;\s|$)/i.exec(c) || /^X-XSRF-TOKEN=(.+?)(?:;\s|$)/i.exec(c);
-      if (xsrfMatch) {
-        xsrfValue = xsrfMatch[1].replace(/^"(.*)"$/, '$1').trim();
-        break;
-      }
-    }
-    const xsrfToSet = xsrfValue || getServerXsrfToken() || process.env.NEXT_PUBLIC_XSRF_TOKEN?.trim();
-    if (xsrfToSet) {
-      response.cookies.set('XSRF-TOKEN', xsrfToSet, COOKIE_OPTIONS);
+    const LOGIN_URL = `${API_BASE}/api/v2/public/user/login`;
+
+    const res = await serverFetch(LOGIN_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const message =
+        (data as { message?: string })?.message ??
+        (data as { error?: string })?.error ??
+        (res.status === 502
+          ? 'API gateway error. Check that User-Service and API Gateway are running.'
+          : 'Invalid username and password');
+      return NextResponse.json(
+        {
+          ...(typeof data === 'object' && data ? data : {}),
+          message,
+          code: (data as { code?: string })?.code ?? `HTTP_${res.status}`,
+        },
+        { status: res.status }
+      );
     }
 
-    return response;
+    return buildLoginSessionResponse(data, email);
   } catch (error) {
     console.error('[Auth] Login API error:', error);
-    if (isBackendNetworkError(error)) {
-      console.error('[Auth] Backend URL:', LOGIN_URL);
+    const kind = classifyBackendFetchError(error);
+    if (kind !== null) {
+      const apiBase = getServerApiBase();
+      return NextResponse.json(
+        {
+          message:
+            kind === 'timeout'
+              ? 'Connection to the API timed out. Check network or increase API_CONNECT_TIMEOUT_MS.'
+              : kind === 'unreachable'
+                ? 'Cannot reach the API from the web server. Set BACKEND_URL / API_INTERNAL_URL.'
+                : 'Could not connect to the API. Set BACKEND_URL or NEXT_PUBLIC_API_URL on the server.',
+          code:
+            kind === 'timeout'
+              ? 'API_CONNECT_TIMEOUT'
+              : kind === 'unreachable'
+                ? 'API_UNREACHABLE'
+                : 'API_FETCH_FAILED',
+          ...(process.env.NODE_ENV === 'development'
+            ? { attemptedBase: apiBase || '(empty)' }
+            : {}),
+        },
+        { status: 503 }
+      );
     }
     return NextResponse.json(
-      { message: getBackendNetworkErrorMessage(error) },
-      { status: isBackendNetworkError(error) ? 503 : 500 }
+      { message: 'Something went wrong. Please try again later.' },
+      { status: 500 }
     );
   }
 }

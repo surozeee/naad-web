@@ -7,12 +7,12 @@ import {
   authProfileFromUserApi,
   saveAuthProfileToLocalStorage,
 } from '@/app/lib/auth-storage';
-import { clearAuthAccessExpiry, setAuthAccessExpiryFromExpiresIn } from '@/app/lib/auth-session';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { resolvePostLoginRedirect } from '@/app/lib/login-redirect';
 import { getProfile } from '@/app/lib/profile.service';
-
-const LOGIN_API = '/api/auth/login';
+import { runLoginFlow } from '@/lib/login-flow';
+import { parseLoginResponse, waitForAuthenticatedSession } from '@/lib/login-client';
+import { clearSessionCache } from '@/lib/auth-fetch';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -62,59 +62,32 @@ export function LoginModal({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       const xsrf = getXsrfToken();
       if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
-      const res = await fetch(LOGIN_API, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers,
-        body: JSON.stringify({ email, password }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        status?: string;
-        code?: string;
-        message?: string;
-        error?: string;
-        data?: {
-          accessToken?: string;
-          refreshToken?: string;
-          access_token?: string;
-          refresh_token?: string;
-          expiresIn?: number;
-          user?: { id?: string; email?: string; name?: string | null };
-        };
-        access_token?: string;
-        refresh_token?: string;
-      };
 
-      if (data?.status === 'FAILED' || !res.ok) {
-        const message =
-          data?.message ??
-          data?.error ??
-          (data?.code === 'USR007'
-            ? 'Failed to generate authentication token. Please try again in a moment.'
-            : data?.code === 'IAM007'
-              ? 'Your account has been locked due to multiple failed login attempts. Please try again later or contact support.'
-              : t('login.error') ?? 'Login failed');
-        setError(message);
+      const loginResult = await runLoginFlow(email.trim(), password, headers);
+      if (!loginResult.ok) {
+        setError(loginResult.message || t('login.error'));
         setLoading(false);
         return;
       }
 
-      const access_token =
-        data.data?.accessToken ??
-        data.access_token ??
-        data.data?.access_token ??
-        '';
-
-      if (!access_token) {
-        setError(data?.message ?? t('login.error') ?? 'Login failed');
+      const parsed = parseLoginResponse(loginResult.data);
+      if (!parsed?.accessToken) {
+        setError(t('login.error') ?? 'Login failed');
         setLoading(false);
         return;
       }
 
-      clearAuthAccessExpiry();
-      setAuthAccessExpiryFromExpiresIn(data.data?.expiresIn);
+      clearSessionCache();
 
-      const loginUser = (data.data?.user ?? {}) as Record<string, unknown>;
+      const sessionVisible =
+        parsed.sessionReady || (await waitForAuthenticatedSession(5000));
+      if (!sessionVisible) {
+        setError('Session could not be established. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const loginUser = parsed.user;
       let authProfile = authProfileFromLoginUser(loginUser);
 
       try {

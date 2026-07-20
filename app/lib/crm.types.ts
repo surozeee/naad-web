@@ -74,10 +74,14 @@ export interface HoroscopeScopeListRequest extends CrmListRequest {
 /** Backend LanguageEnum code (subset commonly used in admin UI). */
 export type LanguageEnumCode = 'EN' | 'NE' | 'HI' | string;
 
+export type ZodiacElementEnum = 'FIRE' | 'EARTH' | 'AIR' | 'WATER';
+
 export interface ZodiacSignLocaleRequest {
   language: LanguageEnumCode;
   name: string;
   startingName?: string;
+  /** Localized element label (Fire / अग्नि / …). */
+  element?: string;
 }
 
 export interface ZodiacSignLocaleResponse {
@@ -85,6 +89,7 @@ export interface ZodiacSignLocaleResponse {
   language: LanguageEnumCode;
   name: string;
   startingName?: string;
+  element?: string;
 }
 
 /** Event-Service: zodiac-sign-locale APIs (persisted rows with id). */
@@ -93,6 +98,7 @@ export interface ZodiacSignLocaleUpsertPayload {
   language: string;
   name: string;
   startingName?: string;
+  element?: string;
 }
 
 // ---- Zodiac Sign ----
@@ -106,6 +112,7 @@ export interface ZodiacSignRequest {
   logoImageBase64?: string;
   startingName?: string;
   daysRange?: string;
+  element?: ZodiacElementEnum;
   /** Per-language display fields (stored in zodiac_sign_language). */
   locales?: ZodiacSignLocaleRequest[];
 }
@@ -118,6 +125,7 @@ export interface ZodiacSignResponse {
   logoUrl?: string;
   startingName?: string;
   daysRange?: string;
+  element?: ZodiacElementEnum;
   status?: StatusEnum;
   createdAt?: string;
   lastModifiedAt?: string;

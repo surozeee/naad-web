@@ -26,6 +26,7 @@ import { zodiacSignApi, zodiacSignLocaleApi } from '@/app/lib/crm.service';
 import type {
   ZodiacSignRequest,
   ZodiacSignEnum,
+  ZodiacElementEnum,
   ZodiacSignLocaleResponse,
   ZodiacSignResponse,
 } from '@/app/lib/crm.types';
@@ -46,8 +47,36 @@ const ZODIAC_SIGN_OPTIONS: { value: ZodiacSignEnum; label: string }[] = [
   { value: 'PISCES', label: 'Pisces' },
 ];
 
+const ZODIAC_ELEMENT_OPTIONS: { value: ZodiacElementEnum; label: string }[] = [
+  { value: 'FIRE', label: 'Fire' },
+  { value: 'EARTH', label: 'Earth' },
+  { value: 'AIR', label: 'Air' },
+  { value: 'WATER', label: 'Water' },
+];
+
+const ZODIAC_SIGN_ELEMENT: Record<ZodiacSignEnum, ZodiacElementEnum> = {
+  ARIES: 'FIRE',
+  TAURUS: 'EARTH',
+  GEMINI: 'AIR',
+  CANCER: 'WATER',
+  LEO: 'FIRE',
+  VIRGO: 'EARTH',
+  LIBRA: 'AIR',
+  SCORPIO: 'WATER',
+  SAGITTARIUS: 'FIRE',
+  CAPRICORN: 'EARTH',
+  AQUARIUS: 'AIR',
+  PISCES: 'WATER',
+};
+
+const ZODIAC_DEFAULT_ELEMENT_LABELS: Record<string, Record<ZodiacElementEnum, string>> = {
+  EN: { FIRE: 'Fire', EARTH: 'Earth', AIR: 'Air', WATER: 'Water' },
+  NE: { FIRE: 'अग्नि', EARTH: 'पृथ्वी', AIR: 'वायु', WATER: 'जल' },
+  HI: { FIRE: 'अग्नि', EARTH: 'पृथ्वी', AIR: 'वायु', WATER: 'जल' },
+};
+
 /** Default local names (matches backend ZodiacSignEnum seed) for empty locale forms. */
-const ZODIAC_DEFAULT_LOCALES: Record<string, Partial<Record<ZodiacSignEnum, { name: string; startingName?: string }>>> = {
+const ZODIAC_DEFAULT_LOCALES: Record<string, Partial<Record<ZodiacSignEnum, { name: string; startingName?: string; element?: string }>>> = {
   EN: Object.fromEntries(ZODIAC_SIGN_OPTIONS.map((o) => [o.value, { name: o.label }])) as Partial<
     Record<ZodiacSignEnum, { name: string; startingName?: string }>
   >,
@@ -91,13 +120,15 @@ function normalizeLanguageEnumCode(raw: unknown, nameHint?: unknown): string | n
 function defaultLocaleFields(
   language: string,
   zodiacSign: string
-): { name: string; startingName: string } {
+): { name: string; startingName: string; element: string } {
   const lang = language.toUpperCase();
   const sign = zodiacSign.toUpperCase() as ZodiacSignEnum;
   const hit = ZODIAC_DEFAULT_LOCALES[lang]?.[sign];
+  const elementKey = ZODIAC_SIGN_ELEMENT[sign] ?? 'FIRE';
   return {
     name: hit?.name ?? '',
     startingName: hit?.startingName ?? '',
+    element: hit?.element ?? ZODIAC_DEFAULT_ELEMENT_LABELS[lang]?.[elementKey] ?? ZODIAC_DEFAULT_ELEMENT_LABELS.EN[elementKey],
   };
 }
 
@@ -109,6 +140,7 @@ interface ZodiacSignItem {
   logoUrl: string;
   startingName: string;
   daysRange: string;
+  element: string;
   status: 'active' | 'inactive' | 'deleted';
   locales: ZodiacSignLocaleResponse[];
 }
@@ -122,6 +154,7 @@ function mapApiLocales(raw: unknown): ZodiacSignLocaleResponse[] {
       language: String(o.language ?? 'EN'),
       name: String(o.name ?? ''),
       startingName: o.startingName != null ? String(o.startingName) : undefined,
+      element: o.element != null ? String(o.element) : undefined,
     };
   });
 }
@@ -146,6 +179,7 @@ function mapApiToItem(raw: ZodiacSignResponse): ZodiacSignItem {
     logoUrl: String(raw.logoUrl ?? ''),
     startingName: String(raw.startingName ?? ''),
     daysRange: String(raw.daysRange ?? ''),
+    element: String(raw.element ?? ''),
     status: statusVal === 'ACTIVE' ? 'active' : statusVal === 'DELETED' ? 'deleted' : 'inactive',
     locales: mapApiLocales(raw.locales),
   };
@@ -166,6 +200,7 @@ export default function ZodiacSignPage() {
     logoUrl: '',
     startingName: '',
     daysRange: '',
+    element: 'FIRE',
   });
   const [logoImageBase64, setLogoImageBase64] = useState<string | null>(null);
   const [logoPreviewDataUrl, setLogoPreviewDataUrl] = useState<string | null>(null);
@@ -180,10 +215,11 @@ export default function ZodiacSignPage() {
   const [localeOnlyMode, setLocaleOnlyMode] = useState(false);
   const [zodiacLocalesApi, setZodiacLocalesApi] = useState<ZodiacSignLocaleResponse[]>([]);
   const [editingZodiacLocaleId, setEditingZodiacLocaleId] = useState<string | null>(null);
-  const [localeForm, setLocaleForm] = useState<{ language: string; name: string; startingName: string }>({
+  const [localeForm, setLocaleForm] = useState<{ language: string; name: string; startingName: string; element: string }>({
     language: 'EN',
     name: '',
     startingName: '',
+    element: '',
   });
   const [localeLanguageOptions, setLocaleLanguageOptions] = useState<ZodiacLangSelectOption[]>([]);
   const [localeLanguagesLoading, setLocaleLanguagesLoading] = useState(false);
@@ -254,11 +290,17 @@ export default function ZodiacSignPage() {
         language: code,
         name: existing.name ?? '',
         startingName: existing.startingName ?? '',
+        element: existing.element ?? '',
       });
     } else {
       const defaults = defaultLocaleFields(code, formData.zodiacSign);
       setEditingZodiacLocaleId(null);
-      setLocaleForm({ language: code, name: defaults.name, startingName: defaults.startingName });
+      setLocaleForm({
+        language: code,
+        name: defaults.name,
+        startingName: defaults.startingName,
+        element: defaults.element,
+      });
     }
   };
 
@@ -300,6 +342,7 @@ export default function ZodiacSignPage() {
         language: normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase(),
         name: localeForm.name.trim(),
         startingName: localeForm.startingName.trim() || undefined,
+        element: localeForm.element.trim() || undefined,
       });
       const list = await refreshZodiacLocales();
       await fetchItems();
@@ -315,6 +358,7 @@ export default function ZodiacSignPage() {
           language: nextMissing.value,
           name: defaults.name,
           startingName: defaults.startingName,
+          element: defaults.element,
         });
       } else {
         const match =
@@ -326,6 +370,7 @@ export default function ZodiacSignPage() {
             language: String(match.language),
             name: match.name ?? '',
             startingName: match.startingName ?? '',
+            element: match.element ?? '',
           });
         }
       }
@@ -347,6 +392,7 @@ export default function ZodiacSignPage() {
         language: normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase(),
         name: localeForm.name.trim(),
         startingName: localeForm.startingName.trim() || undefined,
+        element: localeForm.element.trim() || undefined,
       });
       await refreshZodiacLocales();
       await fetchItems();
@@ -381,10 +427,11 @@ export default function ZodiacSignPage() {
           language: String(first.language),
           name: first.name ?? '',
           startingName: first.startingName ?? '',
+          element: first.element ?? '',
         });
       } else {
         setEditingZodiacLocaleId(null);
-        setLocaleForm({ language: localeLanguageOptions[0]?.value ?? 'EN', name: '', startingName: '' });
+        setLocaleForm({ language: localeLanguageOptions[0]?.value ?? 'EN', name: '', startingName: '', element: '' });
       }
       await Swal.fire({ title: 'Removed', text: 'Translation removed.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
@@ -434,6 +481,7 @@ export default function ZodiacSignPage() {
               language: firstMissing.value,
               name: defaults.name,
               startingName: defaults.startingName,
+              element: defaults.element,
             };
           }
         }
@@ -444,7 +492,17 @@ export default function ZodiacSignPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === 'zodiacSign') {
+        const sign = value.toUpperCase() as ZodiacSignEnum;
+        next.element = ZODIAC_SIGN_ELEMENT[sign] ?? prev.element;
+        if (!prev.logoUrl?.trim()) {
+          next.logoUrl = `/zodiac/${sign.toLowerCase()}.svg`;
+        }
+      }
+      return next;
+    });
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
@@ -485,6 +543,7 @@ export default function ZodiacSignPage() {
       description: formData.description?.trim() || undefined,
       startingName: formData.startingName?.trim() || undefined,
       daysRange: formData.daysRange?.trim() || undefined,
+      element: formData.element,
     };
     if (logoImageBase64) {
       body.logoImageBase64 = logoImageBase64;
@@ -511,7 +570,15 @@ export default function ZodiacSignPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', zodiacSign: 'ARIES', description: '', logoUrl: '', startingName: '', daysRange: '' });
+    setFormData({
+      name: '',
+      zodiacSign: 'ARIES',
+      description: '',
+      logoUrl: '/zodiac/aries.svg',
+      startingName: '',
+      daysRange: '',
+      element: 'FIRE',
+    });
     setLogoImageBase64(null);
     setLogoPreviewDataUrl(null);
     setErrors({});
@@ -520,7 +587,7 @@ export default function ZodiacSignPage() {
     setLocaleOnlyMode(false);
     setZodiacLocalesApi([]);
     setEditingZodiacLocaleId(null);
-    setLocaleForm({ language: 'EN', name: '', startingName: '' });
+    setLocaleForm({ language: 'EN', name: '', startingName: '', element: '' });
     setLocaleLanguageOptions([]);
     setLocaleLanguagesLoading(false);
     setLocaleSubmitting(false);
@@ -546,6 +613,7 @@ export default function ZodiacSignPage() {
         logoUrl: detail.logoUrl ?? row.logoUrl ?? '',
         startingName: detail.startingName ?? row.startingName ?? '',
         daysRange: detail.daysRange ?? row.daysRange ?? '',
+        element: detail.element ?? (ZODIAC_SIGN_ELEMENT[(detail.zodiacSign || row.zodiacSign || 'ARIES') as ZodiacSignEnum] ?? 'FIRE'),
       });
       setLogoImageBase64(null);
       setLogoPreviewDataUrl(null);
@@ -561,19 +629,30 @@ export default function ZodiacSignPage() {
               language: normalizeLanguageEnumCode(first.language) ?? String(first.language),
               name: first.name ?? '',
               startingName: first.startingName ?? '',
+              element: first.element ?? '',
             });
           } else {
             const sign = (detail.zodiacSign || row.zodiacSign || 'ARIES') as string;
             const defaults = defaultLocaleFields('EN', sign);
             setEditingZodiacLocaleId(null);
-            setLocaleForm({ language: 'EN', name: defaults.name, startingName: defaults.startingName });
+            setLocaleForm({
+              language: 'EN',
+              name: defaults.name,
+              startingName: defaults.startingName,
+              element: defaults.element,
+            });
           }
         } catch {
           setZodiacLocalesApi([]);
           const sign = row.zodiacSign || 'ARIES';
           const defaults = defaultLocaleFields('EN', sign);
           setEditingZodiacLocaleId(null);
-          setLocaleForm({ language: 'EN', name: defaults.name, startingName: defaults.startingName });
+          setLocaleForm({
+            language: 'EN',
+            name: defaults.name,
+            startingName: defaults.startingName,
+            element: defaults.element,
+          });
         }
       }
     } catch (err) {
@@ -732,6 +811,7 @@ export default function ZodiacSignPage() {
                 <th>Description</th>
                 <SortableTh columnKey="startingName">Starting Name</SortableTh>
                 <SortableTh columnKey="daysRange">Days Range</SortableTh>
+                <th>Element</th>
                 <th>Logo</th>
                 <SortableTh columnKey="status">Status</SortableTh>
                 <th>Actions</th>
@@ -740,11 +820,11 @@ export default function ZodiacSignPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
-                  <td colSpan={8} className="empty-state">
+                  <td colSpan={9} className="empty-state">
                     <p>{items.length === 0 ? 'No zodiac signs found' : 'No zodiac signs match your search'}</p>
                   </td>
                 </tr>
@@ -760,6 +840,7 @@ export default function ZodiacSignPage() {
                     <td style={{ maxWidth: 180 }}>{row.description ? (row.description.length > 50 ? row.description.slice(0, 50) + '…' : row.description) : '—'}</td>
                     <td>{row.startingName || '—'}</td>
                     <td>{row.daysRange || '—'}</td>
+                    <td>{row.element || '—'}</td>
                     <td>
                       {row.logoUrl ? (
                         <img
@@ -815,7 +896,7 @@ export default function ZodiacSignPage() {
             {!loading && (
               <tfoot>
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <div className="pagination-container">
                       <div className="pagination-left">
                         <label htmlFor="items-per-page-zs" className="pagination-label">Show:</label>
@@ -940,6 +1021,17 @@ export default function ZodiacSignPage() {
                             onChange={(e) => setLocaleForm((p) => ({ ...p, startingName: e.target.value }))}
                             className="form-input"
                             placeholder="Optional"
+                            disabled={localeSubmitting}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                          <label className="form-label">Element (localized)</label>
+                          <input
+                            type="text"
+                            value={localeForm.element}
+                            onChange={(e) => setLocaleForm((p) => ({ ...p, element: e.target.value }))}
+                            className="form-input"
+                            placeholder="e.g. Fire / अग्नि"
                             disabled={localeSubmitting}
                           />
                         </div>
@@ -1069,6 +1161,14 @@ export default function ZodiacSignPage() {
                   <div className="form-group">
                     <label htmlFor="startingName" className="form-label">Starting Name</label>
                     <input type="text" id="startingName" name="startingName" value={formData.startingName ?? ''} onChange={handleInputChange} className="form-input" placeholder="Optional" />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="element" className="form-label">Element</label>
+                    <select id="element" name="element" value={formData.element ?? 'FIRE'} onChange={handleInputChange} className="form-input">
+                      {ZODIAC_ELEMENT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group">
                     <label htmlFor="daysRange" className="form-label">Days Range</label>

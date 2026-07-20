@@ -1,9 +1,10 @@
+import { getToken } from 'next-auth/jwt';
 import { API_BASE, DEFAULT_API_BASE, backendUrl } from '@/app/lib/api-base';
 import { getServerXsrfToken } from '@/app/lib/get-xsrf';
+import { authOptions } from '@/lib/auth';
 
 export { API_BASE, DEFAULT_API_BASE, backendUrl };
 
-const AUTH_COOKIE = 'naad_auth';
 const XSRF_COOKIE = 'XSRF-TOKEN';
 
 function readCookieRawValue(raw: string): string {
@@ -24,7 +25,7 @@ function getCookieFromHeader(cookieHeader: string | null, name: string): string 
   return readCookieRawValue(match[1]);
 }
 
-/** Strip app session cookies before forwarding to backend (use Authorization Bearer instead). */
+/** Strip NextAuth + legacy session cookies before forwarding to backend. */
 function sanitizeForwardCookie(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;
   const kept = cookieHeader
@@ -33,12 +34,16 @@ function sanitizeForwardCookie(cookieHeader: string | null): string | null {
     .filter(Boolean)
     .filter((part) => {
       const name = part.split('=')[0]?.trim().toLowerCase() ?? '';
-      return name !== AUTH_COOKIE.toLowerCase() && name !== 'naad_refresh';
+      return (
+        name !== 'naad_auth' &&
+        name !== 'naad_refresh' &&
+        !name.startsWith('next-auth.session-token') &&
+        !name.startsWith('__secure-next-auth.session-token')
+      );
     });
   return kept.length > 0 ? kept.join('; ') : null;
 }
 
-/** Get XSRF cookie value; try decode so = and + are correct when browser sends encoded. */
 function getXsrfCookieRaw(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;
   const match = cookieHeader.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/i);
@@ -52,10 +57,29 @@ function getXsrfCookieRaw(cookieHeader: string | null): string | null {
   }
 }
 
-/** Build headers for backend request: Authorization Bearer, Cookie, X-XSRF-TOKEN (required by many backends to avoid 403). */
+/** Resolve Bearer access token from Authorization header or NextAuth JWT session cookie. */
+export async function resolveAccessTokenFromRequest(request: Request): Promise<string | null> {
+  const authHeader = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim();
+  if (authHeader) return authHeader;
+
+  const secret = authOptions.secret;
+  if (!secret) return null;
+  try {
+    const token = await getToken({
+      req: request as Parameters<typeof getToken>[0]['req'],
+      secret,
+    });
+    const access = (token as { access_token?: string } | null)?.access_token;
+    return access?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Build headers for backend request: Authorization Bearer, Cookie, X-XSRF-TOKEN. */
 export function backendHeaders(
   request: Request,
-  options?: { includeJsonContentType?: boolean }
+  options?: { includeJsonContentType?: boolean; accessToken?: string | null }
 ): Record<string, string> {
   const headers: Record<string, string> = {
     accept: '*/*',
@@ -65,13 +89,12 @@ export function backendHeaders(
   }
   const cookie = request.headers.get('cookie');
   const authHeader = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim();
-  const accessToken = authHeader || getCookieFromHeader(cookie, AUTH_COOKIE);
+  const accessToken = options?.accessToken ?? authHeader ?? getCookieFromHeader(cookie, 'naad_auth');
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
   const forwardCookie = sanitizeForwardCookie(cookie);
   if (forwardCookie) headers['Cookie'] = forwardCookie;
-  // XSRF: gateway expects X-XSRF-TOKEN header. Use NEXTAUTH_XSRF_TOKEN or NEXT_AUTH_XSRF_TOKEN from env.
   const serverXsrf = getServerXsrfToken();
   const xsrfHeader = request.headers.get('X-XSRF-TOKEN')?.trim();
   const xsrfFromCookie = getXsrfCookieRaw(cookie) ?? getCookieFromHeader(cookie, XSRF_COOKIE);
@@ -86,4 +109,13 @@ export function backendHeaders(
     headers['Accept-Language'] = acceptLanguage;
   }
   return headers;
+}
+
+/** Async variant that reads access_token from NextAuth session JWT when no Bearer is sent. */
+export async function backendHeadersFromSession(
+  request: Request,
+  options?: { includeJsonContentType?: boolean }
+): Promise<Record<string, string>> {
+  const accessToken = await resolveAccessTokenFromRequest(request);
+  return backendHeaders(request, { ...options, accessToken });
 }

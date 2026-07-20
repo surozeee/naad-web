@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { fetchWithAuth } from '@/app/lib/auth-fetch';
 import { resolveLanguageDisplayName } from '@/app/lib/language-i18n';
 import {
   DEFAULT_UI_LANGUAGE,
@@ -53,6 +52,20 @@ function withLabels(
   }));
 }
 
+function mapLanguageRows(raw: unknown[]): Array<{ code: string; name: string; nativeName: string }> {
+  const mapped: Array<{ code: string; name: string; nativeName: string }> = [];
+  const seen = new Set<string>();
+  for (const item of raw as Array<Record<string, unknown>>) {
+    const code = languageRowToUiCode(item);
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
+    const name = String(item.name ?? '').trim() || code.toUpperCase();
+    const nativeName = String(item.nativeName ?? item.native_name ?? '').trim() || name;
+    mapped.push({ code, name, nativeName });
+  }
+  return mapped;
+}
+
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState(DEFAULT_UI_LANGUAGE);
   const [rawLanguages, setRawLanguages] = useState<Array<{ code: string; name: string; nativeName: string }>>(
@@ -66,41 +79,42 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = stored;
     setReady(true);
 
-    // ignoreAuthFailure: never force logout/redirect from the language bootstrap call
-    fetchWithAuth('/api/master/language/list-active', {
-      method: 'GET',
-      ignoreAuthFailure: true,
-    })
-      .then(async (res) => {
-        if (!res.ok) return;
-        const json = (await res.json().catch(() => ({}))) as { data?: unknown };
+    const loadLanguages = async () => {
+      try {
+        const publicRes = await fetch('/api/public/language/list-active', {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Accept-Language': stored,
+          },
+          cache: 'no-store',
+        });
+        if (!publicRes.ok) return;
+        const json = (await publicRes.json().catch(() => ({}))) as { data?: unknown };
         const raw = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
-        const mapped: Array<{ code: string; name: string; nativeName: string }> = [];
-        const seen = new Set<string>();
-        for (const item of raw as Array<Record<string, unknown>>) {
-          const code = languageRowToUiCode(item);
-          if (!code || seen.has(code)) continue;
-          seen.add(code);
-          const name = String(item.name ?? '').trim() || code.toUpperCase();
-          const nativeName = String(item.nativeName ?? item.native_name ?? '').trim() || name;
-          mapped.push({ code, name, nativeName });
-        }
+        const mapped = mapLanguageRows(raw as unknown[]);
         if (!mapped.length) return;
         setRawLanguages(mapped);
-        if (!seen.has(stored)) {
+        const codes = new Set(mapped.map((m) => m.code));
+        if (!codes.has(stored)) {
           const next = mapped.find((l) => l.code === 'en')?.code ?? mapped[0].code;
           setLanguageState(next);
           setStoredUiLanguage(next);
         }
-      })
-      .catch(() => {
+      } catch {
         /* keep fallbacks */
-      });
+      }
+    };
+
+    void loadLanguages();
   }, []);
 
   const setLanguage = useCallback((code: string) => {
     const next = setStoredUiLanguage(code);
     setLanguageState(next);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('naad:language-change', { detail: { language: next } }));
+    }
   }, []);
 
   const languages = useMemo(

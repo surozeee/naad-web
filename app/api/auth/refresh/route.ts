@@ -1,113 +1,163 @@
 import { NextResponse } from 'next/server';
-import { API_BASE, backendFetch, getBackendNetworkErrorMessage, isBackendNetworkError } from '@/app/lib/api-base';
-import { getServerXsrfToken } from '@/app/lib/get-xsrf';
+import { getToken } from 'next-auth/jwt';
+import { jwtSubFromAccessToken, sessionUserFromParsedTokens } from '@/lib/auth-tokens';
+import { buildClearSessionCookieHeaders } from '@/lib/clear-session-cookies';
+import { createSessionCookieHeaders } from '@/lib/set-session';
+import { authOptions } from '@/lib/auth';
+import { refreshTokensWithBackend } from '@/lib/server-refresh-token';
 
-const REFRESH_URL = `${API_BASE}/api/v2/public/user/refresh/token`;
-
-const AUTH_COOKIE = 'naad_auth';
-const REFRESH_COOKIE = 'naad_refresh';
-const COOKIE_OPTIONS = {
-  path: '/',
-  maxAge: 60 * 60 * 24 * 10,
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-};
-const CLEAR_COOKIE = { path: '/', maxAge: 0 };
-
-function clearAuthCookies(response: NextResponse) {
-  response.cookies.set(AUTH_COOKIE, '', CLEAR_COOKIE);
-  response.cookies.set(REFRESH_COOKIE, '', CLEAR_COOKIE);
+export interface RefreshBody {
+  refreshToken: string;
+  id?: string;
+  email?: string;
+  name?: string | null;
 }
 
-/** Refresh access token. On error, clear cookies and return 401 so client redirects to login. */
+function refreshFailureResponse(status: number, message: string) {
+  const response = NextResponse.json({ message }, { status });
+  // Any refresh failure → clear session cookies immediately (no client TTL guess).
+  buildClearSessionCookieHeaders().forEach((cookie) => {
+    response.headers.append('Set-Cookie', cookie);
+  });
+  return response;
+}
+
 export async function POST(request: Request) {
   try {
-    let refreshToken: string | null = null;
-    const contentType = request.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      const body = (await request.json().catch(() => ({}))) as { refreshToken?: string };
-      refreshToken = body?.refreshToken?.trim() || null;
-    }
+    const body = (await request.json()) as RefreshBody;
+    const refreshToken = body?.refreshToken;
+
     if (!refreshToken) {
-      const cookieHeader = request.headers.get('cookie') || '';
-      const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + REFRESH_COOKIE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
-      refreshToken = match ? decodeURIComponent(match[1].trim()) : null;
-    }
-    if (!refreshToken) {
-      const res = NextResponse.json({ message: 'Refresh token required' }, { status: 401 });
-      clearAuthCookies(res);
-      return res;
+      return refreshFailureResponse(400, 'refreshToken is required');
     }
 
-    const headers: Record<string, string> = {
-      accept: '*/*',
-      'Content-Type': 'application/json',
-    };
-    const xsrfFromRequest = request.headers.get('X-XSRF-TOKEN')?.trim();
-    const xsrf = xsrfFromRequest || getServerXsrfToken() || undefined;
-    if (xsrf) {
-      headers['X-XSRF-TOKEN'] = xsrf;
-      headers['Cookie'] = `XSRF-TOKEN=${xsrf}`;
-    }
-
-    const res = await backendFetch(REFRESH_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    const data = (await res.json().catch(() => ({}))) as {
-      status?: string;
-      message?: string;
-      data?: {
-        accessToken?: string;
-        access_token?: string;
-        refreshToken?: string;
-        refresh_token?: string;
-        expiresIn?: number;
-      };
-      access_token?: string;
-      refresh_token?: string;
-    };
-
-    if (!res.ok || data?.status === 'FAILED') {
-      const errRes = NextResponse.json(
-        { message: data?.message ?? 'Session expired. Please sign in again.' },
-        { status: 401 }
-      );
-      clearAuthCookies(errRes);
-      return errRes;
-    }
-
-    const access_token =
-      data.data?.accessToken ?? data.data?.access_token ?? data.access_token ?? '';
-    const new_refresh =
-      data.data?.refreshToken ?? data.data?.refresh_token ?? data.refresh_token ?? refreshToken;
-    const expires_in = data.data?.expiresIn;
-
-    if (!access_token) {
-      const errRes = NextResponse.json(
-        { message: 'Invalid refresh response' },
-        { status: 502 }
-      );
-      clearAuthCookies(errRes);
-      return errRes;
+    const parsed = await refreshTokensWithBackend(refreshToken);
+    if (!parsed) {
+      return refreshFailureResponse(401, 'Refresh failed');
     }
 
     const response = NextResponse.json({
-      access_token,
-      refresh_token: new_refresh,
-      ...(typeof expires_in === 'number' && expires_in > 0 ? { expires_in } : {}),
+      access_token: parsed.access_token,
+      refresh_token: parsed.refresh_token,
+      expires_in: parsed.accessExpiresIn,
+      refresh_expires_in: parsed.refreshExpiresIn,
     });
-    response.cookies.set(AUTH_COOKIE, access_token, COOKIE_OPTIONS);
-    response.cookies.set(REFRESH_COOKIE, new_refresh, COOKIE_OPTIONS);
+
+    let priorSub: string | null = null;
+    let priorEmail = '';
+    let priorName: string | null | undefined;
+    let priorUserType: string | null | undefined;
+    let priorRoleType: string | null | undefined;
+    let priorRole: string | null | undefined;
+    let priorRoles: string[] | undefined;
+    let priorPermissions: string[] | undefined;
+    let priorCompanyId: string | null | undefined;
+    let priorBranchId: string | null | undefined;
+    let priorCompanyName: string | null | undefined;
+    let priorBranchName: string | null | undefined;
+    let priorEmployeeId: string | null | undefined;
+    const secret = authOptions.secret;
+    if (secret) {
+      try {
+        const existing = await getToken({
+          req: request as Parameters<typeof getToken>[0]['req'],
+          secret,
+        });
+        if (existing) {
+          if (typeof existing.sub === 'string' && existing.sub.trim() !== '') {
+            priorSub = existing.sub.trim();
+          } else if (
+            typeof (existing as { id?: unknown }).id === 'string' &&
+            String((existing as { id: string }).id).trim() !== ''
+          ) {
+            priorSub = String((existing as { id: string }).id).trim();
+          }
+          priorEmail = typeof existing.email === 'string' ? existing.email.trim() : '';
+          priorName = typeof existing.name === 'string' ? existing.name : undefined;
+          priorUserType =
+            typeof (existing as { userType?: unknown }).userType === 'string'
+              ? String((existing as { userType: string }).userType)
+              : undefined;
+          priorRoleType =
+            typeof (existing as { roleType?: unknown }).roleType === 'string'
+              ? String((existing as { roleType: string }).roleType)
+              : undefined;
+          priorRole =
+            typeof (existing as { role?: unknown }).role === 'string'
+              ? String((existing as { role: string }).role)
+              : undefined;
+          priorRoles = Array.isArray((existing as { roles?: unknown }).roles)
+            ? ((existing as { roles: string[] }).roles)
+            : undefined;
+          priorPermissions = Array.isArray((existing as { permissions?: unknown }).permissions)
+            ? ((existing as { permissions: string[] }).permissions)
+            : undefined;
+          priorCompanyId =
+            typeof (existing as { companyId?: unknown }).companyId === 'string'
+              ? String((existing as { companyId: string }).companyId)
+              : undefined;
+          priorBranchId =
+            typeof (existing as { branchId?: unknown }).branchId === 'string'
+              ? String((existing as { branchId: string }).branchId)
+              : undefined;
+          priorCompanyName =
+            typeof (existing as { companyName?: unknown }).companyName === 'string'
+              ? String((existing as { companyName: string }).companyName)
+              : undefined;
+          priorBranchName =
+            typeof (existing as { branchName?: unknown }).branchName === 'string'
+              ? String((existing as { branchName: string }).branchName)
+              : undefined;
+          priorEmployeeId =
+            typeof (existing as { employeeId?: unknown }).employeeId === 'string'
+              ? String((existing as { employeeId: string }).employeeId)
+              : undefined;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const bodyId = body.id != null && String(body.id).trim() !== '' ? String(body.id).trim() : '';
+    const bodyEmail = body.email != null && String(body.email).trim() !== '' ? String(body.email).trim() : '';
+    const sub = jwtSubFromAccessToken(parsed.access_token);
+    const id = bodyId || bodyEmail || priorSub || sub;
+    const email = bodyEmail || bodyId || priorEmail || sub || id;
+    const name = body.name ?? priorName;
+
+    if (id) {
+      try {
+        const user = sessionUserFromParsedTokens(parsed, {
+          id,
+          email: email || id,
+          name: name ?? undefined,
+          userType: priorUserType ?? priorRoleType ?? null,
+          roleType: priorRoleType ?? null,
+          role: priorRole ?? null,
+          roles: priorRoles,
+          permissions: priorPermissions,
+          companyId: priorCompanyId ?? null,
+          branchId: priorBranchId ?? null,
+          companyName: priorCompanyName ?? null,
+          branchName: priorBranchName ?? null,
+          employeeId: priorEmployeeId ?? null,
+        });
+        const cookieHeaders = await createSessionCookieHeaders(user);
+        cookieHeaders.forEach((cookie) => {
+          response.headers.append('Set-Cookie', cookie);
+        });
+      } catch (e) {
+        console.error('[Auth] Refresh set-session error:', e);
+      }
+    } else {
+      console.error(
+        '[Auth] Refresh succeeded but could not set session cookie: missing user id/email and no prior session.'
+      );
+    }
+
     return response;
   } catch (error) {
-    console.error('[Auth] Refresh error:', error);
-    const status = isBackendNetworkError(error) ? 503 : 500;
-    return NextResponse.json(
-      { message: isBackendNetworkError(error) ? getBackendNetworkErrorMessage(error) : 'Refresh failed' },
-      { status }
-    );
+    console.error('[Auth] Refresh API error:', error);
+    return refreshFailureResponse(500, 'Refresh failed');
   }
 }

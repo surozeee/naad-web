@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backendHeaders, backendUrl } from '@/app/lib/backend-api';
+import { backendHeadersFromSession, backendUrl } from '@/app/lib/backend-api';
 
 /** Proxy all /api/communication/* requests to backend /api/v2/communication/*. Forwards method, body, and headers. */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
@@ -26,7 +26,7 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     }
     const backendPath = `/communication/${pathSegments.join('/')}`;
     const url = backendUrl(backendPath);
-    const forwardHeaders = backendHeaders(request);
+    const forwardHeaders = await backendHeadersFromSession(request);
     ['id', 'settingId', 'settingCategoryId', 'supportEmailId', 'messageId', 'detailId', 'status', 'caseId', 'slug', 'parentId', 'faqType'].forEach((h) => {
       const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());
       if (v) forwardHeaders[h] = v;

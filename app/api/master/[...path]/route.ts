@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backendHeaders, backendUrl } from '@/app/lib/backend-api';
+import { backendHeadersFromSession, backendUrl } from '@/app/lib/backend-api';
 
 /** Proxy all /api/master/* requests to backend /api/v2/master/*. Forwards method, body, and headers (id, status, etc.). */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
@@ -26,7 +26,7 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     }
     const backendPath = `/master/${pathSegments.join('/')}`;
     const url = backendUrl(backendPath);
-    const forwardHeaders = backendHeaders(request);
+    const forwardHeaders = await backendHeadersFromSession(request);
     ['id', 'status', 'districtId'].forEach((h) => {
       const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());
       if (v) forwardHeaders[h] = v;

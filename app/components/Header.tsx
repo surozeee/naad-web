@@ -152,9 +152,9 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
               aria-label="Toggle theme"
-              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              title="Cycle Cosmic / Celestial / Divine"
             >
-              {theme === 'light' ? (
+              {theme === 'celestial' ? (
                 <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>

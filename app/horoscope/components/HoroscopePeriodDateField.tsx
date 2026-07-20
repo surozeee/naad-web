@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NepaliDatepicker, ensureOfficialLibrary } from '@/app/components/ui/nepali-datepicker';
 import { nepaliCalendarApi } from '@/app/lib/master.service';
+import { publicNepaliCalendarApi } from '@/app/lib/public-horoscope';
 import type { HoroscopeTypeEnum } from '@/app/lib/crm.types';
 import type { NepaliCalendarResponse } from '@/app/lib/master.types';
 import {
@@ -38,6 +39,8 @@ interface HoroscopePeriodDateFieldProps {
    * Daily: Date · Weekly: Year+Month+Week · Monthly: Year+Month · Yearly: Year
    */
   inline?: boolean;
+  /** Use public (unauthenticated) calendar API — required on marketing /horoscope. */
+  usePublicApis?: boolean;
 }
 
 const selectClass = 'form-input text-sm py-1.5 h-9';
@@ -58,6 +61,7 @@ export function HoroscopePeriodDateField({
   className = '',
   compact = false,
   inline = false,
+  usePublicApis = false,
 }: HoroscopePeriodDateFieldProps) {
   const { language } = useLocale();
   const uiCode = normalizeUiLanguageCode(language);
@@ -81,8 +85,10 @@ export function HoroscopePeriodDateField({
 
   useEffect(() => {
     let cancelled = false;
-    nepaliCalendarApi
-      .listActive()
+    const loader = usePublicApis
+      ? publicNepaliCalendarApi.listActive()
+      : nepaliCalendarApi.listActive();
+    loader
       .then((res) => {
         if (cancelled) return;
         const list = (res.data ?? []) as NepaliCalendarResponse[];
@@ -94,7 +100,7 @@ export function HoroscopePeriodDateField({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [usePublicApis]);
 
   const calendarByYear = useMemo(() => {
     const map: Record<number, NepaliCalendarResponse> = {};
