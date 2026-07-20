@@ -33,3 +33,23 @@ The app sends the XSRF token as the **`X-XSRF-TOKEN`** header on every API reque
 3. **Restart the server** (`npm run dev` or `npm run start`).
 
 If you still get 403, your gateway may use a different token — get the correct encrypted value from your backend team and set one of the variables above to that value.
+
+## Google Maps (birth chart place picker)
+
+Used on `/astrology/birth-chart` for place search, map click, lat/lng, and timezone.
+
+Enable in Google Cloud Console:
+
+1. **Maps JavaScript API**
+2. **Places API**
+3. **Time Zone API**
+
+```env
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-browser-key
+# Optional server-only key for Time Zone API (falls back to the public key)
+GOOGLE_MAPS_API_KEY=your-server-key
+```
+
+Restrict the browser key by HTTP referrer (`localhost:4000/*`, your production domain).
+Restart `npm run dev` after changing env.
+

@@ -25,6 +25,7 @@
     "sweetalert2": "^11.26.21"
   },
   "devDependencies": {
+    "@types/google.maps": "^3.65.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

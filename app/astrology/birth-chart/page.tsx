@@ -2,6 +2,9 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import BirthPlaceMapPicker, {
+  type BirthPlaceSelection,
+} from '../../components/kundali/BirthPlaceMapPicker';
 import KundaliChartView from '../../components/kundali/KundaliChartView';
 import { kundaliApi } from '@/app/lib/kundali.service';
 import type {
@@ -12,21 +15,46 @@ import type {
 } from '@/app/lib/kundali.types';
 import { getStoredUiLanguage } from '@/app/lib/ui-language';
 
-const PLACE_PRESETS: { label: string; placeName: string; latitude: number; longitude: number; timezone: string }[] = [
-  { label: 'Kathmandu', placeName: 'Kathmandu, Nepal', latitude: 27.7172, longitude: 85.324, timezone: 'Asia/Kathmandu' },
-  { label: 'Pokhara', placeName: 'Pokhara, Nepal', latitude: 28.2096, longitude: 83.9856, timezone: 'Asia/Kathmandu' },
-  { label: 'Delhi', placeName: 'New Delhi, India', latitude: 28.6139, longitude: 77.209, timezone: 'Asia/Kolkata' },
-  { label: 'Mumbai', placeName: 'Mumbai, India', latitude: 19.076, longitude: 72.8777, timezone: 'Asia/Kolkata' },
+const PLACE_PRESETS: BirthPlaceSelection[] = [
+  {
+    placeName: 'Kathmandu, Nepal',
+    latitude: 27.7172,
+    longitude: 85.324,
+    timezone: 'Asia/Kathmandu',
+    countryCode: 'NP',
+    timezoneSource: 'country',
+  },
+  {
+    placeName: 'Pokhara, Nepal',
+    latitude: 28.2096,
+    longitude: 83.9856,
+    timezone: 'Asia/Kathmandu',
+    countryCode: 'NP',
+    timezoneSource: 'country',
+  },
+  {
+    placeName: 'New Delhi, India',
+    latitude: 28.6139,
+    longitude: 77.209,
+    timezone: 'Asia/Kolkata',
+    countryCode: 'IN',
+    timezoneSource: 'country',
+  },
+  {
+    placeName: 'Mumbai, India',
+    latitude: 19.076,
+    longitude: 72.8777,
+    timezone: 'Asia/Kolkata',
+    countryCode: 'IN',
+    timezoneSource: 'country',
+  },
 ];
 
 export default function BirthChartPage() {
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('1990-05-15');
   const [birthTime, setBirthTime] = useState('10:30');
-  const [placeName, setPlaceName] = useState(PLACE_PRESETS[0].placeName);
-  const [latitude, setLatitude] = useState(String(PLACE_PRESETS[0].latitude));
-  const [longitude, setLongitude] = useState(String(PLACE_PRESETS[0].longitude));
-  const [timezone, setTimezone] = useState(PLACE_PRESETS[0].timezone);
+  const [place, setPlace] = useState<BirthPlaceSelection>(PLACE_PRESETS[0]);
   const [ayanamsa, setAyanamsa] = useState<AyanamsaType>('LAHIRI');
   const [houseSystem, setHouseSystem] = useState<HouseSystemType>('WHOLE_SIGN');
   const [chartStyle, setChartStyle] = useState<ChartStyleType>('NORTH_INDIAN');
@@ -36,32 +64,26 @@ export default function BirthChartPage() {
 
   const language = useMemo(() => getStoredUiLanguage(), []);
 
-  function applyPreset(preset: (typeof PLACE_PRESETS)[number]) {
-    setPlaceName(preset.placeName);
-    setLatitude(String(preset.latitude));
-    setLongitude(String(preset.longitude));
-    setTimezone(preset.timezone);
-  }
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const lat = Number(latitude);
-      const lon = Number(longitude);
-      if (!birthDate || Number.isNaN(lat) || Number.isNaN(lon)) {
-        throw new Error('Date, latitude, and longitude are required');
+      if (!birthDate || Number.isNaN(place.latitude) || Number.isNaN(place.longitude)) {
+        throw new Error('Date and a map place selection are required');
+      }
+      if (!place.timezone.trim()) {
+        throw new Error('Timezone could not be resolved for this place');
       }
       const time = birthTime.length === 5 ? `${birthTime}:00` : birthTime;
       const result = await kundaliApi.generate({
         name: name.trim() || undefined,
         birthDate,
         birthTime: time,
-        timezone,
-        latitude: lat,
-        longitude: lon,
-        placeName: placeName.trim() || undefined,
+        timezone: place.timezone,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        placeName: place.placeName.trim() || undefined,
         ayanamsa,
         houseSystem,
         chartStyle,
@@ -82,7 +104,8 @@ export default function BirthChartPage() {
         <div className="mb-2">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Birth Chart (Kundali)</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Swiss Ephemeris planetary positions with a custom SVG North / South Indian chart — no paid chart API.
+            Select birth place on Google Maps — latitude, longitude, and timezone are filled from the
+            location.
           </p>
         </div>
 
@@ -94,7 +117,9 @@ export default function BirthChartPage() {
             <h2 className="text-xl font-bold text-gray-800 dark:text-white">Birth details</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name (optional)
+              </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -105,7 +130,9 @@ export default function BirthChartPage() {
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date of birth</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Date of birth
+                </label>
                 <input
                   type="date"
                   required
@@ -115,7 +142,9 @@ export default function BirthChartPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time of birth</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Time of birth
+                </label>
                 <input
                   type="time"
                   required
@@ -127,62 +156,43 @@ export default function BirthChartPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Place presets</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Quick places
+              </label>
               <div className="flex flex-wrap gap-2">
                 {PLACE_PRESETS.map((p) => (
                   <button
-                    key={p.label}
+                    key={p.placeName}
                     type="button"
-                    onClick={() => applyPreset(p)}
+                    onClick={() => setPlace(p)}
                     className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
-                    {p.label}
+                    {p.placeName.split(',')[0]}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Place of birth</label>
-              <input
-                value={placeName}
-                onChange={(e) => setPlaceName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                placeholder="City, Country"
-              />
-            </div>
+            <BirthPlaceMapPicker value={place} birthDate={birthDate} onChange={setPlace} />
+
+            {place.timezoneSource && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Timezone{' '}
+                <span className="font-medium text-gray-700 dark:text-gray-300">{place.timezone}</span>
+                {' · '}
+                {place.timezoneSource === 'google'
+                  ? 'from Google Time Zone API'
+                  : place.timezoneSource === 'country'
+                    ? `from country${place.countryCode ? ` (${place.countryCode})` : ''}`
+                    : 'from browser'}
+              </p>
+            )}
 
             <div className="grid sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude</label>
-                <input
-                  value={latitude}
-                  onChange={(e) => setLatitude(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude</label>
-                <input
-                  value={longitude}
-                  onChange={(e) => setLongitude(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timezone</label>
-                <input
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                  placeholder="Asia/Kathmandu"
-                />
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ayanamsa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Ayanamsa
+                </label>
                 <select
                   value={ayanamsa}
                   onChange={(e) => setAyanamsa(e.target.value as AyanamsaType)}
@@ -195,7 +205,9 @@ export default function BirthChartPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">House system</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  House system
+                </label>
                 <select
                   value={houseSystem}
                   onChange={(e) => setHouseSystem(e.target.value as HouseSystemType)}
@@ -208,7 +220,9 @@ export default function BirthChartPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chart style</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Chart style
+                </label>
                 <select
                   value={chartStyle}
                   onChange={(e) => setChartStyle(e.target.value as ChartStyleType)}
@@ -270,8 +284,8 @@ export default function BirthChartPage() {
 
             {!chart ? (
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-10 text-center text-gray-500 dark:text-gray-400">
-                Enter birth details and generate a kundali. The SVG chart is rendered locally from Swiss Ephemeris
-                positions.
+                Choose a birth place on the map, then generate a kundali. The SVG chart is rendered from
+                Swiss Ephemeris positions.
               </div>
             ) : (
               <>
@@ -285,7 +299,13 @@ export default function BirthChartPage() {
                   <Info label="Sun" value={chart.summary.sunSign} />
                   <Info label="Ayanamsa" value={`${chart.ayanamsaName} ${chart.ayanamsaDegrees.toFixed(4)}°`} />
                   <Info label="Ephemeris" value={chart.ephemerisMode} />
-                  <Info label="Place" value={chart.placeName || `${chart.latitude}, ${chart.longitude}`} />
+                  <Info
+                    label="Place"
+                    value={
+                      chart.placeName ||
+                      `${chart.latitude}, ${chart.longitude}` + (chart.timezone ? ` · ${chart.timezone}` : '')
+                    }
+                  />
                 </div>
 
                 <div className="overflow-x-auto">
