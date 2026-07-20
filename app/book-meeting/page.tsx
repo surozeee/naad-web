@@ -56,6 +56,9 @@ export default function BookMeetingPage() {
                 <Link href="/horoscope">Today&apos;s horoscope →</Link>
               </li>
               <li>
+                <Link href="/astrologers">Browse astrologers →</Link>
+              </li>
+              <li>
                 <Link href="/date-converter">Date converter →</Link>
               </li>
             </ul>

@@ -42,10 +42,10 @@ export default function Navigation() {
             Dates
           </Link>
           <Link
-            href="/book-meeting"
-            className={`naad-nav-link hide-sm${pathname === '/book-meeting' ? ' is-active' : ''}`}
+            href="/astrologers"
+            className={`naad-nav-link hide-sm${pathname === '/astrologers' ? ' is-active' : ''}`}
           >
-            Book meeting
+            Astrologers
           </Link>
           <Link
             href="/about-us"

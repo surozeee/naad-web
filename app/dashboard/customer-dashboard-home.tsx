@@ -94,12 +94,21 @@ export default function CustomerDashboardHome() {
                   </div>
                 </a>
                 <a
-                  href="/music"
-                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 hover:shadow-lg transition-all transform hover:scale-105"
+                  href="/dashboard/rate-astrologer"
+                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border border-indigo-200 dark:border-indigo-800 hover:shadow-lg transition-all transform hover:scale-105"
                 >
-                  <div className="text-4xl mb-2">🎵</div>
+                  <div className="text-4xl mb-2">🔮</div>
                   <div className="text-sm font-semibold text-gray-800 dark:text-white text-center">
-                    Listen Music
+                    Rate astrologer
+                  </div>
+                </a>
+                <a
+                  href="/astrologers"
+                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 border border-violet-200 dark:border-violet-800 hover:shadow-lg transition-all transform hover:scale-105"
+                >
+                  <div className="text-4xl mb-2">👤</div>
+                  <div className="text-sm font-semibold text-gray-800 dark:text-white text-center">
+                    Our astrologers
                   </div>
                 </a>
               </div>

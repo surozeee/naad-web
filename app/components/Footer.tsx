@@ -30,7 +30,7 @@ export default function Footer() {
                 <Link href="/date-converter">Date converter</Link>
               </li>
               <li>
-                <Link href="/book-meeting">Book a meeting</Link>
+                <Link href="/astrologers">Our astrologers</Link>
               </li>
               <li>
                 <Link href="/">Home</Link>

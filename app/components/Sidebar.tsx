@@ -47,6 +47,8 @@ const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
     { label: 'Music Type', href: '/music/music-type' }, { label: 'Music', href: '/music/music' },
     { label: 'Listen', href: '/music/listen' },
   ]},
+  { id: 'astrologers', icon: '🔮', label: 'Astrologers', href: '/astrologers' },
+  { id: 'rate-astrologer', icon: '⭐', label: 'Rate astrologer', href: '/dashboard/rate-astrologer' },
 ];
 
 /** Menus for ASTROLOGER role – Jitsi meetings (create, share, history on one page). */

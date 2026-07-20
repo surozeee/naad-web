@@ -11,6 +11,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
   const isPublicShell =
     pathname === '/horoscope' ||
     pathname === '/date-converter' ||
+    pathname === '/astrologers' ||
     pathname === '/book-meeting' ||
     pathname === '/about-us' ||
     pathname === '/faq' ||

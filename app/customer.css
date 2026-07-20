@@ -1929,3 +1929,288 @@ html.dark .naad-converter-error {
   color: var(--naad-fg);
 }
 
+/* —— Astrologers directory —— */
+.naad-astro-page {
+  padding-top: 0.5rem;
+  padding-bottom: 3rem;
+}
+
+.naad-astro-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.naad-astro-search {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: min(100%, 16rem);
+  max-width: 24rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--naad-line);
+  border-radius: 999px;
+  background: var(--naad-bg-elevated);
+  color: var(--naad-fg-muted);
+}
+
+.naad-astro-search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--naad-fg);
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.naad-astro-book-link {
+  flex-shrink: 0;
+}
+
+.naad-astro-loading,
+.naad-astro-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--naad-fg-muted);
+  text-align: center;
+}
+
+.naad-astro-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .naad-astro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.naad-astro-card {
+  border: 1px solid var(--naad-line);
+  border-radius: 1rem;
+  background: var(--naad-bg-elevated);
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.naad-astro-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.naad-astro-avatar {
+  flex-shrink: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--naad-line);
+  background: var(--naad-bg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.naad-astro-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.naad-astro-avatar-fallback {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--naad-fg-muted);
+}
+
+.naad-astro-avatar-fallback span {
+  position: absolute;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--naad-primary);
+}
+
+.naad-astro-card-head h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--naad-fg);
+}
+
+.naad-astro-rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--naad-fg-muted);
+  font-size: 0.8125rem;
+}
+
+.naad-astro-rating-num {
+  font-weight: 700;
+  color: var(--naad-fg);
+}
+
+.naad-astro-review-count {
+  opacity: 0.85;
+}
+
+.naad-stars {
+  display: inline-flex;
+  gap: 0.1rem;
+  align-items: center;
+}
+
+.naad-star-wrap {
+  position: relative;
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+}
+
+.naad-star-on {
+  color: #f59e0b;
+}
+
+.naad-star-empty {
+  color: var(--naad-line);
+}
+
+.naad-star-half {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.naad-astro-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.naad-astro-card-actions .naad-btn-primary,
+.naad-astro-card-actions .naad-btn-ghost {
+  font-size: 0.875rem;
+  padding: 0.55rem 1rem;
+}
+
+.naad-astro-reviews-heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--naad-fg-muted);
+}
+
+.naad-astro-reviews-loading,
+.naad-astro-reviews-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--naad-fg-muted);
+  font-size: 0.875rem;
+}
+
+.naad-astro-reviews-note {
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
+  color: var(--naad-fg-muted);
+  font-style: italic;
+}
+
+.naad-astro-review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.naad-astro-review-item {
+  border-top: 1px solid var(--naad-line);
+  padding-top: 0.75rem;
+}
+
+.naad-astro-review-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.naad-astro-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.naad-astro-review-head strong {
+  color: var(--naad-fg);
+  font-size: 0.875rem;
+}
+
+.naad-astro-review-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--naad-fg-muted);
+  font-size: 0.75rem;
+}
+
+.naad-astro-review-item p {
+  margin: 0;
+  color: var(--naad-fg-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.naad-astro-rate-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.naad-astro-rate-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.naad-astro-rate-field span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--naad-fg);
+}
+
+.naad-astro-rate-field textarea {
+  width: 100%;
+  min-height: 6rem;
+  border: 1px solid var(--naad-line);
+  background: var(--naad-bg);
+  color: var(--naad-fg);
+  border-radius: 0.45rem;
+  padding: 0.7rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  resize: vertical;
+}
+

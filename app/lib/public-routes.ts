@@ -4,6 +4,7 @@ export const PUBLIC_MARKETING_PATHS = [
   '/',
   '/horoscope',
   '/date-converter',
+  '/astrologers',
   '/book-meeting',
   '/about-us',
   '/faq',

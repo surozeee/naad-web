@@ -11,7 +11,7 @@ const FEATURES: Array<{
   title: string;
   description: string;
   href: string;
-  icon: 'horoscope' | 'date' | 'meeting';
+  icon: 'horoscope' | 'date' | 'astrologer';
   cta: string;
 }> = [
   {
@@ -29,11 +29,11 @@ const FEATURES: Array<{
     cta: 'Convert dates',
   },
   {
-    title: 'Book a meeting',
-    description: 'Schedule a personal session with a trusted Naad astrologer.',
-    href: '/book-meeting',
-    icon: 'meeting',
-    cta: 'Book now',
+    title: 'Our astrologers',
+    description: 'Browse Naad astrologers, customer ratings, and reviews before you book.',
+    href: '/astrologers',
+    icon: 'astrologer',
+    cta: 'View astrologers',
   },
 ];
 
@@ -60,13 +60,19 @@ function FeatureIcon({ type }: { type: (typeof FEATURES)[number]['icon'] }) {
   }
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5" />
       <path
-        d="M8 14a4 4 0 118 0v1.5a2.5 2.5 0 01-2.5 2.5h-3A2.5 2.5 0 018 15.5V14z"
+        d="M5 20c1.5-3 3.8-4.5 7-4.5s5.5 1.5 7 4.5"
         stroke="currentColor"
         strokeWidth="1.5"
+        strokeLinecap="round"
       />
-      <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M4.5 19.5c1.2-2 3.2-3 7.5-3s6.3 1 7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M16 6l2-1.5M18.5 9.5l2 .5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -102,8 +108,8 @@ function HomeContent() {
             <Link href="/horoscope" className="naad-btn-primary">
               Read today&apos;s horoscope
             </Link>
-            <Link href="/book-meeting" className="naad-btn-ghost">
-              Book an astrologer
+            <Link href="/astrologers" className="naad-btn-ghost">
+              View our astrologers
             </Link>
           </div>
         </div>

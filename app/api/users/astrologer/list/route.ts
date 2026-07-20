@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backendHeaders, backendUrl } from '@/app/lib/backend-api';
+import { backendHeadersFromSession, backendUrl } from '@/app/lib/backend-api';
 
 /** Backend: POST /api/v2/user/astrologer/list (AstrologerResourceController) */
 const LIST_PATH = '/user/astrologer/list';
+const LIST_ACTIVE_PATH = '/user/astrologer/list-active';
 
 function paginatePayload(body: unknown) {
   const b = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
@@ -18,11 +19,23 @@ function paginatePayload(body: unknown) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const res = await fetch(backendUrl(LIST_PATH), {
+    const headers = await backendHeadersFromSession(request);
+    const payload = paginatePayload(body);
+
+    // Prefer list-active when present; fall back to full list (admin page).
+    let res = await fetch(backendUrl(LIST_ACTIVE_PATH), {
       method: 'POST',
-      headers: backendHeaders(request),
-      body: JSON.stringify(paginatePayload(body)),
+      headers,
+      body: JSON.stringify(payload),
     });
+    if (res.status === 404 || res.status === 405) {
+      res = await fetch(backendUrl(LIST_PATH), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+    }
+
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (e) {
