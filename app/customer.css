@@ -159,6 +159,24 @@ html.dark:not([data-theme]) {
   --naad-gradient-glow-b: rgba(91, 60, 196, 0.35);
 }
 
+/* Shared marketing content rail — widens on large screens */
+:root {
+  --naad-content-max: 72rem;
+  --naad-page-pad: clamp(1.25rem, 2.5vw, 2.5rem);
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --naad-content-max: 88rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --naad-content-max: 100rem;
+  }
+}
+
 @keyframes naad-fade-up {
   from {
     opacity: 0;
@@ -258,14 +276,15 @@ html.dark:not([data-theme]) {
 }
 
 .naad-nav-inner {
-  max-width: 72rem;
+  max-width: var(--naad-content-max);
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 0 var(--naad-page-pad);
   height: 4.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.25rem;
+  width: 100%;
 }
 
 .naad-nav-brand {
@@ -537,10 +556,10 @@ html.dark .naad-nav-brand span {
 
 .naad-hero-visual {
   position: absolute;
-  right: -6%;
-  top: 12%;
-  width: min(58vw, 36rem);
-  height: min(58vw, 36rem);
+  right: max(0rem, calc((100vw - var(--naad-content-max)) / 2 - 2rem));
+  top: 10%;
+  width: min(52vw, 34rem);
+  height: min(52vw, 34rem);
   z-index: 1;
   opacity: 0.95;
   animation: naad-drift 12s ease-in-out infinite alternate;
@@ -690,9 +709,9 @@ html.dark .naad-nav-brand span {
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 72rem;
+  max-width: var(--naad-content-max);
   margin: 0 auto;
-  padding: 7.5rem 1.25rem 5.5rem;
+  padding: 7.5rem var(--naad-page-pad) 5.5rem;
   animation: naad-fade-up 0.9s ease both;
 }
 
@@ -793,9 +812,9 @@ html.dark .naad-section-ink {
 }
 
 .naad-section-inner {
-  max-width: 72rem;
+  max-width: var(--naad-content-max);
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 0 var(--naad-page-pad);
 }
 
 .naad-section-head {
@@ -971,9 +990,9 @@ html.dark .naad-footer a:hover {
 }
 
 .naad-horoscope-intro {
-  max-width: 72rem;
+  max-width: var(--naad-content-max);
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 0.5rem;
+  padding: 2.5rem var(--naad-page-pad) 0.5rem;
   animation: naad-fade-up 0.7s ease both;
 }
 
@@ -994,7 +1013,7 @@ html.dark .naad-footer a:hover {
 }
 
 .hl-page--public {
-  max-width: 72rem !important;
+  max-width: var(--naad-content-max) !important;
   color: var(--naad-fg) !important;
 }
 
@@ -1254,6 +1273,69 @@ html[data-theme='celestial'] .naad-feature-card:hover {
   .naad-home-steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 2rem;
+  }
+}
+
+/* Large / ultra-wide homepage composition */
+@media (min-width: 1200px) {
+  .naad-hero {
+    min-height: min(100vh, 56rem);
+    align-items: center;
+  }
+
+  .naad-hero-content {
+    padding-top: 8rem;
+    padding-bottom: 6rem;
+    padding-right: min(46%, 30rem);
+  }
+
+  .naad-hero-visual {
+    right: max(1.5rem, calc((100vw - var(--naad-content-max)) / 2));
+    top: 14%;
+    width: min(44vw, 40rem);
+    height: min(44vw, 40rem);
+  }
+
+  .naad-hero-brand {
+    font-size: clamp(4.25rem, 7vw, 7.25rem);
+    max-width: 14ch;
+  }
+
+  .naad-hero-lead {
+    max-width: 34rem;
+    font-size: 1.2rem;
+  }
+
+  .naad-section {
+    padding: 5.75rem 0;
+  }
+
+  .naad-section-head {
+    max-width: 42rem;
+    margin-bottom: 3rem;
+  }
+
+  .naad-nav-links {
+    gap: 0.45rem 1.5rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .naad-hero-content {
+    padding-right: min(48%, 36rem);
+  }
+
+  .naad-hero-visual {
+    width: min(40vw, 44rem);
+    height: min(40vw, 44rem);
+  }
+
+  .naad-hero-brand {
+    font-size: clamp(5rem, 6.5vw, 8rem);
+  }
+
+  .naad-section-head h2 {
+    font-size: clamp(2.25rem, 3vw, 3.15rem);
   }
 }
 
@@ -2019,11 +2101,14 @@ html.dark .naad-converter-error {
     opacity: 0.35;
     right: -20%;
     top: 0;
+    width: min(70vw, 22rem);
+    height: min(70vw, 22rem);
   }
 
   .naad-hero-content {
     padding-top: 6.5rem;
     padding-bottom: 4rem;
+    padding-right: var(--naad-page-pad);
   }
 
   .naad-nav-links .naad-nav-link.hide-sm {

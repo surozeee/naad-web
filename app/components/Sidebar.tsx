@@ -10,7 +10,9 @@ import {
 } from '@/app/lib/auth-storage';
 import { mapToNaadPortalRole, type NaadPortalRole } from '@/app/lib/menu-role';
 import { getProfile } from '@/app/lib/profile.service';
+import { menuApi } from '@/app/lib/user-api.service';
 import type { MenuResponse } from '@/app/lib/user-api.types';
+import { getStoredUiLanguage } from '@/app/lib/ui-language';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -204,6 +206,12 @@ function menuItemsForPortalRole(portalRole: NaadPortalRole): SidebarMenuItem[] {
   return ADMIN_MENU_ITEMS;
 }
 
+function portalRoleToUserType(portalRole: NaadPortalRole): string {
+  if (portalRole === 'customer') return 'CUSTOMER';
+  if (portalRole === 'astrologer') return 'ASTROLOGER';
+  return 'SUPER_ADMIN';
+}
+
 function initialMenuItemsFromStorage(): SidebarMenuItem[] {
   if (typeof window === 'undefined') return ADMIN_MENU_ITEMS;
   const stored = getAuthProfileFromLocalStorage();
@@ -213,24 +221,35 @@ function initialMenuItemsFromStorage(): SidebarMenuItem[] {
   return menuItemsForPortalRole(mapToNaadPortalRole(userType, roleName));
 }
 
+function localizedMenuName(m: MenuResponse): string {
+  const ui = getStoredUiLanguage().toUpperCase();
+  const fromLocale = m.menuLocales?.find((l) => String(l.language).toUpperCase() === ui)?.name;
+  if (fromLocale?.trim()) return fromLocale.trim();
+  // Backend may already have applied Accept-Language onto `name`
+  return getDisplayLabel(m.url || '#', m.name ?? '');
+}
+
 function mapMenuResponseToItem(m: MenuResponse): SidebarMenuItem {
   const href = m.url || '#';
   const submenu = m.subMenu?.length
     ? m.subMenu.map((sub) => {
         const subHref = sub.url || '#';
         return {
-          label: getDisplayLabel(subHref, sub.name),
+          label: localizedMenuName(sub),
           href: subHref,
           submenu: sub.subMenu?.length
-            ? sub.subMenu.map((n) => ({ label: getDisplayLabel(n.url || '#', n.name), href: n.url || '#' }))
+            ? sub.subMenu.map((n) => ({
+                label: localizedMenuName(n),
+                href: n.url || '#',
+              }))
             : undefined,
         };
       })
     : undefined;
   return {
-    id: String(m.id),
+    id: String(m.code ?? m.id ?? href),
     icon: m.icon || '•',
-    label: getDisplayLabel(href, m.name),
+    label: localizedMenuName(m),
     href,
     submenu,
   };
@@ -365,8 +384,9 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
     (async () => {
       try {
         const stored = getAuthProfileFromLocalStorage();
+        let portalRole: NaadPortalRole = 'admin';
         if (stored?.role || stored?.userType) {
-          const portalRole = mapToNaadPortalRole(
+          portalRole = mapToNaadPortalRole(
             stored.userType,
             stored.role ?? stored.roles?.[0] ?? null
           );
@@ -379,13 +399,24 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
         }
         const roleName = (profile?.roleName ?? stored?.role ?? '').trim();
         const userType = profile?.userDetail?.userType ?? stored?.userType ?? '';
-        const portalRole = mapToNaadPortalRole(userType, roleName);
+        portalRole = mapToNaadPortalRole(userType, roleName);
         if (!cancelled) setMenuItems(menuItemsForPortalRole(portalRole));
+
+        try {
+          const apiMenus = await menuApi.getByUserType(portalRoleToUserType(portalRole));
+          if (!cancelled && Array.isArray(apiMenus) && apiMenus.length > 0) {
+            setMenuItems(apiMenus.map(mapMenuResponseToItem));
+          }
+        } catch {
+          /* keep hardcoded fallback for this role */
+        }
       } catch {
         if (!cancelled) setMenuItems(initialMenuItemsFromStorage());
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');

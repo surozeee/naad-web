@@ -196,9 +196,26 @@ export default function ZodiacMatchingPage() {
   }, [localeMode, editingId, refreshLocales]);
 
   const missingLocaleOptions = useMemo(() => {
-    const saved = new Set(locales.map((l) => String(l.language).toUpperCase()));
+    const saved = new Set(
+      locales
+        .map((l) => normalizeLanguageEnumCode(l.language) ?? String(l.language).toUpperCase())
+        .filter(Boolean)
+    );
     return localeLanguageOptions.filter((o) => !saved.has(o.value));
   }, [locales, localeLanguageOptions]);
+
+  // Keep add-form language on an unsaved option when saved list changes
+  useEffect(() => {
+    if (!localeMode || editingLocaleId) return;
+    const current = normalizeLanguageEnumCode(localeForm.language) ?? localeForm.language.toUpperCase();
+    const stillAvailable = missingLocaleOptions.some((o) => o.value === current);
+    if (!stillAvailable) {
+      setLocaleForm((p) => ({
+        ...p,
+        language: missingLocaleOptions[0]?.value ?? '',
+      }));
+    }
+  }, [localeMode, editingLocaleId, missingLocaleOptions, localeForm.language]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -237,7 +254,7 @@ export default function ZodiacMatchingPage() {
     setLocaleMode(true);
     setShowModal(true);
     setEditingLocaleId(null);
-    setLocaleForm({ language: 'NE', summary: '', loveAdvice: '', friendshipAdvice: '', workAdvice: '' });
+    setLocaleForm({ language: '', summary: '', loveAdvice: '', friendshipAdvice: '', workAdvice: '' });
     try {
       const res = await zodiacCompatibilityApi.getById(id);
       const d = (res.data ?? res) as ZodiacCompatibilityDetailResponse;
@@ -253,6 +270,22 @@ export default function ZodiacMatchingPage() {
       });
       const list = await zodiacCompatibilityLocaleApi.getByCompatibilityId(id);
       setLocales(list);
+      const saved = new Set(
+        list
+          .map((l) => normalizeLanguageEnumCode(l.language) ?? String(l.language).toUpperCase())
+          .filter(Boolean)
+      );
+      const firstAvailable =
+        localeLanguageOptions.find((o) => !saved.has(o.value))?.value ??
+        ['NE', 'HI'].find((code) => !saved.has(code)) ??
+        '';
+      setLocaleForm({
+        language: firstAvailable,
+        summary: '',
+        loveAdvice: '',
+        friendshipAdvice: '',
+        workAdvice: '',
+      });
     } catch (err) {
       await Swal.fire('Error', err instanceof Error ? err.message : 'Failed to load locales', 'error');
       setShowModal(false);
@@ -345,8 +378,10 @@ export default function ZodiacMatchingPage() {
       }
       await refreshLocales();
       setEditingLocaleId(null);
+      const nextLang =
+        missingLocaleOptions.find((o) => o.value !== lang)?.value ?? '';
       setLocaleForm({
-        language: missingLocaleOptions[0]?.value ?? 'NE',
+        language: nextLang,
         summary: '',
         loveAdvice: '',
         friendshipAdvice: '',
@@ -570,9 +605,15 @@ export default function ZodiacMatchingPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="modal-overlay" onClick={() => setShowModal(false)} role="presentation">
+          <div
+            className="modal-content bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700"
+            style={{ maxWidth: '48rem', borderRadius: '0.75rem' }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
               <h2 className="text-lg font-bold text-gray-800 dark:text-white">
                 {localeMode
                   ? `Translations · ${pairLabel}`
@@ -718,16 +759,35 @@ export default function ZodiacMatchingPage() {
                     <Select
                       options={
                         editingLocaleId
-                          ? localeLanguageOptions.filter((o) => o.value === localeForm.language)
+                          ? localeLanguageOptions.filter(
+                              (o) =>
+                                o.value ===
+                                (normalizeLanguageEnumCode(localeForm.language) ??
+                                  localeForm.language.toUpperCase())
+                            )
                           : missingLocaleOptions
                       }
-                      isDisabled={Boolean(editingLocaleId) && missingLocaleOptions.length === 0}
+                      isDisabled={
+                        Boolean(editingLocaleId) ||
+                        (!editingLocaleId && missingLocaleOptions.length === 0)
+                      }
+                      placeholder={
+                        missingLocaleOptions.length === 0 && !editingLocaleId
+                          ? 'All languages already saved'
+                          : 'Select language'
+                      }
                       value={
-                        localeLanguageOptions.find((o) => o.value === localeForm.language) ??
-                        missingLocaleOptions.find((o) => o.value === localeForm.language) ??
-                        null
+                        editingLocaleId
+                          ? localeLanguageOptions.find(
+                              (o) =>
+                                o.value ===
+                                (normalizeLanguageEnumCode(localeForm.language) ??
+                                  localeForm.language.toUpperCase())
+                            ) ?? null
+                          : missingLocaleOptions.find((o) => o.value === localeForm.language) ?? null
                       }
                       onChange={(opt) => opt && setLocaleForm((p) => ({ ...p, language: opt.value }))}
+                      noOptionsMessage={() => 'No languages left to add'}
                     />
                   </label>
                   {(

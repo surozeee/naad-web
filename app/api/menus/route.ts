@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backendHeaders, backendUrl } from '@/app/lib/backend-api';
 
-/** GET menu tree - proxy to User-Service MenuController (root-tree). */
+/** GET menu tree - proxy to User-Service MenuController (root-tree or by user-type). */
 export async function GET(request: NextRequest) {
   try {
-    const path = request.nextUrl.searchParams.get('tree') !== null ? '/user/menu/root-tree' : '/user/menu/list';
+    const userType = request.nextUrl.searchParams.get('userType');
+    let path: string;
+    if (userType) {
+      path = '/user/menu/get-by-user-type';
+    } else if (request.nextUrl.searchParams.get('tree') !== null) {
+      path = '/user/menu/root-tree';
+    } else {
+      path = '/user/menu/list';
+    }
     const search = path.includes('list') ? (request.nextUrl?.search?.toString() || '') : '';
     const url = backendUrl(path) + search;
+    const headers = backendHeaders(request);
+    if (userType) {
+      headers['userType'] = userType;
+    }
+    const acceptLanguage = request.headers.get('accept-language');
+    if (acceptLanguage) {
+      headers['Accept-Language'] = acceptLanguage;
+    }
     const res = await fetch(url, {
       method: 'GET',
-      headers: backendHeaders(request),
+      headers,
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });

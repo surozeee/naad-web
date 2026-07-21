@@ -202,12 +202,21 @@ async function getMenuTree(): Promise<MenuResponse[]> {
   return normalizeList<MenuResponse>(json);
 }
 
+async function getMenusByUserType(userType: string): Promise<MenuResponse[]> {
+  const qs = new URLSearchParams({ userType });
+  const res = await fetchWithAuth(`/api/menus?${qs}`, { method: 'GET' });
+  const json = (await res.json().catch(() => ({}))) as GlobalResponse<unknown>;
+  if (!res.ok) throw new Error((json as { message?: string }).message || `HTTP ${res.status}`);
+  return normalizeList<MenuResponse>(json);
+}
+
 export const menuApi = {
   list: (params?: PaginationRequest) =>
     apiRequest<unknown>('POST', 'menus', { body: listBody(params) }).then((r) => normalizeList<MenuResponse>(r)),
   listPaginate: (body: MenuListPaginateRequest) =>
     apiRequest<unknown>('POST', 'menus', { body }).then((r) => normalizeList<MenuResponse>(r)),
   getTree: getMenuTree,
+  getByUserType: getMenusByUserType,
   getById: (id: string) =>
     apiRequest<MenuResponse>('GET', `menus/${encodeURIComponent(id)}`).then((r) => r.data as MenuResponse),
   create: (body: MenuRequest) => apiRequest('POST', 'menus/create', { body }),
