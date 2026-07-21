@@ -842,10 +842,12 @@ html.dark .naad-section-ink {
   color: var(--naad-fg-muted);
 }
 
-.naad-service-row {
-  display: grid;
-  gap: 0;
-  border-top: 1px solid var(--naad-line);
+.naad-service-row > .naad-reveal {
+  display: block;
+}
+
+.naad-service-row > .naad-reveal .naad-service-link {
+  width: 100%;
 }
 
 .naad-service-link {
@@ -1179,8 +1181,9 @@ html.dark .hl-page--public .hl-type-tab.is-active {
   color: var(--naad-accent);
 }
 
-/* —— Homepage feature cards —— */
-.naad-feature-cards {
+/* —— Homepage feature / service cards —— */
+.naad-feature-cards,
+.naad-service-showcase {
   display: grid;
   gap: 1.15rem;
   grid-template-columns: 1fr;
@@ -1191,9 +1194,22 @@ html.dark .hl-page--public .hl-type-tab.is-active {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.25rem;
   }
+
+  .naad-service-showcase {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
 }
 
-.naad-feature-card {
+@media (min-width: 1100px) {
+  .naad-service-showcase {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.35rem;
+  }
+}
+
+.naad-feature-card,
+.naad-service-card {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -1204,60 +1220,514 @@ html.dark .hl-page--public .hl-type-tab.is-active {
   color: inherit;
   text-decoration: none;
   min-height: 14.5rem;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  animation: naad-fade-up 0.7s ease both;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
 }
 
-.naad-feature-card:hover {
-  transform: translateY(-3px);
+.naad-service-card {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.1rem;
+  min-height: 11.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.naad-service-card::before {
+  content: '';
+  position: absolute;
+  inset: auto -20% -40% auto;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--naad-primary) 22%, transparent), transparent 70%);
+  opacity: 0.55;
+  pointer-events: none;
+  transition: transform 0.45s ease, opacity 0.45s ease;
+}
+
+.naad-feature-card:hover,
+.naad-service-card:hover {
+  transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--naad-primary) 45%, var(--naad-line));
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
 }
 
-.naad-feature-card-icon {
+.naad-service-card:hover::before {
+  transform: scale(1.25) translate(-8%, -8%);
+  opacity: 0.85;
+}
+
+.naad-feature-card-icon,
+.naad-service-card-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.75rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex-shrink: 0;
+  border-radius: 0.9rem;
   color: var(--naad-accent);
   background: color-mix(in srgb, var(--naad-primary) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--naad-primary) 28%, transparent);
 }
 
+.naad-service-card-svg,
 .naad-feature-card-icon svg {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 2rem;
+  height: 2rem;
 }
 
-.naad-feature-card h3 {
-  margin: 0.35rem 0 0;
-  font-size: 1.55rem;
+.naad-service-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.naad-feature-card h3,
+.naad-service-card h3 {
+  margin: 0;
+  font-size: 1.4rem;
   line-height: 1.2;
   color: var(--naad-fg);
 }
 
-.naad-feature-card p {
+.naad-feature-card p,
+.naad-service-card p {
   margin: 0;
   flex: 1;
   color: var(--naad-fg-muted);
-  font-size: 0.975rem;
+  font-size: 0.95rem;
   line-height: 1.55;
 }
 
-.naad-feature-card-cta {
+.naad-feature-card-cta,
+.naad-service-card-cta {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--naad-primary);
+  transition: gap 0.25s ease;
 }
 
-html[data-theme='celestial'] .naad-feature-card:hover {
+.naad-service-card:hover .naad-service-card-cta,
+.naad-feature-card:hover .naad-feature-card-cta {
+  gap: 0.65rem;
+}
+
+html[data-theme='celestial'] .naad-feature-card:hover,
+html[data-theme='celestial'] .naad-service-card:hover {
   box-shadow: 0 12px 28px rgba(67, 56, 202, 0.1);
+}
+
+/* Tone accents */
+.naad-service-card--horoscope .naad-service-card-icon { color: #f4c430; }
+.naad-service-card--kundali .naad-service-card-icon { color: #6c63ff; }
+.naad-service-card--match .naad-service-card-icon { color: #fb7185; }
+.naad-service-card--astrologer .naad-service-card-icon { color: #67e8f9; }
+.naad-service-card--calendar .naad-service-card-icon { color: #22c55e; }
+.naad-service-card--transits .naad-service-card-icon { color: #a78bfa; }
+
+/* Scroll reveal — hero-grade entrance */
+.naad-reveal {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  filter: blur(4px);
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.85s ease;
+  transition-delay: calc(var(--naad-card-i, 0) * 0.08s);
+}
+
+.naad-reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.naad-reveal--lift.is-revealed {
+  animation: naad-settle-float 5.5s ease-in-out 0.9s infinite alternate;
+}
+
+.naad-reveal--slide {
+  transform: translateX(-22px) translateY(12px);
+}
+
+.naad-reveal--slide.is-revealed {
+  transform: none;
+}
+
+.naad-service-showcase-item.naad-reveal {
+  height: 100%;
+}
+
+.naad-service-showcase-item .naad-service-card {
+  height: 100%;
+}
+
+.naad-zodiac-chip-wrap.naad-reveal {
+  display: block;
+  height: 100%;
+}
+
+.naad-zodiac-chip-wrap .naad-zodiac-chip {
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes naad-settle-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes naad-orb-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -22px, 0) scale(1.06);
+  }
+}
+
+@keyframes naad-orb-drift-alt {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-24px, 16px, 0) scale(1.08);
+  }
+}
+
+@keyframes naad-chip-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes naad-starfield-shift {
+  from {
+    background-position: 0 0, 40px 20px, -20px 60px;
+  }
+  to {
+    background-position: 40px -30px, 10px 50px, 30px 10px;
+  }
+}
+
+/* Ambient motion layers (hero-like sky under sections) */
+.naad-section--motion,
+.naad-home-band--motion {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.naad-section-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.naad-section--motion > .naad-section-inner,
+.naad-home-band--motion > .naad-section-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.naad-section-ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.45;
+  animation: naad-orb-drift 14s ease-in-out infinite;
+}
+
+.naad-section-ambient-orb--a {
+  width: min(42vw, 22rem);
+  height: min(42vw, 22rem);
+  top: -12%;
+  right: 4%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--naad-accent) 55%, transparent), transparent 70%);
+}
+
+.naad-section-ambient-orb--b {
+  width: min(50vw, 28rem);
+  height: min(50vw, 28rem);
+  bottom: -18%;
+  left: -6%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--naad-primary) 40%, transparent), transparent 72%);
+  animation-name: naad-orb-drift-alt;
+  animation-duration: 18s;
+}
+
+.naad-section-ambient-stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(1.2px 1.2px at 18% 22%, color-mix(in srgb, var(--naad-fg) 35%, transparent), transparent),
+    radial-gradient(1px 1px at 62% 38%, color-mix(in srgb, var(--naad-accent) 45%, transparent), transparent),
+    radial-gradient(1.4px 1.4px at 78% 68%, color-mix(in srgb, var(--naad-fg) 28%, transparent), transparent),
+    radial-gradient(1px 1px at 32% 74%, color-mix(in srgb, var(--naad-accent) 30%, transparent), transparent);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+  animation: naad-starfield-shift 28s linear infinite alternate, naad-glow-pulse 10s ease-in-out infinite;
+}
+
+.naad-section-ambient--soft .naad-section-ambient-orb {
+  opacity: 0.28;
+}
+
+.naad-section-ambient--soft .naad-section-ambient-stars {
+  opacity: 0.28;
+}
+
+.naad-service-card--float.is-revealed,
+.naad-reveal.is-revealed .naad-service-card--float {
+  animation: naad-settle-float 6s ease-in-out calc(0.8s + var(--naad-card-i, 0) * 0.15s) infinite alternate;
+}
+
+.naad-zodiac-chip--live {
+  animation: naad-chip-bob 4.2s ease-in-out calc(var(--naad-chip-i, 0) * 0.18s) infinite;
+}
+
+.naad-zodiac-chip-wrap.is-revealed .naad-zodiac-chip--live {
+  animation-play-state: running;
+}
+
+.naad-home-pillar--live {
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.naad-reveal.is-revealed .naad-home-pillar--live {
+  animation: naad-settle-float 7s ease-in-out calc(var(--naad-card-i, 0) * 0.2s) infinite alternate;
+}
+
+.naad-service-link--live {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, background 0.25s ease;
+}
+
+.naad-service-link--live:hover {
+  transform: translateX(6px);
+}
+
+.naad-home-band--motion {
+  position: relative;
+}
+
+.naad-section-head h2 {
+  transition: letter-spacing 0.6s ease;
+}
+
+.naad-reveal.is-revealed .naad-section-head h2 {
+  letter-spacing: -0.02em;
+}
+
+/* Motion icon keyframes */
+@keyframes naad-mi-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes naad-mi-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.7;
+  }
+}
+
+@keyframes naad-mi-ring {
+  0%,
+  100% {
+    stroke-opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    stroke-opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes naad-mi-draw {
+  0% {
+    stroke-dashoffset: 80;
+    opacity: 0.35;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes naad-mi-orbit-shift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(1.5px);
+  }
+}
+
+@keyframes naad-mi-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes naad-mi-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes naad-mi-dots {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.naad-mi-spin-slow {
+  transform-origin: 24px 24px;
+  animation: naad-mi-spin 18s linear infinite;
+}
+
+.naad-mi-spin-slow--alt {
+  animation-duration: 12s;
+  animation-direction: reverse;
+}
+
+.naad-mi-pulse {
+  transform-origin: center;
+  animation: naad-mi-pulse 2.8s ease-in-out infinite;
+}
+
+.naad-mi-pulse--alt {
+  animation-delay: 0.7s;
+}
+
+.naad-mi-ring {
+  transform-origin: 24px 24px;
+  animation: naad-mi-ring 4.5s ease-in-out infinite;
+}
+
+.naad-mi-ring--delayed {
+  animation-delay: 1.1s;
+}
+
+.naad-mi-draw {
+  stroke-dasharray: 80;
+  animation: naad-mi-draw 3.6s ease-in-out infinite;
+}
+
+.naad-mi-draw--delayed {
+  animation-delay: 0.55s;
+}
+
+.naad-mi-orbit-a {
+  animation: naad-mi-orbit-shift 3.2s ease-in-out infinite;
+}
+
+.naad-mi-orbit-b {
+  animation: naad-mi-orbit-shift 3.2s ease-in-out infinite reverse;
+}
+
+.naad-mi-link {
+  animation: naad-mi-pulse 3s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.naad-mi-twinkle {
+  transform-origin: center;
+  animation: naad-mi-twinkle 2.4s ease-in-out infinite;
+}
+
+.naad-mi-twinkle--delayed {
+  animation-delay: 0.8s;
+}
+
+.naad-mi-bob {
+  animation: naad-mi-bob 2.6s ease-in-out infinite;
+}
+
+.naad-mi-dots {
+  animation: naad-mi-dots 2.8s ease-in-out infinite;
+}
+
+.naad-service-card:hover .naad-mi-spin-slow {
+  animation-duration: 8s;
+}
+
+.naad-service-card:hover .naad-mi-pulse {
+  animation-duration: 1.6s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .naad-reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .naad-reveal--lift.is-revealed,
+  .naad-reveal.is-revealed .naad-service-card--float,
+  .naad-service-card--float.is-revealed,
+  .naad-zodiac-chip--live,
+  .naad-reveal.is-revealed .naad-home-pillar--live,
+  .naad-section-ambient-orb,
+  .naad-section-ambient-stars {
+    animation: none !important;
+  }
+
+  .naad-mi-spin-slow,
+  .naad-mi-pulse,
+  .naad-mi-ring,
+  .naad-mi-draw,
+  .naad-mi-orbit-a,
+  .naad-mi-orbit-b,
+  .naad-mi-link,
+  .naad-mi-twinkle,
+  .naad-mi-bob,
+  .naad-mi-dots {
+    animation: none !important;
+  }
 }
 
 /* —— Homepage content sections —— */
@@ -1340,7 +1810,7 @@ html[data-theme='celestial'] .naad-feature-card:hover {
 }
 
 .naad-home-step {
-  animation: naad-fade-up 0.8s ease both;
+  list-style: none;
 }
 
 .naad-home-step-n {
@@ -1351,6 +1821,12 @@ html[data-theme='celestial'] .naad-feature-card:hover {
   line-height: 1;
   color: var(--naad-accent);
   letter-spacing: 0.04em;
+  transition: transform 0.35s ease, letter-spacing 0.35s ease;
+}
+
+.naad-home-step:hover .naad-home-step-n {
+  transform: translateX(4px);
+  letter-spacing: 0.08em;
 }
 
 .naad-home-step h3 {
@@ -1397,14 +1873,16 @@ html[data-theme='celestial'] .naad-feature-card:hover {
   background: var(--naad-bg);
   color: var(--naad-fg);
   text-decoration: none;
-  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+  transition: border-color 0.25s ease, transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
   animation: naad-fade-up 0.7s ease both;
 }
 
-.naad-zodiac-chip span {
+.naad-zodiac-chip span,
+.naad-zodiac-chip-glyph {
   font-size: 1.45rem;
   line-height: 1;
   color: var(--naad-accent);
+  transition: transform 0.35s ease, color 0.25s ease;
 }
 
 .naad-zodiac-chip em {
@@ -1417,7 +1895,13 @@ html[data-theme='celestial'] .naad-feature-card:hover {
 .naad-zodiac-chip:hover {
   border-color: var(--naad-primary);
   background: var(--naad-bg-muted);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.naad-zodiac-chip:hover .naad-zodiac-chip-glyph,
+.naad-zodiac-chip:hover span {
+  transform: scale(1.12) rotate(-6deg);
 }
 
 .naad-home-pillars {
@@ -1435,7 +1919,6 @@ html[data-theme='celestial'] .naad-feature-card:hover {
 .naad-home-pillar {
   padding-top: 0.25rem;
   border-top: 1px solid var(--naad-line);
-  animation: naad-fade-up 0.8s ease both;
 }
 
 .naad-home-pillar h3 {

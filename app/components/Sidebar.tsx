@@ -36,56 +36,46 @@ const HOROSCOPE_SUBMENU = [
   { label: 'Horoscope Scope', href: '/horoscope/horoscope-scope' },
 ];
 
-const ASTROLOGY_USER_SUBMENU = [
+const ASTROLOGY_END_USER_SUBMENU = [
+  { label: 'Kundali Generate', href: '/astrology/birth-chart' },
+  { label: 'Kundali Matching', href: '/astrology/compatibility' },
+  { label: 'Zodiac Matching', href: '/astrology/zodiac-matching' },
+];
+
+const ASTROLOGY_ADMIN_SUBMENU = [
   { label: 'Birth Kundali', href: '/astrology/birth-chart' },
   { label: 'Kundali Matching', href: '/astrology/compatibility' },
   { label: 'Planetary Positions', href: '/astrology/planets' },
   { label: 'Transits', href: '/astrology/transits' },
-];
-
-const ASTROLOGY_ADMIN_SUBMENU = [
-  ...ASTROLOGY_USER_SUBMENU,
   { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
   { label: 'Zodiac Matching', href: '/astrology/zodiac-matching' },
 ];
 
-/** Menus shown only to CUSTOMER role (Horoscope, Astrology, Puja, Music). */
-const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
-  {
-    id: 'horoscope',
-    icon: '♈',
-    label: 'Horoscope',
-    href: '/horoscope',
-    submenu: HOROSCOPE_SUBMENU,
-  },
+/** Customer + Astrologer: astrologer list, book, kundali, matching, zodiac matching, music only. */
+const END_USER_MENU_ITEMS: SidebarMenuItem[] = [
+  { id: 'astrologers', icon: '🔮', label: 'Astrologers', href: '/astrologers' },
+  { id: 'book', icon: '📅', label: 'Book', href: '/book-meeting' },
   {
     id: 'astrology',
     icon: '⭐',
     label: 'Astrology',
     href: '/astrology',
-    submenu: ASTROLOGY_USER_SUBMENU,
+    submenu: ASTROLOGY_END_USER_SUBMENU,
   },
-  { id: 'puja', icon: '🕉️', label: 'Puja', href: '/puja', submenu: [
-    { label: 'Daily Puja', href: '/puja/daily' }, { label: 'Festival Puja', href: '/puja/festival' },
-    { label: 'Special Puja', href: '/puja/special' }, { label: 'Puja Calendar', href: '/puja/calendar' },
-  ]},
-  { id: 'music', icon: '🎵', label: 'Music', href: '/music', submenu: [
-    { label: 'Music Type', href: '/music/music-type' }, { label: 'Music', href: '/music/music' },
-    { label: 'Listen', href: '/music/listen' },
-  ]},
-  { id: 'astrologers', icon: '🔮', label: 'Astrologers', href: '/astrologers' },
-  { id: 'rate-astrologer', icon: '⭐', label: 'Rate astrologer', href: '/dashboard/rate-astrologer' },
+  {
+    id: 'music',
+    icon: '🎵',
+    label: 'Music',
+    href: '/music',
+    submenu: [
+      { label: 'View Music', href: '/music/music' },
+      { label: 'Listen', href: '/music/listen' },
+    ],
+  },
 ];
 
-/** Menus for ASTROLOGER role – Jitsi meetings (create, share, history on one page). */
-const ASTROLOGER_MENU_ITEMS: SidebarMenuItem[] = [
-  {
-    id: 'meetings',
-    icon: '📹',
-    label: 'Meetings',
-    href: '/meetings',
-  },
-];
+const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = END_USER_MENU_ITEMS;
+const ASTROLOGER_MENU_ITEMS: SidebarMenuItem[] = END_USER_MENU_ITEMS;
 
 /** Fallback for Superadmin when menu tree API fails or returns empty (full admin CRUD menus). */
 const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
@@ -103,7 +93,15 @@ const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
     href: '/astrology',
     submenu: ASTROLOGY_ADMIN_SUBMENU,
   },
-  ...CUSTOMER_MENU_ITEMS.filter((item) => item.id !== 'horoscope' && item.id !== 'astrology'),
+  { id: 'puja', icon: '🕉️', label: 'Puja', href: '/puja', submenu: [
+    { label: 'Daily Puja', href: '/puja/daily' }, { label: 'Festival Puja', href: '/puja/festival' },
+    { label: 'Special Puja', href: '/puja/special' }, { label: 'Puja Calendar', href: '/puja/calendar' },
+  ]},
+  { id: 'music', icon: '🎵', label: 'Music', href: '/music', submenu: [
+    { label: 'Music Type', href: '/music/music-type' }, { label: 'Music', href: '/music/music' },
+    { label: 'Listen', href: '/music/listen' },
+  ]},
+  { id: 'astrologers', icon: '🔮', label: 'Astrologers', href: '/astrologers' },
   { id: 'master-setting', icon: '⚙️', label: 'Master Setting', href: '/master-setting', submenu: [
     { label: 'Nepali Calendar Days', href: '/master-setting/general/nepali-calendar' },
     { label: 'General', href: '/master-setting/general', submenu: [
@@ -174,6 +172,8 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/astrology/transits': 'Transits',
   '/astrology/zodiac-sign': 'Zodiac Sign',
   '/astrology/zodiac-matching': 'Zodiac Matching',
+  '/astrologers': 'Astrologers',
+  '/book-meeting': 'Book',
   '/puja': 'Puja',
   '/music': 'Music',
   '/music/music-type': 'Music Type',

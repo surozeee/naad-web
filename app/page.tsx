@@ -1,42 +1,83 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Footer from './components/Footer';
 import { useAuthModal } from './components/AuthModalContext';
 import HeroCosmicVisual from './components/home/HeroCosmicVisual';
+import {
+  AstrologerMotionIcon,
+  CalendarMotionIcon,
+  HoroscopeMotionIcon,
+  KundaliMotionIcon,
+  MatchMotionIcon,
+  TransitsMotionIcon,
+} from './components/home/ServiceMotionIcons';
 
-const FEATURES: Array<{
+type ServiceIcon = ComponentType<{ className?: string }>;
+
+const SERVICES: Array<{
   title: string;
   description: string;
   href: string;
-  icon: 'horoscope' | 'date' | 'astrologer';
   cta: string;
+  Icon: ServiceIcon;
+  tone: 'horoscope' | 'kundali' | 'match' | 'astrologer' | 'calendar' | 'transits';
 }> = [
   {
     title: 'Horoscope readings',
     description:
-      'Structured daily, weekly, monthly, and yearly forecasts across all twelve zodiac signs.',
+      'Daily through yearly forecasts for all twelve signs — clear structure for practical planning.',
     href: '/horoscope',
-    icon: 'horoscope',
     cta: 'View readings',
+    Icon: HoroscopeMotionIcon,
+    tone: 'horoscope',
   },
   {
-    title: 'Calendar conversion',
+    title: 'Birth kundali',
     description:
-      'Convert between Gregorian (A.D.) and Bikram Sambat (B.S.) with a clear month calendar.',
-    href: '/date-converter',
-    icon: 'date',
-    cta: 'Open converter',
+      'Generate a North or South Indian chart from birth details — houses, grahas, and chart geometry.',
+    href: '/astrology/birth-chart',
+    cta: 'Open kundali',
+    Icon: KundaliMotionIcon,
+    tone: 'kundali',
+  },
+  {
+    title: 'Match making',
+    description:
+      'Ashtakoot-style kundali matching and sun-sign compatibility for relationship insight.',
+    href: '/astrology/compatibility',
+    cta: 'Check compatibility',
+    Icon: MatchMotionIcon,
+    tone: 'match',
   },
   {
     title: 'Astrologer consultations',
     description:
-      'Review verified profiles, ratings, and reviews — then book a private live session.',
+      'Compare verified practitioners, read client ratings, and book a private live session.',
     href: '/astrologers',
-    icon: 'astrologer',
     cta: 'Meet astrologers',
+    Icon: AstrologerMotionIcon,
+    tone: 'astrologer',
+  },
+  {
+    title: 'Calendar conversion',
+    description:
+      'Convert Gregorian (A.D.) and Bikram Sambat (B.S.) with a month calendar built for Nepal.',
+    href: '/date-converter',
+    cta: 'Open converter',
+    Icon: CalendarMotionIcon,
+    tone: 'calendar',
+  },
+  {
+    title: 'Planetary transits',
+    description:
+      'Track current planetary positions and transit context alongside your birth chart work.',
+    href: '/astrology/transits',
+    cta: 'View transits',
+    Icon: TransitsMotionIcon,
+    tone: 'transits',
   },
 ];
 
@@ -111,53 +152,85 @@ const EXPLORE = [
   },
 ];
 
-function FeatureIcon({ type }: { type: (typeof FEATURES)[number]['icon'] }) {
-  if (type === 'horoscope') {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="12" cy="12" r="2" fill="currentColor" />
-        <path
-          d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
+function useRevealOnScroll<T extends HTMLElement>(options?: { once?: boolean }) {
+  const ref = useRef<T | null>(null);
+  const once = options?.once ?? true;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      el.classList.add('is-revealed');
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+            if (once) io.unobserve(entry.target);
+          } else if (!once) {
+            entry.target.classList.remove('is-revealed');
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
     );
-  }
-  if (type === 'date') {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" strokeWidth="1.5" />
-        <path
-          d="M8 3.5v3M16 3.5v3M3.5 10h17"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <circle cx="9" cy="14" r="1" fill="currentColor" />
-        <circle cx="12" cy="14" r="1" fill="currentColor" />
-        <circle cx="15" cy="14" r="1" fill="currentColor" />
-      </svg>
-    );
-  }
+    io.observe(el);
+    return () => io.disconnect();
+  }, [once]);
+
+  return ref;
+}
+
+function Reveal({
+  className = '',
+  delay = 0,
+  children,
+}: {
+  className?: string;
+  delay?: number;
+  children: ReactNode;
+}) {
+  const ref = useRevealOnScroll<HTMLDivElement>();
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M5 20c1.5-3 3.8-4.5 7-4.5s5.5 1.5 7 4.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M16 6l2-1.5M18.5 9.5l2 .5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
+    <div
+      ref={ref}
+      className={`naad-reveal ${className}`.trim()}
+      style={{ ['--naad-card-i' as string]: String(delay) }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function RevealStep({
+  index,
+  children,
+}: {
+  index: number;
+  children: ReactNode;
+}) {
+  const ref = useRevealOnScroll<HTMLLIElement>();
+  return (
+    <li
+      ref={ref}
+      className="naad-reveal naad-reveal--lift naad-home-step"
+      style={{ ['--naad-card-i' as string]: String(index) }}
+    >
+      {children}
+    </li>
+  );
+}
+
+function SectionAmbient({ variant = 'ink' }: { variant?: 'ink' | 'soft' }) {
+  return (
+    <div className={`naad-section-ambient naad-section-ambient--${variant}`} aria-hidden>
+      <span className="naad-section-ambient-orb naad-section-ambient-orb--a" />
+      <span className="naad-section-ambient-orb naad-section-ambient-orb--b" />
+      <span className="naad-section-ambient-stars" />
+    </div>
   );
 }
 
@@ -185,8 +258,8 @@ function HomeContent() {
             Naad <em>Official</em>
           </h1>
           <p className="naad-hero-lead">
-            Professional astrology for modern life — horoscope forecasts, calendar tools, and private
-            consultations with trusted practitioners.
+            Professional astrology for modern life — horoscope forecasts, kundali tools, match making,
+            and private consultations with trusted practitioners.
           </p>
           <div className="naad-hero-actions">
             <Link href="/horoscope" className="naad-btn-primary">
@@ -199,154 +272,198 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section-ink">
+      <section className="naad-section naad-section-ink naad-section--motion">
+        <SectionAmbient variant="ink" />
         <div className="naad-section-inner">
-          <div className="naad-section-head">
-            <h2>How Naad works</h2>
-            <p>From zodiac insight to one-to-one consultation — a clear path for every stage of guidance.</p>
+          <Reveal>
+            <div className="naad-section-head">
+              <h2>Guidance, charted with care</h2>
+              <p>
+                Horoscope, kundali, match making, and consultations — each tool designed for clarity
+                and professional presentation.
+              </p>
+            </div>
+          </Reveal>
+          <div className="naad-service-showcase">
+            {SERVICES.map((service, index) => {
+              const Icon = service.Icon;
+              return (
+                <Reveal key={service.href} className="naad-service-showcase-item" delay={index}>
+                  <Link
+                    href={service.href}
+                    className={`naad-service-card naad-service-card--float naad-service-card--${service.tone}`}
+                    style={{ ['--naad-card-i' as string]: String(index) }}
+                  >
+                    <span className="naad-service-card-icon" aria-hidden>
+                      <Icon className="naad-service-card-svg" />
+                    </span>
+                    <div className="naad-service-card-copy">
+                      <h3>{service.title}</h3>
+                      <p>{service.description}</p>
+                      <span className="naad-service-card-cta">
+                        {service.cta}
+                        <span aria-hidden>→</span>
+                      </span>
+                    </div>
+                  </Link>
+                </Reveal>
+              );
+            })}
           </div>
+        </div>
+      </section>
+
+      <section className="naad-section naad-section--motion">
+        <SectionAmbient variant="soft" />
+        <div className="naad-section-inner">
+          <Reveal>
+            <div className="naad-section-head">
+              <h2>How Naad works</h2>
+              <p>From zodiac insight to one-to-one consultation — a clear path for every stage of guidance.</p>
+            </div>
+          </Reveal>
           <ol className="naad-home-steps">
-            {STEPS.map((step) => (
-              <li key={step.n} className="naad-home-step">
+            {STEPS.map((step, index) => (
+              <RevealStep key={step.n} index={index}>
                 <span className="naad-home-step-n" aria-hidden>
                   {step.n}
                 </span>
                 <h3>{step.title}</h3>
                 <p>{step.text}</p>
-              </li>
+              </RevealStep>
             ))}
           </ol>
         </div>
       </section>
 
-      <section className="naad-section">
+      <section className="naad-section naad-section-ink naad-section--motion">
+        <SectionAmbient variant="ink" />
         <div className="naad-section-inner">
-          <div className="naad-section-head">
-            <h2>The twelve signs</h2>
-            <p>Access curated horoscope content for every zodiac — prepared for daily and long-range planning.</p>
-          </div>
+          <Reveal>
+            <div className="naad-section-head">
+              <h2>The twelve signs</h2>
+              <p>Access curated horoscope content for every zodiac — prepared for daily and long-range planning.</p>
+            </div>
+          </Reveal>
           <div className="naad-zodiac-strip" role="list">
-            {ZODIAC.map((z) => (
-              <Link
-                key={z.name}
-                href="/horoscope"
-                className="naad-zodiac-chip"
-                role="listitem"
-                title={`${z.name} horoscope`}
-              >
-                <span aria-hidden>{z.symbol}</span>
-                <em>{z.name}</em>
-              </Link>
+            {ZODIAC.map((z, index) => (
+              <Reveal key={z.name} className="naad-zodiac-chip-wrap" delay={index}>
+                <Link
+                  href="/horoscope"
+                  className="naad-zodiac-chip naad-zodiac-chip--live"
+                  role="listitem"
+                  title={`${z.name} horoscope`}
+                  style={{ ['--naad-chip-i' as string]: String(index) }}
+                >
+                  <span className="naad-zodiac-chip-glyph" aria-hidden>
+                    {z.symbol}
+                  </span>
+                  <em>{z.name}</em>
+                </Link>
+              </Reveal>
             ))}
           </div>
-          <div className="naad-inline-link">
-            <Link href="/horoscope">Browse all readings →</Link>
-          </div>
+          <Reveal delay={2}>
+            <div className="naad-inline-link">
+              <Link href="/horoscope">Browse all readings →</Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      <section className="naad-section naad-section-ink">
+      <section className="naad-section naad-section--motion">
+        <SectionAmbient variant="soft" />
         <div className="naad-section-inner">
-          <div className="naad-section-head">
-            <h2>Built for serious guidance</h2>
-            <p>A disciplined platform experience — tradition respected, presentation refined.</p>
-          </div>
+          <Reveal>
+            <div className="naad-section-head">
+              <h2>Built for serious guidance</h2>
+              <p>A disciplined platform experience — tradition respected, presentation refined.</p>
+            </div>
+          </Reveal>
           <div className="naad-home-pillars">
-            {PILLARS.map((item) => (
-              <article key={item.title} className="naad-home-pillar">
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="naad-home-band">
-        <div className="naad-section-inner naad-home-band-inner">
-          <div>
-            <h2>Private astrologer consultations</h2>
-            <p>
-              Compare active practitioners, review ratings from real clients, and book a confidential
-              live session on your schedule.
-            </p>
-          </div>
-          <div className="naad-hero-actions">
-            <Link href="/astrologers" className="naad-btn-primary">
-              View astrologers
-            </Link>
-            <Link href="/book-meeting" className="naad-btn-ghost">
-              Book a consultation
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="naad-section">
-        <div className="naad-section-inner">
-          <div className="naad-section-head">
-            <h2>Company &amp; support</h2>
-            <p>Learn about Naad Official, find answers, or speak with our team.</p>
-          </div>
-          <div className="naad-service-row">
-            {EXPLORE.map((item) => (
-              <Link key={item.href} href={item.href} className="naad-service-link">
-                <div>
+            {PILLARS.map((item, index) => (
+              <Reveal key={item.title} delay={index} className="naad-reveal--lift">
+                <article className="naad-home-pillar naad-home-pillar--live">
                   <h3>{item.title}</h3>
                   <p>{item.text}</p>
-                </div>
-                <span className="naad-service-arrow" aria-hidden>
-                  →
-                </span>
-              </Link>
+                </article>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="naad-section naad-section-ink naad-home-close">
+      <section className="naad-home-band naad-home-band--motion">
+        <SectionAmbient variant="ink" />
+        <div className="naad-section-inner naad-home-band-inner">
+          <Reveal className="naad-reveal--lift">
+            <div>
+              <h2>Private astrologer consultations</h2>
+              <p>
+                Compare active practitioners, review ratings from real clients, and book a confidential
+                live session on your schedule.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={1}>
+            <div className="naad-hero-actions">
+              <Link href="/astrologers" className="naad-btn-primary">
+                View astrologers
+              </Link>
+              <Link href="/book-meeting" className="naad-btn-ghost">
+                Book a consultation
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="naad-section naad-section--motion">
+        <SectionAmbient variant="soft" />
         <div className="naad-section-inner">
-          <div className="naad-section-head">
-            <h2>Begin with today’s forecast</h2>
-            <p>A clear reading for your sign — available whenever you need grounded perspective.</p>
-          </div>
-          <div className="naad-hero-actions">
-            <Link href="/horoscope" className="naad-btn-primary">
-              Open horoscope
-            </Link>
-            <Link href="/date-converter" className="naad-btn-ghost">
-              Convert a date
-            </Link>
+          <Reveal>
+            <div className="naad-section-head">
+              <h2>Company &amp; support</h2>
+              <p>Learn about Naad Official, find answers, or speak with our team.</p>
+            </div>
+          </Reveal>
+          <div className="naad-service-row">
+            {EXPLORE.map((item, index) => (
+              <Reveal key={item.href} delay={index} className="naad-reveal--slide">
+                <Link href={item.href} className="naad-service-link naad-service-link--live">
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                  </div>
+                  <span className="naad-service-arrow" aria-hidden>
+                    →
+                  </span>
+                </Link>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="naad-section">
+      <section className="naad-section naad-section-ink naad-home-close naad-section--motion">
+        <SectionAmbient variant="ink" />
         <div className="naad-section-inner">
-          <div className="naad-section-head">
-            <h2>Platform capabilities</h2>
-            <p>Core tools for astrology guidance, calendar planning, and professional consultation.</p>
-          </div>
-          <div className="naad-feature-cards">
-            {FEATURES.map((feature, index) => (
-              <Link
-                key={feature.href}
-                href={feature.href}
-                className="naad-feature-card"
-                style={{ animationDelay: `${0.08 + index * 0.06}s` }}
-              >
-                <span className="naad-feature-card-icon">
-                  <FeatureIcon type={feature.icon} />
-                </span>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
-                <span className="naad-feature-card-cta">
-                  {feature.cta}
-                  <span aria-hidden>→</span>
-                </span>
+          <Reveal className="naad-reveal--lift">
+            <div className="naad-section-head">
+              <h2>Begin with today’s forecast</h2>
+              <p>A clear reading for your sign — available whenever you need grounded perspective.</p>
+            </div>
+          </Reveal>
+          <Reveal delay={1}>
+            <div className="naad-hero-actions">
+              <Link href="/horoscope" className="naad-btn-primary">
+                Open horoscope
               </Link>
-            ))}
-          </div>
+              <Link href="/astrology/compatibility" className="naad-btn-ghost">
+                Try match making
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
