@@ -17,6 +17,11 @@ import type {
   ZodiacSignRequest,
   ZodiacSignListRequest,
   ZodiacSignResponse,
+  ZodiacCompatibilityDetailResponse,
+  ZodiacCompatibilityListRequest,
+  ZodiacCompatibilityLocaleResponse,
+  ZodiacCompatibilityLocaleUpsertPayload,
+  ZodiacCompatibilityRequest,
   MusicTypeRequest,
   MusicTypeListRequest,
   MusicRequest,
@@ -250,6 +255,52 @@ export const zodiacSignLocaleApi = {
   delete: (id: string) =>
     request<void>('DELETE', `${ZODIAC_LOCALE_PATH}/delete`, { headers: { id }, base: EVENT_BASE }),
 };
+
+export const zodiacCompatibilityApi = crud<
+  ZodiacCompatibilityDetailResponse,
+  ZodiacCompatibilityRequest,
+  ZodiacCompatibilityRequest,
+  ZodiacCompatibilityListRequest
+>('zodiac-compatibility', EVENT_BASE);
+
+const ZODIAC_COMPAT_LOCALE_PATH = 'zodiac-compatibility-locale';
+
+export const zodiacCompatibilityLocaleApi = {
+  getByCompatibilityId: async (compatibilityId: string): Promise<ZodiacCompatibilityLocaleResponse[]> => {
+    const r = await request<ZodiacCompatibilityLocaleResponse[]>(
+      'POST',
+      `${ZODIAC_COMPAT_LOCALE_PATH}/get-by-compatibility-id`,
+      {
+        body: { compatibilityId },
+        base: EVENT_BASE,
+      }
+    );
+    return unwrapList(r);
+  },
+  create: async (
+    body: ZodiacCompatibilityLocaleUpsertPayload
+  ): Promise<ZodiacCompatibilityLocaleResponse | undefined> => {
+    const r = await request<ZodiacCompatibilityLocaleResponse>('POST', `${ZODIAC_COMPAT_LOCALE_PATH}/create`, {
+      body: body as object,
+      base: EVENT_BASE,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (
+    id: string,
+    body: ZodiacCompatibilityLocaleUpsertPayload
+  ): Promise<ZodiacCompatibilityLocaleResponse | undefined> => {
+    const r = await request<ZodiacCompatibilityLocaleResponse>('PUT', `${ZODIAC_COMPAT_LOCALE_PATH}/update`, {
+      body: body as object,
+      headers: { id },
+      base: EVENT_BASE,
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', `${ZODIAC_COMPAT_LOCALE_PATH}/delete`, { headers: { id }, base: EVENT_BASE }),
+};
+
 const horoscopeCrud = crud<HoroscopeResponse, HoroscopeRequest, HoroscopeRequest, HoroscopeListRequest>('horoscope', EVENT_BASE);
 
 export const horoscopeApi = {

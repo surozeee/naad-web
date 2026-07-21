@@ -71,6 +71,26 @@ async function main() {
       : match.json?.message
   );
 
+  const transits = await req('/api/public/kundali/transits', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      timezone: 'Asia/Kathmandu',
+      latitude: 27.7172,
+      longitude: 85.324,
+      placeName: 'Kathmandu',
+      daysAhead: 90,
+    }),
+  });
+  const transitData = transits.json?.data ?? transits.json?.result;
+  pass(
+    'kundali/transits',
+    transits.status === 200 && transitData?.transits?.length >= 9,
+    transits.status === 200
+      ? `${transitData?.transits?.length} transits, ephemeris=${transitData?.ephemerisMode}`
+      : transits.json?.message
+  );
+
   const compat = await req('/api/public/zodiac-compatibility?signA=ARIES&signB=LEO', {
     headers: { Accept: 'application/json', 'Accept-Language': 'en' },
   });
@@ -84,7 +104,7 @@ async function main() {
       : `HTTP ${compat.status} — ${compat.json?.message ?? 'no backend yet (UI uses static fallback)'}`
   );
 
-  const pages = ['/astrology/planets', '/astrology/compatibility', '/astrology/birth-chart'];
+  const pages = ['/astrology/planets', '/astrology/compatibility', '/astrology/birth-chart', '/astrology/transits'];
   for (const p of pages) {
     const r = await fetch(`${BASE}${p}`);
     pass(`page ${p}`, r.status === 200, `HTTP ${r.status}`);

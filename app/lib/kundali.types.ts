@@ -184,6 +184,67 @@ export interface PlanetDignity {
   note?: string;
 }
 
+export interface TransitGenerateRequest {
+  date?: string;
+  time?: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
+  placeName?: string;
+  ayanamsa?: AyanamsaType;
+  language?: string;
+  daysAhead?: number;
+  natalBirthDate?: string;
+  natalBirthTime?: string;
+  natalTimezone?: string;
+  natalLatitude?: number;
+  natalLongitude?: number;
+  natalPlaceName?: string;
+}
+
+export interface TransitPlanet {
+  code: string;
+  name: string;
+  glyph: string;
+  retrograde: boolean;
+  sign: string;
+  signLabel: string;
+  signIndex: number;
+  degreeInSign: number;
+  formattedDegree: string;
+  longitude: number;
+  speed: number;
+  nakshatra: string;
+  nakshatraLabel: string;
+  pada: number;
+  house?: number | null;
+  status: string;
+  nextSign?: string | null;
+  nextSignLabel?: string | null;
+  nextSignChangeAt?: string | null;
+  daysUntilSignChange?: number | null;
+  effect: string;
+}
+
+export interface TransitSnapshot {
+  dateTime: string;
+  timezone: string;
+  latitude: number;
+  longitude: number;
+  placeName?: string;
+  ayanamsaName: string;
+  ayanamsaDegrees: number;
+  ephemerisMode: string;
+  language: string;
+  daysAhead: number;
+  personal: boolean;
+  natalLagna?: string | null;
+  natalLagnaSignIndex?: number | null;
+  ascendant: SignPosition;
+  planets: PlanetPosition[];
+  transits: TransitPlanet[];
+}
+
 export interface KundaliChart {
   name?: string;
   placeName?: string;

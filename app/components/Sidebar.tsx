@@ -44,6 +44,7 @@ const ASTROLOGY_USER_SUBMENU = [
 const ASTROLOGY_ADMIN_SUBMENU = [
   ...ASTROLOGY_USER_SUBMENU,
   { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
+  { label: 'Zodiac Matching', href: '/astrology/zodiac-matching' },
 ];
 
 /** Menus shown only to CUSTOMER role (Horoscope, Astrology, Puja, Music). */
@@ -170,6 +171,7 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/astrology/planets': 'Planetary Positions',
   '/astrology/transits': 'Transits',
   '/astrology/zodiac-sign': 'Zodiac Sign',
+  '/astrology/zodiac-matching': 'Zodiac Matching',
   '/puja': 'Puja',
   '/music': 'Music',
   '/music/music-type': 'Music Type',

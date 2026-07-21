@@ -136,6 +136,69 @@ export interface ZodiacSignListRequest extends CrmListRequest {
   zodiacSign?: ZodiacSignEnum;
 }
 
+// ---- Zodiac Compatibility (sign matching) ----
+export type ZodiacCompatibilityLevelEnum = 'EXCELLENT' | 'GOOD' | 'MODERATE' | 'CHALLENGING';
+
+export interface ZodiacCompatibilityLocaleRequest {
+  language: LanguageEnumCode;
+  summary?: string;
+  loveAdvice?: string;
+  friendshipAdvice?: string;
+  workAdvice?: string;
+}
+
+export interface ZodiacCompatibilityLocaleResponse extends ZodiacCompatibilityLocaleRequest {
+  id?: string;
+  compatibilityId?: string;
+  status?: StatusEnum;
+}
+
+export interface ZodiacCompatibilityLocaleUpsertPayload {
+  compatibilityId: string;
+  language: LanguageEnumCode;
+  summary?: string;
+  loveAdvice?: string;
+  friendshipAdvice?: string;
+  workAdvice?: string;
+}
+
+export interface ZodiacCompatibilityRequest {
+  signA: ZodiacSignEnum;
+  signB: ZodiacSignEnum;
+  score?: number;
+  level?: ZodiacCompatibilityLevelEnum;
+  summary?: string;
+  loveAdvice?: string;
+  friendshipAdvice?: string;
+  workAdvice?: string;
+  locales?: ZodiacCompatibilityLocaleRequest[];
+}
+
+export interface ZodiacCompatibilityDetailResponse {
+  id: string;
+  signA: ZodiacSignEnum;
+  signB: ZodiacSignEnum;
+  signALabel?: string;
+  signBLabel?: string;
+  score: number;
+  level?: ZodiacCompatibilityLevelEnum;
+  levelLabel?: string;
+  summary?: string;
+  loveAdvice?: string;
+  friendshipAdvice?: string;
+  workAdvice?: string;
+  status?: StatusEnum;
+  createdAt?: string;
+  lastModifiedAt?: string;
+  locales?: ZodiacCompatibilityLocaleResponse[];
+}
+
+export interface ZodiacCompatibilityListRequest extends CrmListRequest {
+  signA?: ZodiacSignEnum;
+  signB?: ZodiacSignEnum;
+  level?: ZodiacCompatibilityLevelEnum;
+}
+
 // ---- Horoscope (Event-Service) ----
 export type HoroscopeTypeEnum = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 export type HoroscopePublishStatusEnum =

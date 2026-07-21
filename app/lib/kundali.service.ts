@@ -8,6 +8,8 @@ import type {
   KundaliGenerateRequest,
   KundaliMatchRequest,
   KundaliMatchResult,
+  TransitGenerateRequest,
+  TransitSnapshot,
 } from '@/app/lib/kundali.types';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { getStoredUiLanguage } from '@/app/lib/ui-language';
@@ -91,5 +93,35 @@ export const kundaliApi = {
     const match = json.data ?? json.result;
     if (!match) throw new Error('Empty kundali match response');
     return match;
+  },
+
+  transits: async (body: TransitGenerateRequest = {}): Promise<TransitSnapshot> => {
+    const res = await publicFetch('/api/public/kundali/transits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: getStoredUiLanguage(),
+        ayanamsa: 'LAHIRI',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kathmandu',
+        latitude: 27.7172,
+        longitude: 85.324,
+        placeName: 'Kathmandu',
+        daysAhead: 120,
+        ...body,
+        time:
+          body.time && body.time.length === 5 ? `${body.time}:00` : body.time,
+        natalBirthTime:
+          body.natalBirthTime && body.natalBirthTime.length === 5
+            ? `${body.natalBirthTime}:00`
+            : body.natalBirthTime,
+      }),
+    });
+    const json = (await res.json().catch(() => ({}))) as GlobalResponse<TransitSnapshot> & {
+      result?: TransitSnapshot;
+    };
+    if (!res.ok) throw new Error(formatApiError(json, res.status));
+    const snapshot = json.data ?? json.result;
+    if (!snapshot) throw new Error('Empty transit response');
+    return snapshot;
   },
 };
