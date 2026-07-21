@@ -692,7 +692,7 @@ export default function EventCalendarPage() {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700" style={{ overflow: 'hidden' }}>
             <div style={{ padding: 16, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <CalendarDays size={20} color="#2563eb" />
+                <CalendarDays size={20} color='var(--naad-primary)' />
                 <div>
                   <div className="text-sm font-semibold text-black dark:text-slate-200">{monthTitle}</div>
                   <div className="text-xs text-black dark:text-slate-400" style={{ marginTop: 4 }}>
@@ -814,7 +814,7 @@ export default function EventCalendarPage() {
                       style={{
                         padding: '12px 10px',
                         borderRight: '1px solid #e2e8f0',
-                        background: '#f8fafc',
+                        background: 'var(--naad-bg-muted)',
                         textAlign: 'center',
                       }}
                     >
@@ -849,13 +849,13 @@ export default function EventCalendarPage() {
                           ? '#fca5a5'
                           : '#dc2626'
                         : isOutsideMonth
-                          ? '#94a3b8'
+                          ? 'var(--naad-fg-muted)'
                           : '#000000';
-                    const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.9)' : isOutsideMonth ? '#94a3b8' : '#000000';
+                    const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.9)' : isOutsideMonth ? 'var(--naad-fg-muted)' : '#000000';
                     const eventTextColor = isSelected
                       ? '#ffffff'
                       : isOutsideMonth
-                        ? '#64748b'
+                        ? 'var(--naad-fg-muted)'
                         : isSaturdayColumn
                           ? '#7f1d1d'
                           : '#000000';
@@ -873,8 +873,8 @@ export default function EventCalendarPage() {
                           padding: 10,
                           borderRight: index % 7 !== 6 ? '1px solid #e2e8f0' : 'none',
                           borderBottom: '1px solid #e2e8f0',
-                          background: isSelected ? '#0f5fae' : day.inCurrentMonth ? '#ffffff' : '#f8fafc',
-                          color: isSelected ? '#ffffff' : '#0f172a',
+                          background: isSelected ? '#0f5fae' : day.inCurrentMonth ? '#ffffff' : 'var(--naad-bg-muted)',
+                          color: isSelected ? '#ffffff' : 'var(--naad-fg)',
                           textAlign: 'left',
                           position: 'relative',
                         }}
@@ -948,7 +948,7 @@ export default function EventCalendarPage() {
                                   background: isSelected
                                     ? 'rgba(255,255,255,0.16)'
                                     : isOutsideMonth
-                                      ? '#e2e8f0'
+                                      ? 'var(--naad-line)'
                                       : '#eff6ff',
                                   border: isSelected
                                     ? '1px solid rgba(255,255,255,0.18)'
@@ -964,7 +964,7 @@ export default function EventCalendarPage() {
                                   fontSize: 10,
                                   lineHeight: 1,
                                   fontWeight: 700,
-                                  color: isSelected ? 'rgba(255,255,255,0.92)' : '#1d4ed8',
+                                  color: isSelected ? 'rgba(255,255,255,0.92)' : 'var(--naad-primary)',
                                 }}
                               >
                                 +{dayEvents.length - visibleDayEvents.length} more
@@ -1005,7 +1005,7 @@ export default function EventCalendarPage() {
                         borderRadius: 12,
                         padding: 14,
                         textAlign: 'left',
-                        background: '#fff',
+                        background: 'var(--naad-card-bg)',
                       }}
                     >
                       <div className="text-sm font-semibold text-black">
@@ -1038,7 +1038,7 @@ export default function EventCalendarPage() {
               </button>
             </div>
 
-            <div style={{ borderRadius: 12, background: '#f8fafc', padding: 14, marginBottom: 16 }}>
+            <div style={{ borderRadius: 12, background: 'var(--naad-bg-muted)', padding: 14, marginBottom: 16 }}>
               <div className="text-sm text-black">{calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}</div>
               <div className="text-lg font-bold text-black">{selectedMonthLabel || 'Loading...'}</div>
               <div className="text-sm text-black" style={{ marginTop: 8 }}>Selected date: {selectedDateTitle}</div>

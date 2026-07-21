@@ -86,7 +86,7 @@ function formatJoinUrlDisplay(url: string, maxLength = JOIN_URL_DISPLAY_MAX) {
 const joinUrlTextStyle: CSSProperties = {
   margin: '0 0 10px',
   fontSize: '0.8rem',
-  color: '#475569',
+  color: 'var(--naad-fg-muted)',
   maxWidth: '100%',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -284,7 +284,7 @@ export default function MeetingsPage() {
                   padding: '2px 8px',
                   borderRadius: 999,
                   background: activeMeeting.meetingCallType === 'AUDIO' ? '#e0e7ff' : '#dbeafe',
-                  color: activeMeeting.meetingCallType === 'AUDIO' ? '#3730a3' : '#1d4ed8',
+                  color: activeMeeting.meetingCallType === 'AUDIO' ? '#3730a3' : 'var(--naad-primary)',
                 }}
               >
                 {callTypeLabel(activeMeeting.meetingCallType)}
@@ -305,14 +305,14 @@ export default function MeetingsPage() {
                 </span>
               )}
             </p>
-            <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: '#64748b' }}>
+            <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--naad-fg-muted)' }}>
               Room name:{' '}
-              <code style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: 4 }}>{activeMeeting.jitsiRoomId}</code>
+              <code style={{ background: 'var(--naad-line)', padding: '2px 6px', borderRadius: 4 }}>{activeMeeting.jitsiRoomId}</code>
             </p>
 
-            <div style={{ marginBottom: 14, padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-              <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>Moderator (you)</p>
-              <p style={{ margin: '0 0 4px', fontSize: '0.75rem', color: '#64748b' }}>
+            <div style={{ marginBottom: 14, padding: 12, background: 'var(--naad-card-bg)', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '0.9rem', color: 'var(--naad-fg)' }}>Moderator (you)</p>
+              <p style={{ margin: '0 0 4px', fontSize: '0.75rem', color: 'var(--naad-fg-muted)' }}>
                 {joinUrlUsesJwt(activeModeratorUrl) ? 'Signed join URL (moderator JWT)' : 'Join URL'}
               </p>
               <p style={joinUrlTextStyle} title={activeModeratorUrl}>
@@ -341,9 +341,9 @@ export default function MeetingsPage() {
               </div>
             </div>
 
-            <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-              <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>Guest (customer)</p>
-              <p style={{ margin: '0 0 4px', fontSize: '0.75rem', color: '#64748b' }}>
+            <div style={{ padding: 12, background: 'var(--naad-card-bg)', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '0.9rem', color: 'var(--naad-fg)' }}>Guest (customer)</p>
+              <p style={{ margin: '0 0 4px', fontSize: '0.75rem', color: 'var(--naad-fg-muted)' }}>
                 {joinUrlUsesJwt(activeGuestUrl) ? 'Signed join URL (guest JWT)' : 'Join URL'}
               </p>
               <p style={joinUrlTextStyle} title={activeGuestUrl}>
@@ -375,7 +375,7 @@ export default function MeetingsPage() {
         )}
 
         <section style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: '1.05rem', marginBottom: 12, color: '#0f172a' }}>Create Jitsi meeting</h2>
+          <h2 style={{ fontSize: '1.05rem', marginBottom: 12, color: 'var(--naad-fg)' }}>Create Jitsi meeting</h2>
           <div className="table-container" style={{ padding: '1.25rem', maxWidth: 720 }}>
             <form onSubmit={handleCreate} className="organization-form">
               <div className="form-group">
@@ -418,7 +418,7 @@ export default function MeetingsPage() {
                     Video call
                   </button>
                 </div>
-                <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: 'var(--naad-fg-muted)' }}>
                   {meetingCallType === 'AUDIO'
                     ? 'Participants join with microphone only; camera stays off.'
                     : 'Participants can enable camera and microphone from the prejoin screen.'}
@@ -495,7 +495,7 @@ export default function MeetingsPage() {
         </section>
 
         <section>
-          <h2 style={{ fontSize: '1.05rem', marginBottom: 12, color: '#0f172a' }}>Meeting history</h2>
+          <h2 style={{ fontSize: '1.05rem', marginBottom: 12, color: 'var(--naad-fg)' }}>Meeting history</h2>
           <div className="search-section">
             <div className="search-wrapper">
               <Search size={20} />
@@ -523,7 +523,7 @@ export default function MeetingsPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                    <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                       Loading...
                     </td>
                   </tr>
@@ -541,7 +541,7 @@ export default function MeetingsPage() {
                         <tr>
                           <td>
                             <span className="org-name">{row.title}</span>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--naad-fg-muted)', marginTop: 2 }}>
                               {callTypeLabel(row.meetingCallType)}
                             </div>
                           </td>
@@ -596,9 +596,9 @@ export default function MeetingsPage() {
                         </tr>
                         {isOpen && (
                           <tr key={`${row.id}-detail`}>
-                            <td colSpan={5} style={{ background: '#f8fafc', padding: '1rem 1.25rem' }}>
+                            <td colSpan={5} style={{ background: 'var(--naad-bg-muted)', padding: '1rem 1.25rem' }}>
                               {detailLoading ? (
-                                <p style={{ color: '#64748b', margin: 0 }}>Loading details...</p>
+                                <p style={{ color: 'var(--naad-fg-muted)', margin: 0 }}>Loading details...</p>
                               ) : detail && detail.id === row.id ? (
                                 <div style={{ display: 'grid', gap: '0.5rem', fontSize: '0.9rem' }}>
                                   <p style={{ margin: 0 }}>
@@ -665,7 +665,7 @@ export default function MeetingsPage() {
                                   </div>
                                 </div>
                               ) : (
-                                <p style={{ color: '#64748b', margin: 0 }}>Could not load meeting details.</p>
+                                <p style={{ color: 'var(--naad-fg-muted)', margin: 0 }}>Could not load meeting details.</p>
                               )}
                             </td>
                           </tr>

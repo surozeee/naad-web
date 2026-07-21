@@ -143,7 +143,7 @@ export default function SupportMessagePage() {
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
         {children}
         <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 14 }}>
-          {sortBy === columnKey ? (sortDirection === 'asc' ? <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} /> : <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />) : <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />}
+          {sortBy === columnKey ? (sortDirection === 'asc' ? <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} /> : <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />) : <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />}
         </span>
       </span>
     </th>
@@ -159,12 +159,12 @@ export default function SupportMessagePage() {
               <h1 className="page-title" style={{ margin: 0 }}>Support Message</h1>
             </div>
             <div style={{ marginTop: -12, position: 'relative' }} onMouseEnter={() => setShowInfoTooltip(true)} onMouseLeave={() => setShowInfoTooltip(false)}>
-              <button type="button" aria-label="Support message information" title="View support emails and send replies" style={{ border: '1px solid #cbd5e1', background: '#f8fafc', padding: 2, borderRadius: 999, cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#334155', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)' }}>
+              <button type="button" aria-label="Support message information" title="View support emails and send replies" style={{ border: '1px solid #cbd5e1', background: 'var(--naad-bg-muted)', padding: 2, borderRadius: 999, cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--naad-fg-muted)', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)' }}>
                 <Info size={18} />
               </button>
               {showInfoTooltip && (
-                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 260, padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', background: '#ffffff', color: '#334155', boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)', fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>
-                  <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: '#ffffff', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
+                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 260, padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', background: 'var(--naad-card-bg)', color: 'var(--naad-fg-muted)', boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)', fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>
+                  <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: 'var(--naad-card-bg)', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
                   View support emails from the Contact Us form. Click a row or use Reply to open the thread and send a reply email.
                 </div>
               )}
@@ -198,7 +198,7 @@ export default function SupportMessagePage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>Loading...</td></tr>
+                <tr><td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading...</td></tr>
               ) : emails.length === 0 ? (
                 <tr><td colSpan={7} className="empty-state"><p>No support emails found</p></td></tr>
               ) : (
@@ -206,12 +206,12 @@ export default function SupportMessagePage() {
                   <tr key={row.id} role="button" tabIndex={0} onClick={() => handleRowClick(row)} onKeyDown={(e) => e.key === 'Enter' && handleRowClick(row)} className="data-table-row-clickable" style={{ cursor: 'pointer' }}>
                     <td style={{ minWidth: 220 }}>
                       <div className="org-name-cell">
-                        <User size={14} style={{ flexShrink: 0, color: '#64748b' }} />
+                        <User size={14} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />
                         <span className="org-name">{row.name}</span>
                       </div>
                     </td>
                     <td>
-                      <div className="contact-cell" style={{ color: '#64748b' }}>
+                      <div className="contact-cell" style={{ color: 'var(--naad-fg-muted)' }}>
                         <Mail size={14} />
                         <span>{row.email}</span>
                       </div>
@@ -219,7 +219,7 @@ export default function SupportMessagePage() {
                     <td><span className="org-code">{row.subject || '-'}</span></td>
                     <td><div style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.message || '-'}</div></td>
                     <td><span className={`status-badge ${row.isCompany ? 'active' : 'inactive'}`}>{row.isCompany ? 'Yes' : 'No'}</span></td>
-                    <td style={{ color: '#64748b', fontSize: '0.875rem' }}>{formatDate(row.createdAt)}</td>
+                    <td style={{ color: 'var(--naad-fg-muted)', fontSize: '0.875rem' }}>{formatDate(row.createdAt)}</td>
                     <td style={{ width: 100 }} onClick={(e) => e.stopPropagation()}>
                       <div className="action-buttons">
                         <button type="button" className="btn-icon-edit" title="Send reply email" onClick={(e) => { e.stopPropagation(); handleRowClick(row); }}><Send size={18} /></button>
@@ -275,52 +275,52 @@ export default function SupportMessagePage() {
               <div style={{ padding: '0 1.25rem 1.25rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px 20px', fontSize: '0.8125rem', lineHeight: 1.4 }}>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
-                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><User size={12} style={{ flexShrink: 0, color: '#64748b' }} />Name</span>
+                    <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><User size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Name</span>
                     <span style={{ minWidth: 0 }}>{detailEmail.name}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
-                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Mail size={12} style={{ flexShrink: 0, color: '#64748b' }} />Email</span>
+                    <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Mail size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Email</span>
                     <span style={{ minWidth: 0 }}>{detailEmail.email}</span>
                   </div>
                   {detailEmail.mobileNumber && (
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
-                      <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Phone size={12} style={{ flexShrink: 0, color: '#64748b' }} />Mobile</span>
+                      <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Phone size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Mobile</span>
                       <span style={{ minWidth: 0 }}>{detailEmail.mobileNumber}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
-                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Building2 size={12} style={{ flexShrink: 0, color: '#64748b' }} />Company</span>
+                    <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Building2 size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Company</span>
                     <span style={{ minWidth: 0 }}>{detailEmail.isCompany ? 'Yes' : 'No'}{detailEmail.companyName ? ` · ${detailEmail.companyName}` : ''}</span>
                   </div>
                   {detailEmail.address && (
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap', gridColumn: '1 / -1' }}>
-                      <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><MapPin size={12} style={{ flexShrink: 0, color: '#64748b' }} />Address</span>
+                      <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><MapPin size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Address</span>
                       <span style={{ minWidth: 0 }}>{detailEmail.address}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap', gridColumn: '1 / -1' }}>
-                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><FileText size={12} style={{ flexShrink: 0, color: '#64748b' }} />Subject</span>
+                    <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><FileText size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Subject</span>
                     <span style={{ minWidth: 0 }}>{detailEmail.subject || '-'}</span>
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
-                      <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><MessageSquare size={12} style={{ flexShrink: 0, color: '#64748b' }} />Message</span>
+                      <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><MessageSquare size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Message</span>
                     </div>
                     <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap', fontSize: '0.8125rem' }}>{detailEmail.message || '-'}</p>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
-                    <span style={{ fontWeight: 600, color: '#475569', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Calendar size={12} style={{ flexShrink: 0, color: '#64748b' }} />Created</span>
-                    <span style={{ color: '#64748b', minWidth: 0 }}>{formatDate(detailEmail.createdAt)}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 72, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Calendar size={12} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />Created</span>
+                    <span style={{ color: 'var(--naad-fg-muted)', minWidth: 0 }}>{formatDate(detailEmail.createdAt)}</span>
                   </div>
                 </div>
                 {(detailEmail.replies?.length ?? 0) > 0 && (
                   <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#475569' }}>Replies ({detailEmail.replies!.length})</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--naad-fg-muted)' }}>Replies ({detailEmail.replies!.length})</span>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
                       {detailEmail.replies!.map((r) => (
-                        <div key={r.id} style={{ padding: '8px 10px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
+                        <div key={r.id} style={{ padding: '8px 10px', background: 'var(--naad-bg-muted)', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
                           <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{r.message}</p>
-                          <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#64748b' }}>{formatDate(r.createdAt)}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--naad-fg-muted)' }}>{formatDate(r.createdAt)}</p>
                         </div>
                       ))}
                     </div>
@@ -344,15 +344,15 @@ export default function SupportMessagePage() {
               </div>
               <form onSubmit={handleSendReply} style={{ padding: '0 1.25rem 1.25rem' }}>
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#475569', display: 'block', marginBottom: 4 }}>Subject</label>
-                  <p style={{ margin: 0, padding: '8px 10px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.875rem' }}>{detailEmail.subject || '(No subject)'}</p>
+                  <label style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--naad-fg-muted)', display: 'block', marginBottom: 4 }}>Subject</label>
+                  <p style={{ margin: 0, padding: '8px 10px', background: 'var(--naad-bg-muted)', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.875rem' }}>{detailEmail.subject || '(No subject)'}</p>
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#475569', display: 'block', marginBottom: 4 }}>Original message</label>
-                  <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.875rem', maxHeight: 120, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{detailEmail.message || '-'}</div>
+                  <label style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--naad-fg-muted)', display: 'block', marginBottom: 4 }}>Original message</label>
+                  <div style={{ padding: '10px 12px', background: 'var(--naad-bg-muted)', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.875rem', maxHeight: 120, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{detailEmail.message || '-'}</div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#475569', display: 'block', marginBottom: 4 }}>Your reply</label>
+                  <label style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--naad-fg-muted)', display: 'block', marginBottom: 4 }}>Your reply</label>
                   <textarea value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} placeholder="Type your reply..." rows={6} style={{ width: '100%', padding: '10px 12px', fontSize: '0.875rem', border: '1px solid #e2e8f0', borderRadius: 8, resize: 'vertical', minHeight: 160 }} />
                 </div>
                 {replyError && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: 10 }}>{replyError}</p>}

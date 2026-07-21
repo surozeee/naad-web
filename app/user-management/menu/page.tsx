@@ -490,7 +490,7 @@ export default function MenuManagement() {
             style={{
               width: '100%',
               border: 'none',
-              background: depth === 0 ? '#f8fafc' : '#fafafa',
+              background: depth === 0 ? 'var(--naad-bg-muted)' : '#fafafa',
               padding: '0.65rem 0.75rem',
               display: 'flex',
               alignItems: 'center',
@@ -501,7 +501,7 @@ export default function MenuManagement() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>{getMenuDisplayName(menu, currentLangCode)}</span>
-              {menu.code && <span style={{ fontSize: 12, color: '#64748b' }}>({menu.code})</span>}
+              {menu.code && <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }}>({menu.code})</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               <ActionTooltip text="Add Sub Menu">
@@ -546,13 +546,13 @@ export default function MenuManagement() {
             </div>
           </div>
           {expanded && (
-            <div style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
+            <div style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', background: 'var(--naad-card-bg)' }}>
               {children.length > 0 ? (
                 <div style={{ display: 'grid', gap: 4 }}>
                   {children.map((child) => renderMenuNode(child, depth + 1))}
                 </div>
               ) : (
-                <div style={{ color: '#64748b', fontSize: 14 }}>No sub menus. Use &quot;Add Sub Menu&quot; on the row to add one.</div>
+                <div style={{ color: 'var(--naad-fg-muted)', fontSize: 14 }}>No sub menus. Use &quot;Add Sub Menu&quot; on the row to add one.</div>
               )}
             </div>
           )}
@@ -570,7 +570,7 @@ export default function MenuManagement() {
         infoText="Manage navigation menus by user type. Assign URLs, icons, and permissions to build the app sidebar and routes. Add translations for multi-language labels."
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Globe size={14} />
             Labels: <strong>{currentLangCode}</strong>
           </span>
@@ -594,7 +594,7 @@ export default function MenuManagement() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 0.9fr) minmax(0, 2.1fr)', gap: '1rem', alignItems: 'start' }}>
-            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: '#fff' }}>
+            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: 'var(--naad-card-bg)' }}>
               <div style={{ padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>
                 <div className="search-wrapper">
                   <Search size={20} />
@@ -615,7 +615,7 @@ export default function MenuManagement() {
                       key={menu.id}
                       onClick={() => setSelectedParentId(menu.id)}
                       style={{
-                        border: `1px solid ${isSelected ? '#93c5fd' : '#e2e8f0'}`,
+                        border: `1px solid ${isSelected ? '#93c5fd' : 'var(--naad-line)'}`,
                         borderRadius: 10,
                         padding: '0.625rem 0.75rem',
                         display: 'flex',
@@ -649,15 +649,15 @@ export default function MenuManagement() {
               </div>
             </section>
 
-            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: '#fff', padding: '1rem' }}>
+            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: 'var(--naad-card-bg)', padding: '1rem' }}>
               {!selectedParent ? (
-                <div style={{ color: '#64748b' }}>Select a parent menu to view and manage sub menus.</div>
+                <div style={{ color: 'var(--naad-fg-muted)' }}>Select a parent menu to view and manage sub menus.</div>
               ) : (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{getMenuDisplayName(selectedParent, currentLangCode)}</h3>
-                      {selectedParent.code && <span style={{ fontSize: 13, color: '#64748b' }}>({selectedParent.code})</span>}
+                      {selectedParent.code && <span style={{ fontSize: 13, color: 'var(--naad-fg-muted)' }}>({selectedParent.code})</span>}
                       <div
                         style={{ position: 'relative', flexShrink: 0 }}
                         onMouseEnter={() => setShowSelectedMenuInfoTooltip(true)}
@@ -668,14 +668,14 @@ export default function MenuManagement() {
                           aria-label="Menu info"
                           style={{
                             border: '1px solid #cbd5e1',
-                            background: '#f8fafc',
+                            background: 'var(--naad-bg-muted)',
                             padding: 2,
                             borderRadius: 999,
                             cursor: 'help',
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#334155',
+                            color: 'var(--naad-fg-muted)',
                           }}
                         >
                           <Info size={18} />
@@ -692,14 +692,14 @@ export default function MenuManagement() {
                               padding: '10px 12px',
                               borderRadius: 12,
                               border: '1px solid #dbe2ea',
-                              background: '#ffffff',
-                              color: '#334155',
+                              background: 'var(--naad-card-bg)',
+                              color: 'var(--naad-fg-muted)',
                               boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)',
                               fontSize: 12,
                               lineHeight: 1.5,
                             }}
                           >
-                            <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: '#ffffff', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
+                            <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: 'var(--naad-card-bg)', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
                             {selectedParent.url ? <div><strong>URL:</strong> {selectedParent.url}</div> : null}
                             {selectedParent.userType ? <div><strong>User type:</strong> {selectedParent.userType}</div> : null}
                             {!selectedParent.url && !selectedParent.userType && selectedParent.name}
@@ -744,11 +744,11 @@ export default function MenuManagement() {
                     </div>
                   </div>
                   <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
-                    <h4 style={{ margin: '0 0 0.5rem', fontSize: 14, fontWeight: 600, color: '#64748b' }}>Nested sub menus</h4>
+                    <h4 style={{ margin: '0 0 0.5rem', fontSize: 14, fontWeight: 600, color: 'var(--naad-fg-muted)' }}>Nested sub menus</h4>
                     {(subMenusByParent[selectedParent.id] ?? []).length > 0 ? (
                       (subMenusByParent[selectedParent.id] ?? []).map((child) => renderMenuNode(child, 0))
                     ) : (
-                      <div style={{ color: '#64748b', fontSize: 14 }}>No sub menus. Use &quot;Add Sub Menu&quot; above to add one.</div>
+                      <div style={{ color: 'var(--naad-fg-muted)', fontSize: 14 }}>No sub menus. Use &quot;Add Sub Menu&quot; above to add one.</div>
                     )}
                   </div>
                 </>
@@ -869,7 +869,7 @@ export default function MenuManagement() {
                     )}
                   </div>
                   {showLocaleForm && (
-                    <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: 8, marginBottom: '0.75rem' }}>
+                    <div style={{ padding: '0.75rem', background: 'var(--naad-bg-muted)', borderRadius: 8, marginBottom: '0.75rem' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr auto', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
                         <div>
                           <label className="form-label" style={{ fontSize: 12 }}>Language</label>
@@ -931,7 +931,7 @@ export default function MenuManagement() {
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {editingLocales.length === 0 ? (
-                      <div style={{ fontSize: 13, color: '#64748b' }}>No translations yet. Add one to show this menu in other languages.</div>
+                      <div style={{ fontSize: 13, color: 'var(--naad-fg-muted)' }}>No translations yet. Add one to show this menu in other languages.</div>
                     ) : (
                       editingLocales.map((loc) => (
                         <div
@@ -941,14 +941,14 @@ export default function MenuManagement() {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '0.5rem 0.75rem',
-                            background: '#fff',
+                            background: 'var(--naad-card-bg)',
                             border: '1px solid #e2e8f0',
                             borderRadius: 8,
                           }}
                         >
                           <div>
                             <span style={{ fontWeight: 600, marginRight: 8 }}>{String(loc.language)}</span>
-                            <span style={{ color: '#475569' }}>{loc.name}</span>
+                            <span style={{ color: 'var(--naad-fg-muted)' }}>{loc.name}</span>
                           </div>
                           <div style={{ display: 'flex', gap: 4 }}>
                             <ActionTooltip text="Edit">
@@ -1019,9 +1019,9 @@ export default function MenuManagement() {
               </div>
             </div>
             <div style={{ padding: '0 1.5rem 1.5rem' }}>
-              <div style={{ marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#f1f5f9', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Menu</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{translationsModalMenuName || '—'}</div>
+              <div style={{ marginBottom: '1.25rem', padding: '0.875rem 1rem', background: 'var(--naad-bg-muted)', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--naad-fg-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Menu</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--naad-fg)' }}>{translationsModalMenuName || '—'}</div>
               </div>
 
               <div className="form-group" style={{ marginBottom: '1.25rem' }}>
@@ -1065,10 +1065,10 @@ export default function MenuManagement() {
                 )}
               </div>
 
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>Saved translations</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--naad-fg-muted)', marginBottom: '0.5rem' }}>Saved translations</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {editingLocales.length === 0 ? (
-                  <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>No translations yet. Select a language above, enter Local name, and click Save.</div>
+                  <div style={{ fontSize: 13, color: 'var(--naad-fg-muted)', padding: '0.75rem', background: 'var(--naad-bg-muted)', borderRadius: 8 }}>No translations yet. Select a language above, enter Local name, and click Save.</div>
                 ) : (
                   editingLocales.map((loc) => (
                     <div
@@ -1078,14 +1078,14 @@ export default function MenuManagement() {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '0.5rem 0.75rem',
-                        background: '#fff',
+                        background: 'var(--naad-card-bg)',
                         border: '1px solid #e2e8f0',
                         borderRadius: 8,
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                        <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{String(loc.language)}</span>
-                        <span style={{ color: '#0f172a' }}>{loc.name}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--naad-fg-muted)', minWidth: 36 }}>{String(loc.language)}</span>
+                        <span style={{ color: 'var(--naad-fg)' }}>{loc.name}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 4 }}>
                         <ActionTooltip text="Edit">

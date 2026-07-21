@@ -17,7 +17,7 @@ const tabStyle = (active: boolean) => ({
   border: 'none',
   borderBottom: active ? '2px solid #2563eb' : '2px solid transparent',
   background: active ? '#eff6ff' : 'transparent',
-  color: active ? '#1d4ed8' : '#475569',
+  color: active ? 'var(--naad-primary)' : 'var(--naad-fg-muted)',
   fontWeight: active ? 600 : 500,
   cursor: 'pointer',
   borderRadius: '8px 8px 0 0',
@@ -132,7 +132,7 @@ export default function BulkMessagePage() {
     fontSize: '0.9375rem',
     border: '1px solid #e2e8f0',
     borderRadius: 8,
-    background: '#fff',
+    background: 'var(--naad-card-bg)',
     boxSizing: 'border-box',
   };
 
@@ -150,7 +150,7 @@ export default function BulkMessagePage() {
         <Breadcrumb items={[{ label: 'Message Management', href: '/support' }, { label: 'Bulk Message' }]} />
         <div className="page-header-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Send size={28} style={{ color: '#64748b' }} />
+            <Send size={28} style={{ color: 'var(--naad-fg-muted)' }} />
             <div>
               <h1 className="page-title" style={{ margin: 0 }}>Bulk Message</h1>
               <p className="page-subtitle" style={{ margin: 0 }}>
@@ -160,38 +160,38 @@ export default function BulkMessagePage() {
           </div>
         </div>
 
-        <div style={{ maxWidth: 720, background: '#fff', borderRadius: 12, boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+        <div style={{ maxWidth: 720, background: 'var(--naad-card-bg)', borderRadius: 12, boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <form onSubmit={handleSubmit} className="bulk-message-form">
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', background: '#fafbfc' }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#334155', marginBottom: 10 }}>Send to</label>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: 'var(--naad-fg-muted)', marginBottom: 10 }}>Send to</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                 {(['ALL', 'ROLE', 'SELECTED'] as const).map((t) => (
                   <label key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input type="radio" name="targetType" checked={targetType === t} onChange={() => setTargetType(t)} style={{ width: 16, height: 16, accentColor: '#2563eb' }} />
-                    <span style={{ fontSize: '0.9375rem', color: '#475569' }}>{t === 'ALL' ? 'All users' : t === 'ROLE' ? 'By role' : 'Selected users'}</span>
+                    <input type="radio" name="targetType" checked={targetType === t} onChange={() => setTargetType(t)} style={{ width: 16, height: 16, accentColor: 'var(--naad-primary)' }} />
+                    <span style={{ fontSize: '0.9375rem', color: 'var(--naad-fg-muted)' }}>{t === 'ALL' ? 'All users' : t === 'ROLE' ? 'By role' : 'Selected users'}</span>
                   </label>
                 ))}
               </div>
               {targetType === 'ROLE' && (
                 <div style={{ marginTop: 12 }}>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Roles</label>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Roles</label>
                   <select multiple value={roleIds} onChange={(e) => setRoleIds(Array.from(e.target.selectedOptions, (o) => o.value))} style={{ ...inputBase, minHeight: 100 }}>
                     {roles.map((r) => (
                       <option key={r.id} value={r.id}>{r.name ?? r.id}</option>
                     ))}
                   </select>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>Hold Ctrl/Cmd to select multiple.</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--naad-fg-muted)', marginTop: 4 }}>Hold Ctrl/Cmd to select multiple.</p>
                 </div>
               )}
               {targetType === 'SELECTED' && (
                 <div style={{ marginTop: 12 }}>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Users</label>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Users</label>
                   <select multiple value={userIds} onChange={(e) => setUserIds(Array.from(e.target.selectedOptions, (o) => o.value))} style={{ ...inputBase, minHeight: 100 }}>
                     {users.map((u) => (
                       <option key={u.id} value={u.id}>{u.label || u.id}</option>
                     ))}
                   </select>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>Hold Ctrl/Cmd to select multiple.</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--naad-fg-muted)', marginTop: 4 }}>Hold Ctrl/Cmd to select multiple.</p>
                 </div>
               )}
             </div>
@@ -206,11 +206,11 @@ export default function BulkMessagePage() {
               {activeTab === 'sms' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <MessageSquare size={20} style={{ color: '#64748b' }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#334155' }}>SMS</span>
+                    <MessageSquare size={20} style={{ color: 'var(--naad-fg-muted)' }} />
+                    <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--naad-fg-muted)' }}>SMS</span>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Message (plain text)</label>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Message (plain text)</label>
                     <textarea placeholder="Enter SMS body…" value={smsBody} onChange={(e) => setSmsBody(e.target.value)} rows={4} style={{ ...inputBase, resize: 'vertical', minHeight: 100 }} />
                   </div>
                 </div>
@@ -218,15 +218,15 @@ export default function BulkMessagePage() {
               {activeTab === 'email' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Mail size={20} style={{ color: '#64748b' }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#334155' }}>Email</span>
+                    <Mail size={20} style={{ color: 'var(--naad-fg-muted)' }} />
+                    <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--naad-fg-muted)' }}>Email</span>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Subject</label>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Subject</label>
                     <input type="text" placeholder="Email subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} style={inputBase} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Body (HTML supported)</label>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Body (HTML supported)</label>
                     <textarea placeholder="Email body…" value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={5} style={{ ...inputBase, resize: 'vertical', minHeight: 140 }} />
                   </div>
                 </div>
@@ -234,21 +234,21 @@ export default function BulkMessagePage() {
               {activeTab === 'notification' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Bell size={20} style={{ color: '#64748b' }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#334155' }}>Push Notification</span>
+                    <Bell size={20} style={{ color: 'var(--naad-fg-muted)' }} />
+                    <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--naad-fg-muted)' }}>Push Notification</span>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Title</label>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Title</label>
                     <input type="text" placeholder="Notification title" value={notificationTitle} onChange={(e) => setNotificationTitle(e.target.value)} style={inputBase} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#64748b', marginBottom: 6 }}>Body</label>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--naad-fg-muted)', marginBottom: 6 }}>Body</label>
                     <textarea placeholder="Notification body…" value={notificationBody} onChange={(e) => setNotificationBody(e.target.value)} rows={4} style={{ ...inputBase, resize: 'vertical', minHeight: 100 }} />
                   </div>
                 </div>
               )}
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
-                <button type="submit" disabled={submitting} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: '0.9375rem', fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: 8, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.9 : 1, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
+                <button type="submit" disabled={submitting} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: '0.9375rem', fontWeight: 600, color: '#fff', background: 'var(--naad-primary)', border: 'none', borderRadius: 8, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.9 : 1, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
                   {submitting ? <Loader2 size={18} className="bulk-msg-spin" /> : <Send size={18} />}
                   {submitting ? 'Sending…' : `Send ${activeTab === 'sms' ? 'SMS' : activeTab === 'email' ? 'Email' : 'Notification'}`}
                 </button>

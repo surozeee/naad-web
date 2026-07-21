@@ -707,12 +707,12 @@ export default function HoroscopeScopePage() {
         {children}
         {sortKey === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color="var(--naad-primary)" strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color="var(--naad-primary)" strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color="var(--naad-fg-muted)" strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -732,7 +732,16 @@ export default function HoroscopeScopePage() {
           </button>
         </PageHeaderWithInfo>
         {error && (
-          <div className="error-message" style={{ marginBottom: 16, padding: 12, background: '#fef2f2', color: '#b91c1c', borderRadius: 8 }}>
+          <div
+            className="form-error"
+            style={{
+              marginBottom: 16,
+              padding: 12,
+              borderRadius: 8,
+              border: '1px solid color-mix(in srgb, var(--naad-error) 40%, transparent)',
+              background: 'color-mix(in srgb, var(--naad-error) 12%, transparent)',
+            }}
+          >
             {error}
           </div>
         )}
@@ -761,7 +770,7 @@ export default function HoroscopeScopePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={4} className="dash-muted" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
@@ -912,13 +921,13 @@ export default function HoroscopeScopePage() {
                   <div style={{ padding: '0 1.5rem 1.5rem' }}>
                     {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                     {fetchingDetail ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>
+                      <div className="dash-muted" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
                     ) : (
                       <>
-                        <div style={{ marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#f1f5f9', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Horoscope scope</div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{formData.name?.trim() || '—'}</div>
-                          <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{scopeInfoSubtitle}</div>
+                        <div className="dash-info-panel">
+                          <div className="dash-info-panel__eyebrow">Horoscope scope</div>
+                          <div className="dash-info-panel__title">{formData.name?.trim() || '—'}</div>
+                          <div className="dash-info-panel__meta">{scopeInfoSubtitle}</div>
                         </div>
                         <div className="form-group" style={{ marginBottom: '1.25rem' }}>
                           <label className="form-label">Local name</label>
@@ -967,29 +976,21 @@ export default function HoroscopeScopePage() {
                             </button>
                           )}
                         </div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>Saved translations</div>
+                        <div className="dash-section-label">Saved translations</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {scopeLocalesApi.length === 0 ? (
-                            <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>
+                            <div className="dash-locale-empty">
                               No translations yet. Select a language above, enter Local name, and click Save.
                             </div>
                           ) : (
                             scopeLocalesApi.map((loc) => (
                               <div
                                 key={loc.id}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#fff',
-                                  border: '1px solid #e2e8f0',
-                                  borderRadius: 8,
-                                }}
+                                className="dash-locale-row"
                               >
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-                                  <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{String(loc.language)}</span>
-                                  <span style={{ color: '#0f172a' }}>{loc.name}</span>
+                                  <span className="dash-locale-row__code">{String(loc.language)}</span>
+                                  <span>{loc.name}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: 4 }}>
                                   <ActionTooltip text="Edit">
@@ -1112,7 +1113,7 @@ export default function HoroscopeScopePage() {
                       <span className="form-label" style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Multi-language labels</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 12, color: '#64748b' }}>Add/update localized Name + Description</span>
+                      <span className="dash-muted" style={{ fontSize: 12 }}>Add/update localized Name + Description</span>
                       <button
                         type="button"
                         className="btn-secondary btn-small"
@@ -1125,7 +1126,7 @@ export default function HoroscopeScopePage() {
                     </div>
                   </div>
 
-                  <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 12 }}>
+                  <div className="dash-info-panel" style={{ marginBottom: 12 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 12, alignItems: 'end' }}>
                       <div>
                         <label className="form-label" style={{ fontSize: 12 }}>Language</label>
@@ -1192,11 +1193,11 @@ export default function HoroscopeScopePage() {
                     </div>
                   </div>
 
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>
+                  <div className="dash-section-label">
                     Saved translations
                   </div>
                   {localeRows.length === 0 ? (
-                    <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>
+                    <div className="dash-locale-empty">
                       No translations yet. Select a language above, enter Local name, and click Save.
                     </div>
                   ) : (
@@ -1204,19 +1205,11 @@ export default function HoroscopeScopePage() {
                       {localeRows.map((row) => (
                         <div
                           key={row.key}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.5rem 0.75rem',
-                            background: '#fff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: 8,
-                          }}
+                          className="dash-locale-row"
                         >
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-                            <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{row.language}</span>
-                            <span style={{ color: '#0f172a', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span className="dash-locale-row__code">{row.language}</span>
+                            <span style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {row.name?.trim() ? row.name : '—'}
                             </span>
                           </div>

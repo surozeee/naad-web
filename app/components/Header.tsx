@@ -110,7 +110,7 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
                 }}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Language"
-                className="appearance-none cursor-pointer rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-black dark:text-white font-semibold text-sm pl-2.5 pr-8 py-1.5 min-w-[7.5rem] max-w-[11rem] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="appearance-none cursor-pointer rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 font-semibold text-sm pl-2.5 pr-8 py-1.5 min-w-[7.5rem] max-w-[11rem] focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {languages.map((lang) => (
                   <option key={lang.code} value={lang.code}>

@@ -596,12 +596,12 @@ export default function LanguageSetupPage() {
         {children}
         {sortBy === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -633,14 +633,14 @@ export default function LanguageSetupPage() {
                 aria-label="Language setup information"
                 style={{
                   border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
+                  background: 'var(--naad-bg-muted)',
                   padding: 2,
                   borderRadius: 999,
                   cursor: 'help',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#334155',
+                  color: 'var(--naad-fg-muted)',
                 }}
               >
                 <Info size={18} />
@@ -657,8 +657,8 @@ export default function LanguageSetupPage() {
                     padding: '10px 12px',
                     borderRadius: 12,
                     border: '1px solid #dbe2ea',
-                    background: '#ffffff',
-                    color: '#334155',
+                    background: 'var(--naad-card-bg)',
+                    color: 'var(--naad-fg-muted)',
                     boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)',
                     fontSize: 12,
                     lineHeight: 1.5,
@@ -727,7 +727,7 @@ export default function LanguageSetupPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     Loading languages...
                   </td>
                 </tr>
@@ -749,10 +749,10 @@ export default function LanguageSetupPage() {
                       <span className="org-code">{language.code}</span>
                     </td>
                     <td>
-                      <span style={{ color: '#64748b', fontSize: '1rem' }}>{language.nativeName}</span>
+                      <span style={{ color: 'var(--naad-fg-muted)', fontSize: '1rem' }}>{language.nativeName}</span>
                     </td>
                     <td>
-                      <span style={{ fontSize: 12, color: '#475569' }} title={localesSummary(language.locales)}>
+                      <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }} title={localesSummary(language.locales)}>
                         {localesSummary(language.locales)}
                       </span>
                     </td>
@@ -968,7 +968,7 @@ export default function LanguageSetupPage() {
                 <div className="color-locale-modal-body">
                   {errors.submit ? <div className="form-error">{errors.submit}</div> : null}
                   {fetchingDetail ? (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                       Loading...
                     </div>
                   ) : (
@@ -981,7 +981,7 @@ export default function LanguageSetupPage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#2563eb',
+                            color: 'var(--naad-primary)',
                             borderRadius: 10,
                             width: 36,
                             height: 36,
@@ -1040,7 +1040,7 @@ export default function LanguageSetupPage() {
                                 minHeight: 42,
                                 fontSize: 14,
                                 borderRadius: 8,
-                                borderColor: '#e2e8f0',
+                                borderColor: 'var(--naad-line)',
                               }),
                               valueContainer: (base) => ({ ...base, padding: '0 10px' }),
                               menuPortal: (base) => ({ ...base, zIndex: 1000000 }),
@@ -1230,7 +1230,7 @@ export default function LanguageSetupPage() {
                       />
                       {errors.code && <span className="form-error">{errors.code}</span>}
                       <small
-                        style={{ color: '#64748b', fontSize: '0.75rem', marginTop: 4, display: 'block' }}
+                        style={{ color: 'var(--naad-fg-muted)', fontSize: '0.75rem', marginTop: 4, display: 'block' }}
                       >
                         Must match backend LanguageEnum (EN, NE, HI, …)
                       </small>
@@ -1270,7 +1270,7 @@ export default function LanguageSetupPage() {
                         <option value="rtl">Right to Left (RTL)</option>
                       </select>
                       <small
-                        style={{ color: '#64748b', fontSize: '0.75rem', marginTop: 4, display: 'block' }}
+                        style={{ color: 'var(--naad-fg-muted)', fontSize: '0.75rem', marginTop: 4, display: 'block' }}
                       >
                         RTL for Arabic, Hebrew, etc.
                       </small>

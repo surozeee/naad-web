@@ -393,12 +393,12 @@ export default function EventPage() {
         {children}
         {sortKey === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -462,7 +462,7 @@ export default function EventPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
@@ -624,11 +624,11 @@ export default function EventPage() {
                     className="form-input"
                     style={{ maxWidth: 320 }}
                   />
-                  <p style={{ fontSize: 12, color: '#64748b', marginTop: 6, marginBottom: 0 }}>
+                  <p style={{ fontSize: 12, color: 'var(--naad-fg-muted)', marginTop: 6, marginBottom: 0 }}>
                     Select one or more image files. Order is used as display order. Remove below to reorder.
                   </p>
                   {images.length === 0 ? (
-                    <p style={{ fontSize: 13, color: '#94a3b8', marginTop: 8, marginBottom: 0 }}>No images added yet.</p>
+                    <p style={{ fontSize: 13, color: 'var(--naad-fg-muted)', marginTop: 8, marginBottom: 0 }}>No images added yet.</p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
                       {images.map((img, index) => (
@@ -648,7 +648,7 @@ export default function EventPage() {
                               <Trash2 size={14} />
                             </button>
                           </ActionTooltip>
-                          <span style={{ display: 'block', fontSize: 11, color: '#64748b', textAlign: 'center', marginTop: 2 }}>{index + 1}</span>
+                          <span style={{ display: 'block', fontSize: 11, color: 'var(--naad-fg-muted)', textAlign: 'center', marginTop: 2 }}>{index + 1}</span>
                         </div>
                       ))}
                     </div>

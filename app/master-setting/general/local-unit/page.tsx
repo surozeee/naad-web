@@ -200,7 +200,7 @@ export default function LocalUnitSetup() {
       confirmButtonText: 'Yes, update',
       cancelButtonText: 'No',
       confirmButtonColor: '#0f766e',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: 'var(--naad-fg-muted)',
     });
     if (!result.isConfirmed) return;
     setError(null);
@@ -225,7 +225,7 @@ export default function LocalUnitSetup() {
       confirmButtonText: 'Yes, delete',
       cancelButtonText: 'No',
       confirmButtonColor: '#b91c1c',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: 'var(--naad-fg-muted)',
     });
     if (!result.isConfirmed) return;
     setError(null);
@@ -265,7 +265,7 @@ export default function LocalUnitSetup() {
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
         {children}
         <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 14 }}>
-          {sortBy === columnKey ? (sortDirection === 'asc' ? <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} /> : <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />) : <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />}
+          {sortBy === columnKey ? (sortDirection === 'asc' ? <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} /> : <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />) : <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />}
         </span>
       </span>
     </th>
@@ -281,12 +281,12 @@ export default function LocalUnitSetup() {
               <h1 className="page-title" style={{ margin: 0 }}>Local Unit Setup</h1>
             </div>
             <div style={{ marginTop: -12, position: 'relative' }} onMouseEnter={() => setShowInfoTooltip(true)} onMouseLeave={() => setShowInfoTooltip(false)}>
-              <button type="button" aria-label="Local unit setup information" style={{ border: '1px solid #cbd5e1', background: '#f8fafc', padding: 2, borderRadius: 999, cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#334155', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)' }}>
+              <button type="button" aria-label="Local unit setup information" style={{ border: '1px solid #cbd5e1', background: 'var(--naad-bg-muted)', padding: 2, borderRadius: 999, cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--naad-fg-muted)', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)' }}>
                 <Info size={18} />
               </button>
               {showInfoTooltip && (
-                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 260, padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', background: '#ffffff', color: '#334155', boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)', fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>
-                  <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: '#ffffff', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
+                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 260, padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', background: 'var(--naad-card-bg)', color: 'var(--naad-fg-muted)', boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)', fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>
+                  <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: 'var(--naad-card-bg)', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
                   Manage local units (e.g., wards, VDCs) by district and type.
                 </div>
               )}
@@ -317,7 +317,7 @@ export default function LocalUnitSetup() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>Loading local units...</td></tr>
+                <tr><td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading local units...</td></tr>
               ) : sorted.length === 0 ? (
                 <tr><td colSpan={5} className="empty-state"><p>No local units found</p></td></tr>
               ) : (
@@ -329,7 +329,7 @@ export default function LocalUnitSetup() {
                     <td>
                       <div className="contact-cell"><MapPin size={14} /><span>{item.districtName || '—'}</span></div>
                     </td>
-                    <td><span style={{ color: '#64748b' }}>{item.localUnitTypeName || '—'}</span></td>
+                    <td><span style={{ color: 'var(--naad-fg-muted)' }}>{item.localUnitTypeName || '—'}</span></td>
                     <td onClick={(e) => { e.stopPropagation(); handleChangeStatus(item); }} role="button" tabIndex={0} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') handleChangeStatus(item); }} title={`Set to ${item.status === 'active' ? 'Inactive' : 'Active'}`}>
                       <span className={`status-badge ${item.status}`}>
                         {item.status === 'active' && <Check size={14} />}

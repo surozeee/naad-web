@@ -173,7 +173,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
     background: 'transparent',
     borderRadius: 4,
     cursor: 'pointer',
-    color: '#475569',
+    color: 'var(--naad-fg-muted)',
   };
 
   const viewBtnStyle = (active: boolean): React.CSSProperties => ({
@@ -183,7 +183,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
     gap: 6,
     fontSize: 13,
     background: active ? '#e0e7ff' : 'transparent',
-    color: active ? '#3730a3' : '#475569',
+    color: active ? '#3730a3' : 'var(--naad-fg-muted)',
   });
 
   const viewSwitcher = (
@@ -206,16 +206,16 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
   return (
     <div className={`rich-text-editor ${className}`} style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
       {label != null && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 12px', background: 'var(--naad-bg-muted)', borderBottom: '1px solid #e2e8f0' }}>
           <span className="form-label" style={{ margin: 0 }}>{label}</span>
           {viewSwitcher}
         </div>
       )}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 8px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'var(--naad-bg-muted)', borderBottom: '1px solid #e2e8f0' }}>
         {label == null && (
           <>
             {viewSwitcher}
-            <span style={{ width: 1, height: 24, background: '#e2e8f0' }} />
+            <span style={{ width: 1, height: 24, background: 'var(--naad-line)' }} />
           </>
         )}
         <div
@@ -244,7 +244,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
         <button type="button" onClick={() => exec('superscript')} title="Superscript" style={btnStyle}>
           <Superscript size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => formatBlock('p')} title="Paragraph" style={btnStyle}>
           <Type size={18} />
         </button>
@@ -254,7 +254,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
         <button type="button" onClick={wrapSpan} title="Span (wrap selection)" style={btnStyle}>
           <WrapText size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => formatBlock('h1')} title="Heading 1" style={btnStyle}>
           <Heading1 size={18} />
         </button>
@@ -282,7 +282,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
         <button type="button" onClick={() => formatBlock('address')} title="Address" style={btnStyle}>
           <MapPin size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => openDialog('link')} title="Insert link" style={btnStyle}>
           <Link size={18} />
         </button>
@@ -292,14 +292,14 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
         <button type="button" onClick={insertHR} title="Horizontal rule" style={btnStyle}>
           <Minus size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => openColorDialog('foreColor')} title="Text color" style={btnStyle}>
           <Palette size={18} />
         </button>
         <button type="button" onClick={() => openColorDialog('backColor')} title="Highlight color" style={btnStyle}>
           <Highlighter size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => exec('insertUnorderedList')} title="Bullet list" style={btnStyle}>
           <List size={18} />
         </button>
@@ -312,7 +312,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
         <button type="button" onClick={() => exec('indent')} title="Increase indent" style={btnStyle}>
           <Indent size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => exec('justifyLeft')} title="Align left" style={btnStyle}>
           <AlignLeft size={18} />
         </button>
@@ -325,7 +325,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
         <button type="button" onClick={() => exec('justifyFull')} title="Justify" style={btnStyle}>
           <AlignJustify size={18} />
         </button>
-        <span style={{ width: 1, background: '#e2e8f0', margin: '0 4px' }} />
+        <span style={{ width: 1, background: 'var(--naad-line)', margin: '0 4px' }} />
         <button type="button" onClick={() => exec('removeFormat')} title="Clear formatting" style={btnStyle}>
           <Eraser size={18} />
         </button>
@@ -349,7 +349,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
             padding: 12,
             outline: 'none',
             overflowY: 'auto',
-            background: '#fff',
+            background: 'var(--naad-card-bg)',
             fontSize: 14,
             lineHeight: 1.5,
           }}
@@ -364,7 +364,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
             minHeight,
             padding: 12,
             overflowY: 'auto',
-            background: '#f8fafc',
+            background: 'var(--naad-bg-muted)',
             fontSize: 14,
             lineHeight: 1.5,
             borderTop: '1px solid #e2e8f0',
@@ -388,8 +388,8 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
             fontFamily: 'ui-monospace, monospace',
             fontSize: 13,
             lineHeight: 1.5,
-            background: '#1e293b',
-            color: '#e2e8f0',
+            background: 'var(--naad-fg)',
+            color: 'var(--naad-line)',
           }}
           placeholder="<p>Enter HTML...</p>"
         />
@@ -416,7 +416,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 160, 
               <button
                 type="button"
                 onClick={closeDialog}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748b' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--naad-fg-muted)' }}
                 aria-label="Close"
               >
                 <X size={20} />

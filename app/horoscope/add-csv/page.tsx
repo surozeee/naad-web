@@ -856,7 +856,7 @@ export default function AddHoroscopeCsvPage() {
 
   return (
     <DashboardLayout>
-      <div className="horoscope-csv-page space-y-4 max-w-[1400px] text-black dark:text-white">
+      <div className="horoscope-csv-page space-y-4 max-w-[1400px]">
         <Breadcrumb
           items={[
             { label: t('common.horoscope'), href: '/horoscope' },
@@ -893,7 +893,7 @@ export default function AddHoroscopeCsvPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
           <section className="horoscope-panel rounded-xl overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-sm font-semibold text-black dark:text-white">
+              <h2 className="text-sm font-semibold">
                 {editingId ? t('add.editDraft') : t('add.newDraft')}
               </h2>
               <span className="text-[11px] font-medium uppercase tracking-wide horoscope-muted">
@@ -1052,8 +1052,8 @@ export default function AddHoroscopeCsvPage() {
           <aside className="space-y-4">
             <div className="horoscope-panel rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <FileSpreadsheet size={16} className="text-black dark:text-white" />
-                <h2 className="text-sm font-semibold text-black dark:text-white">{t('add.csvImport')}</h2>
+                <FileSpreadsheet size={16} className="" />
+                <h2 className="text-sm font-semibold">{t('add.csvImport')}</h2>
               </div>
               <p className="text-xs horoscope-muted mb-3">{t('add.csvHint')}</p>
               <div className="flex flex-wrap gap-1.5">
@@ -1090,7 +1090,7 @@ export default function AddHoroscopeCsvPage() {
 
             <div className="horoscope-panel rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-sm font-semibold text-black dark:text-white">{t('add.records')}</h2>
+                <h2 className="text-sm font-semibold">{t('add.records')}</h2>
               </div>
 
               <div className="px-3 pt-2">
@@ -1111,7 +1111,7 @@ export default function AddHoroscopeCsvPage() {
                   </p>
                   {publishableDrafts.length > 0 ? (
                     <div className="flex flex-wrap items-center gap-2">
-                      <label className="inline-flex items-center gap-1.5 text-[11px] text-black dark:text-white cursor-pointer select-none">
+                      <label className="inline-flex items-center gap-1.5 text-[11px] cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={allVisibleSelected}
@@ -1186,7 +1186,7 @@ export default function AddHoroscopeCsvPage() {
                         }`}
                       >
                         <div
-                          className={`flex items-start gap-2 min-w-0 flex-1 text-black dark:text-white ${
+                          className={`flex items-start gap-2 min-w-0 flex-1 ${
                             canSelect ? 'cursor-pointer' : ''
                           }`}
                           onClick={canSelect ? () => toggleDraftSelected(entry.id) : undefined}
@@ -1254,7 +1254,7 @@ export default function AddHoroscopeCsvPage() {
                 ) : (
                   <ul className="space-y-1.5">
                     {activeServerRows.map((h) => (
-                      <li key={h.id} className="rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-2 text-xs text-black dark:text-white">
+                      <li key={h.id} className="rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-2 text-xs">
                         <div className="font-semibold">
                           {h.zodiacSign ? zodiacName(h.zodiacSign as ZodiacSignEnum) : '—'}
                         </div>

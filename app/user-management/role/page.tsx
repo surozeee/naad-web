@@ -90,7 +90,7 @@ function PermissionGroupTreeNode({
           gap: 8,
           padding: '6px 8px',
           borderRadius: 8,
-          background: depth === 0 ? '#f8fafc' : 'transparent',
+          background: depth === 0 ? 'var(--naad-bg-muted)' : 'transparent',
           marginLeft: depth * 16,
           cursor: hasExpandableContent ? 'pointer' : undefined,
         }}
@@ -103,12 +103,12 @@ function PermissionGroupTreeNode({
           onClick={(e) => e.stopPropagation()}
           style={{ marginRight: 4, flexShrink: 0 }}
         />
-        <FolderTree size={14} style={{ color: '#64748b', flexShrink: 0 }} />
+        <FolderTree size={14} style={{ color: 'var(--naad-fg-muted)', flexShrink: 0 }} />
         {depth > 0 && (
-          <span style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.02em', flexShrink: 0 }}>Sub</span>
+          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--naad-fg-muted)', textTransform: 'uppercase', letterSpacing: '0.02em', flexShrink: 0 }}>Sub</span>
         )}
         <span style={{ fontWeight: 600, fontSize: 13, flex: 1 }}>{node.name}</span>
-        {node.code && <span style={{ fontSize: 12, color: '#64748b' }}>({node.code})</span>}
+        {node.code && <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }}>({node.code})</span>}
         {hasExpandableContent && (
           <button
             type="button"
@@ -160,9 +160,9 @@ function PermissionGroupTreeNode({
                 onChange={() => onTogglePermission(String(perm.id))}
                 style={{ marginRight: 4 }}
               />
-              <Shield size={12} style={{ color: '#64748b', flexShrink: 0 }} />
+              <Shield size={12} style={{ color: 'var(--naad-fg-muted)', flexShrink: 0 }} />
               <span style={{ fontSize: 12 }}>{perm.name}</span>
-              {perm.code && <span style={{ fontSize: 11, color: '#94a3b8' }}>({perm.code})</span>}
+              {perm.code && <span style={{ fontSize: 11, color: 'var(--naad-fg-muted)' }}>({perm.code})</span>}
             </div>
           ))}
         </div>
@@ -531,7 +531,7 @@ export default function RolePage() {
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
         {children}
         <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 14 }}>
-          {sortBy === columnKey ? (sortDirection === 'asc' ? <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} /> : <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />) : <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />}
+          {sortBy === columnKey ? (sortDirection === 'asc' ? <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} /> : <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />) : <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />}
         </span>
       </span>
     </th>
@@ -547,12 +547,12 @@ export default function RolePage() {
               <h1 className="page-title" style={{ margin: 0, fontSize: '1.35rem' }}>Roles</h1>
             </div>
             <div style={{ marginTop: -12, position: 'relative' }} onMouseEnter={() => setShowInfoTooltip(true)} onMouseLeave={() => setShowInfoTooltip(false)}>
-              <button type="button" aria-label="Roles information" style={{ border: '1px solid #cbd5e1', background: '#f8fafc', padding: 2, borderRadius: 999, cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#334155', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)' }}>
+              <button type="button" aria-label="Roles information" style={{ border: '1px solid #cbd5e1', background: 'var(--naad-bg-muted)', padding: 2, borderRadius: 999, cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--naad-fg-muted)', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)' }}>
                 <Info size={18} />
               </button>
               {showInfoTooltip && (
-                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 260, padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', background: '#ffffff', color: '#334155', boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)', fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>
-                  <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: '#ffffff', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
+                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 260, padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', background: 'var(--naad-card-bg)', color: 'var(--naad-fg-muted)', boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)', fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>
+                  <div style={{ position: 'absolute', left: -6, top: '50%', width: 10, height: 10, background: 'var(--naad-card-bg)', borderLeft: '1px solid #dbe2ea', borderBottom: '1px solid #dbe2ea', transform: 'translateY(-50%) rotate(45deg)' }} />
                   Roles define access levels. Assign permissions to roles, then assign roles to users to control what they can do.
                 </div>
               )}
@@ -583,7 +583,7 @@ export default function RolePage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={4} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b', fontSize: 15 }}>Loading...</td></tr>
+                <tr><td colSpan={4} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)', fontSize: 15 }}>Loading...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={4} className="empty-state" style={{ fontSize: 15 }}><p>{roles.length === 0 ? 'No roles found' : 'No roles match your search'}</p></td></tr>
               ) : (
@@ -701,7 +701,7 @@ export default function RolePage() {
                   </div>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, overflow: 'auto', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, fontSize: 14 }}>
-                  {treeLoading ? <span style={{ color: '#64748b', fontSize: 15 }}>Loading permission tree...</span> : permissionGroupTree.length === 0 ? <span style={{ color: '#64748b', fontSize: 15 }}>No permission groups loaded</span> : permissionsModalFilteredTree.length === 0 ? <span style={{ color: '#64748b', fontSize: 15 }}>No groups or permissions match your search</span> : permissionsModalFilteredTree.map((node) => (
+                  {treeLoading ? <span style={{ color: 'var(--naad-fg-muted)', fontSize: 15 }}>Loading permission tree...</span> : permissionGroupTree.length === 0 ? <span style={{ color: 'var(--naad-fg-muted)', fontSize: 15 }}>No permission groups loaded</span> : permissionsModalFilteredTree.length === 0 ? <span style={{ color: 'var(--naad-fg-muted)', fontSize: 15 }}>No groups or permissions match your search</span> : permissionsModalFilteredTree.map((node) => (
                     <PermissionGroupTreeNode key={node.id} node={node} depth={0} formData={{ permissionIds: permissionsModalFormData.permissionIds }} expandedGroupIds={permissionsModalExpanded} onTogglePermission={permissionsModalTogglePermission} onToggleGroup={permissionsModalToggleGroup} isGroupChecked={permissionsModalIsGroupChecked} isGroupIndeterminate={permissionsModalIsGroupIndeterminate} onToggleExpanded={permissionsModalToggleExpanded} />
                   ))}
                 </div>

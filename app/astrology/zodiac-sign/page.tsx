@@ -750,12 +750,12 @@ export default function ZodiacSignPage() {
         {children}
         {sortKey === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -820,7 +820,7 @@ export default function ZodiacSignPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={9} style={{ padding: '2rem', textAlign: 'center' }} className="dash-muted">Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
@@ -846,7 +846,7 @@ export default function ZodiacSignPage() {
                         <img
                           src={row.logoUrl}
                           alt={`${row.name} logo`}
-                          style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
+                          style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--naad-line)' }}
                         />
                       ) : (
                         '—'
@@ -993,13 +993,13 @@ export default function ZodiacSignPage() {
                   <div style={{ padding: '0 1.5rem 1.5rem' }}>
                     {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                     {fetchingDetail ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>
+                      <div className="dash-muted" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
                     ) : (
                       <>
-                        <div style={{ marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#f1f5f9', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Zodiac sign</div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{formData.name?.trim() || '—'}</div>
-                          <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{zodiacInfoSubtitle}</div>
+                        <div className="dash-info-panel">
+                          <div className="dash-info-panel__eyebrow">Zodiac sign</div>
+                          <div className="dash-info-panel__title">{formData.name?.trim() || '—'}</div>
+                          <div className="dash-info-panel__meta">{zodiacInfoSubtitle}</div>
                         </div>
                         <div className="form-group" style={{ marginBottom: '1.25rem' }}>
                           <label className="form-label">Local name</label>
@@ -1059,29 +1059,21 @@ export default function ZodiacSignPage() {
                             </button>
                           )}
                         </div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>Saved translations</div>
+                        <div className="dash-section-label">Saved translations</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {zodiacLocalesApi.length === 0 ? (
-                            <div style={{ fontSize: 13, color: '#64748b', padding: '0.75rem', background: '#f8fafc', borderRadius: 8 }}>
+                            <div className="dash-locale-empty">
                               No translations yet. Select a language above, enter Local name, and click Save.
                             </div>
                           ) : (
                             zodiacLocalesApi.map((loc) => (
                               <div
                                 key={loc.id ?? `${loc.language}-${loc.name}`}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#fff',
-                                  border: '1px solid #e2e8f0',
-                                  borderRadius: 8,
-                                }}
+                                className="dash-locale-row"
                               >
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
-                                  <span style={{ fontWeight: 600, color: '#475569', minWidth: 36 }}>{String(loc.language)}</span>
-                                  <span style={{ color: '#0f172a' }}>{loc.name}</span>
+                                  <span className="dash-locale-row__code">{String(loc.language)}</span>
+                                  <span>{loc.name}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: 4 }}>
                                   <ActionTooltip text="Edit">
@@ -1135,7 +1127,7 @@ export default function ZodiacSignPage() {
                 </div>
                 <form onSubmit={handleSubmit} className="organization-form">
                   {fetchingDetail && (
-                    <div style={{ marginBottom: 12, padding: 10, background: '#f1f5f9', borderRadius: 8, fontSize: 14 }}>
+                    <div className="dash-loading-note">
                       Loading details…
                     </div>
                   )}
@@ -1174,7 +1166,7 @@ export default function ZodiacSignPage() {
                     <label htmlFor="daysRange" className="form-label">Days Range</label>
                     <input type="text" id="daysRange" name="daysRange" value={formData.daysRange ?? ''} onChange={handleInputChange} className="form-input" placeholder="e.g. Mar 21 - Apr 19" />
                   </div>
-                  <p style={{ marginBottom: 12, fontSize: 13, color: '#64748b' }}>
+                  <p className="dash-muted" style={{ marginBottom: 12, fontSize: 13 }}>
                     Per-language labels are managed with the <strong>Languages</strong> action on each row after save.
                   </p>
                   <div className="form-group">

@@ -214,12 +214,12 @@ export default function MusicTypePage() {
         {children}
         {sortKey === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -280,7 +280,7 @@ export default function MusicTypePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>

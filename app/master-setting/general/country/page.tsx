@@ -678,7 +678,7 @@ export default function CountrySetup() {
       confirmButtonText: 'Yes, update',
       cancelButtonText: 'No',
       confirmButtonColor: '#0f766e',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: 'var(--naad-fg-muted)',
     });
     if (!result.isConfirmed) return;
     setError(null);
@@ -703,7 +703,7 @@ export default function CountrySetup() {
       confirmButtonText: 'Yes, delete',
       cancelButtonText: 'No',
       confirmButtonColor: '#b91c1c',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: 'var(--naad-fg-muted)',
     });
     if (!result.isConfirmed) return;
     setError(null);
@@ -775,12 +775,12 @@ export default function CountrySetup() {
         >
           {sortBy === columnKey ? (
             sortDirection === 'asc' ? (
-              <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+              <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
             ) : (
-              <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+              <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
             )
           ) : (
-            <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+            <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
           )}
         </span>
       </span>
@@ -829,14 +829,14 @@ export default function CountrySetup() {
               aria-label="Country setup information"
               style={{
                 border: '1px solid #cbd5e1',
-                background: '#f8fafc',
+                background: 'var(--naad-bg-muted)',
                 padding: 2,
                 borderRadius: 999,
                 cursor: 'help',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#334155',
+                color: 'var(--naad-fg-muted)',
                 boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
               }}
             >
@@ -854,8 +854,8 @@ export default function CountrySetup() {
                   padding: '10px 12px',
                   borderRadius: 12,
                   border: '1px solid #dbe2ea',
-                  background: '#ffffff',
-                  color: '#334155',
+                  background: 'var(--naad-card-bg)',
+                  color: 'var(--naad-fg-muted)',
                   boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)',
                   fontSize: 12,
                   lineHeight: 1.5,
@@ -869,7 +869,7 @@ export default function CountrySetup() {
                     top: '50%',
                     width: 10,
                     height: 10,
-                    background: '#ffffff',
+                    background: 'var(--naad-card-bg)',
                     borderLeft: '1px solid #dbe2ea',
                     borderBottom: '1px solid #dbe2ea',
                     transform: 'translateY(-50%) rotate(45deg)',
@@ -929,7 +929,7 @@ export default function CountrySetup() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
+                <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                   Loading countries...
                 </td>
               </tr>
@@ -992,13 +992,13 @@ export default function CountrySetup() {
                     <span className="org-code">{country.isoCode}</span>
                   </td>
                   <td style={{ width: 90 }}>
-                    <div className="contact-cell" style={{ color: '#64748b' }}>
+                    <div className="contact-cell" style={{ color: 'var(--naad-fg-muted)' }}>
                       <MapPin size={14} />
                       <span>{country.phoneCode}</span>
                     </div>
                   </td>
                   <td>
-                    <span style={{ fontSize: 12, color: '#475569' }} title={localesSummary(country.locales)}>
+                    <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }} title={localesSummary(country.locales)}>
                       {localesSummary(country.locales)}
                     </span>
                   </td>
@@ -1331,7 +1331,7 @@ export default function CountrySetup() {
               <div className="color-locale-modal-body">
                 {errors.submit ? <div className="form-error">{errors.submit}</div> : null}
                 {fetchingDetail ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     Loading...
                   </div>
                 ) : (
@@ -1358,7 +1358,7 @@ export default function CountrySetup() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#2563eb',
+                            color: 'var(--naad-primary)',
                             borderRadius: 10,
                             width: 36,
                             height: 36,
@@ -1416,7 +1416,7 @@ export default function CountrySetup() {
                               minHeight: 42,
                               fontSize: 14,
                               borderRadius: 8,
-                              borderColor: '#e2e8f0',
+                              borderColor: 'var(--naad-line)',
                             }),
                             valueContainer: (base) => ({ ...base, padding: '0 10px' }),
                             menuPortal: (base) => ({ ...base, zIndex: 1000000 }),

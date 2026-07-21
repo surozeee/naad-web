@@ -335,12 +335,12 @@ export default function AstrologerManagementPage() {
         <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 14 }}>
           {sortKey === columnKey ? (
             sortDirection === 'asc' ? (
-              <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+              <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
             ) : (
-              <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+              <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
             )
           ) : (
-            <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+            <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
           )}
         </span>
       </span>
@@ -408,7 +408,7 @@ export default function AstrologerManagementPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     Loading...
                   </td>
                 </tr>
@@ -428,7 +428,7 @@ export default function AstrologerManagementPage() {
                           height: 40,
                           borderRadius: '50%',
                           overflow: 'hidden',
-                          background: '#f1f5f9',
+                          background: 'var(--naad-bg-muted)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -444,7 +444,7 @@ export default function AstrologerManagementPage() {
                             style={{ objectFit: 'cover', width: 40, height: 40 }}
                           />
                         ) : (
-                          <UserCircle size={28} color="#94a3b8" />
+                          <UserCircle size={28} color='var(--naad-fg-muted)' />
                         )}
                       </div>
                     </td>
@@ -597,7 +597,7 @@ export default function AstrologerManagementPage() {
                         height: 72,
                         borderRadius: '50%',
                         overflow: 'hidden',
-                        background: '#f1f5f9',
+                        background: 'var(--naad-bg-muted)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -608,7 +608,7 @@ export default function AstrologerManagementPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={photoPreview} alt="Preview" style={{ width: 72, height: 72, objectFit: 'cover' }} />
                       ) : (
-                        <UserCircle size={40} color="#94a3b8" />
+                        <UserCircle size={40} color='var(--naad-fg-muted)' />
                       )}
                     </div>
                     <div>

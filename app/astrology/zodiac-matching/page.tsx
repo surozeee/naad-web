@@ -64,15 +64,15 @@ function normalizeLanguageEnumCode(raw: unknown, nameHint?: unknown): string | n
 function levelBadgeClass(level?: string): string {
   switch (level) {
     case 'EXCELLENT':
-      return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200';
+      return 'zm-level zm-level--excellent';
     case 'GOOD':
-      return 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200';
+      return 'zm-level zm-level--good';
     case 'MODERATE':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200';
+      return 'zm-level zm-level--moderate';
     case 'CHALLENGING':
-      return 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200';
+      return 'zm-level zm-level--challenging';
     default:
-      return 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-200';
+      return 'zm-level';
   }
 }
 
@@ -417,7 +417,7 @@ export default function ZodiacMatchingPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="organization-page space-y-5">
         <Breadcrumb
           items={[
             { label: 'Astrology', href: '/astrology' },
@@ -429,145 +429,145 @@ export default function ZodiacMatchingPage() {
           infoText="Manage sun-sign compatibility pairs (78 seeded). English content lives on the main row; Nepali/Hindi (and other active languages) are locale translations. Seeded on backend startup."
         >
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => fetchItems()}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-sm"
-            >
+            <button type="button" onClick={() => fetchItems()} className="btn-secondary btn-small">
               <RefreshCw size={16} /> Refresh
             </button>
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
-            >
+            <button type="button" onClick={openCreate} className="btn-primary btn-small">
               <Plus size={16} /> Add Pair
             </button>
           </div>
         </PageHeaderWithInfo>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              value={searchTerm}
-              onChange={(e) => {
+        <div className="table-container" style={{ padding: '1rem' }}>
+          <div className="search-section" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 0 }}>
+            <div className="search-wrapper" style={{ flex: 1, minWidth: 200 }}>
+              <Search size={16} />
+              <input
+                value={searchTerm}
+                onChange={(e) => {
+                  setPage(0);
+                  setSearchTerm(e.target.value);
+                }}
+                placeholder="Search summary / advice…"
+                className="search-input"
+              />
+            </div>
+            <Select
+              className="min-w-[160px] text-sm"
+              classNamePrefix="lang-select"
+              isClearable
+              placeholder="Filter sign"
+              options={ZODIAC_SIGN_OPTIONS}
+              value={ZODIAC_SIGN_OPTIONS.find((o) => o.value === filterSign) ?? null}
+              onChange={(opt) => {
                 setPage(0);
-                setSearchTerm(e.target.value);
+                setFilterSign(opt?.value ?? '');
               }}
-              placeholder="Search summary / advice…"
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+              styles={{ menuPortal: (base) => ({ ...base, zIndex: 1000002 }) }}
+              menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+              menuPosition="fixed"
+            />
+            <Select
+              className="min-w-[160px] text-sm"
+              classNamePrefix="lang-select"
+              isClearable
+              placeholder="Filter level"
+              options={LEVEL_OPTIONS}
+              value={LEVEL_OPTIONS.find((o) => o.value === filterLevel) ?? null}
+              onChange={(opt) => {
+                setPage(0);
+                setFilterLevel(opt?.value ?? '');
+              }}
+              styles={{ menuPortal: (base) => ({ ...base, zIndex: 1000002 }) }}
+              menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+              menuPosition="fixed"
             />
           </div>
-          <Select
-            className="min-w-[160px] text-sm"
-            classNamePrefix="rs"
-            isClearable
-            placeholder="Filter sign"
-            options={ZODIAC_SIGN_OPTIONS}
-            value={ZODIAC_SIGN_OPTIONS.find((o) => o.value === filterSign) ?? null}
-            onChange={(opt) => {
-              setPage(0);
-              setFilterSign(opt?.value ?? '');
-            }}
-          />
-          <Select
-            className="min-w-[160px] text-sm"
-            classNamePrefix="rs"
-            isClearable
-            placeholder="Filter level"
-            options={LEVEL_OPTIONS}
-            value={LEVEL_OPTIONS.find((o) => o.value === filterLevel) ?? null}
-            onChange={(opt) => {
-              setPage(0);
-              setFilterLevel(opt?.value ?? '');
-            }}
-          />
         </div>
 
         {error && (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-3 py-2 text-sm dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+          <div
+            className="form-error"
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              border: '1px solid color-mix(in srgb, var(--naad-error) 40%, transparent)',
+              background: 'color-mix(in srgb, var(--naad-error) 12%, transparent)',
+            }}
+          >
             {error}
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div className="table-container">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-900/50 text-left">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Pair</th>
-                  <th className="px-4 py-3 font-semibold">Score</th>
-                  <th className="px-4 py-3 font-semibold">Level</th>
-                  <th className="px-4 py-3 font-semibold">Summary (EN)</th>
-                  <th className="px-4 py-3 font-semibold">Locales</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                  <th>Pair</th>
+                  <th>Score</th>
+                  <th>Level</th>
+                  <th>Summary (EN)</th>
+                  <th>Locales</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="dash-muted" style={{ padding: '2rem', textAlign: 'center' }}>
                       Loading…
                     </td>
                   </tr>
                 )}
                 {!loading && items.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                      No pairs found. Restart naad-app to seed EN/NE/HI initial data, or add a pair.
+                    <td colSpan={7} className="empty-state">
+                      <p>No pairs found. Restart naad-app to seed EN/NE/HI initial data, or add a pair.</p>
                     </td>
                   </tr>
                 )}
                 {!loading &&
                   items.map((row) => (
-                    <tr key={row.id} className="border-t border-gray-100 dark:border-slate-700">
-                      <td className="px-4 py-3 font-medium text-gray-800 dark:text-white whitespace-nowrap">
+                    <tr key={row.id}>
+                      <td className="org-name" style={{ whiteSpace: 'nowrap' }}>
                         {row.signALabel ?? row.signA} × {row.signBLabel ?? row.signB}
                       </td>
-                      <td className="px-4 py-3">{row.score}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${levelBadgeClass(row.level)}`}>
+                      <td>{row.score}</td>
+                      <td>
+                        <span className={`status-badge ${levelBadgeClass(row.level)}`}>
                           {row.levelLabel ?? row.level}
                         </span>
                       </td>
-                      <td className="px-4 py-3 max-w-xs truncate text-gray-600 dark:text-gray-300" title={row.summary}>
-                        {row.summary || '—'}
+                      <td style={{ maxWidth: 220 }} className="dash-muted" title={row.summary}>
+                        {row.summary
+                          ? row.summary.length > 60
+                            ? `${row.summary.slice(0, 60)}…`
+                            : row.summary
+                          : '—'}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      <td className="dash-muted">
                         {(row.locales ?? [])
                           .map((l) => String(l.language).toUpperCase())
                           .filter(Boolean)
                           .join(', ') || '—'}
                       </td>
-                      <td className="px-4 py-3 capitalize">{String(row.status ?? 'ACTIVE').toLowerCase()}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
+                      <td style={{ textTransform: 'capitalize' }}>{String(row.status ?? 'ACTIVE').toLowerCase()}</td>
+                      <td>
+                        <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
                           <ActionTooltip text="Edit EN">
-                            <button
-                              type="button"
-                              className="p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700"
-                              onClick={() => openEdit(row.id)}
-                            >
+                            <button type="button" className="btn-icon-edit" onClick={() => openEdit(row.id)}>
                               <Edit size={16} />
                             </button>
                           </ActionTooltip>
                           <ActionTooltip text="Translations">
-                            <button
-                              type="button"
-                              className="p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700"
-                              onClick={() => openLocales(row.id)}
-                            >
+                            <button type="button" className="btn-icon-edit" onClick={() => openLocales(row.id)}>
                               <Languages size={16} />
                             </button>
                           </ActionTooltip>
                           <ActionTooltip text="Delete">
-                            <button
-                              type="button"
-                              className="p-2 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600"
-                              onClick={() => handleDelete(row.id)}
-                            >
+                            <button type="button" className="btn-icon-delete" onClick={() => handleDelete(row.id)}>
                               <Trash2 size={16} />
                             </button>
                           </ActionTooltip>
@@ -578,16 +578,16 @@ export default function ZodiacMatchingPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-slate-700 text-sm">
-            <span className="text-gray-500">
+          <div className="pagination-container" style={{ padding: '12px 16px' }}>
+            <span className="pagination-label">
               {total} pair{total === 1 ? '' : 's'} · page {page + 1}/{totalPages}
             </span>
-            <div className="flex gap-2">
+            <div className="pagination-controls">
               <button
                 type="button"
                 disabled={page <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3 py-1 rounded border disabled:opacity-40"
+                className="pagination-btn"
               >
                 Prev
               </button>
@@ -595,7 +595,7 @@ export default function ZodiacMatchingPage() {
                 type="button"
                 disabled={page + 1 >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1 rounded border disabled:opacity-40"
+                className="pagination-btn"
               >
                 Next
               </button>
@@ -607,49 +607,60 @@ export default function ZodiacMatchingPage() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)} role="presentation">
           <div
-            className="modal-content bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700"
-            style={{ maxWidth: '48rem', borderRadius: '0.75rem' }}
+            className="modal-content organization-modal"
+            style={{ maxWidth: '48rem', width: '92vw', borderRadius: '0.75rem' }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+            <div
+              className="modal-header"
+              style={{ position: 'sticky', top: 0, zIndex: 2, background: 'var(--naad-card-bg)' }}
+            >
+              <h2>
                 {localeMode
                   ? `Translations · ${pairLabel}`
                   : editingId
                     ? `Edit pair · ${pairLabel}`
                     : 'Add zodiac matching pair'}
               </h2>
-              <button type="button" onClick={() => setShowModal(false)} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700">
+              <button type="button" onClick={() => setShowModal(false)} className="modal-close-btn" aria-label="Close">
                 <X size={18} />
               </button>
             </div>
 
             {!localeMode ? (
-              <form onSubmit={handleSubmit} className="p-5 space-y-4">
-                <p className="text-xs text-gray-500">
+              <form onSubmit={handleSubmit} className="organization-form" style={{ display: 'grid', gap: 16 }}>
+                <p className="dash-muted" style={{ fontSize: 12, margin: 0 }}>
                   Default language (English) fields. Use the Languages action to manage Nepali / Hindi translations.
                 </p>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <label className="text-sm space-y-1">
-                    <span className="font-medium">Sign A</span>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Sign A</label>
                     <Select
+                      classNamePrefix="lang-select"
                       options={ZODIAC_SIGN_OPTIONS}
                       value={ZODIAC_SIGN_OPTIONS.find((o) => o.value === formData.signA)}
                       onChange={(opt) => opt && setFormData((p) => ({ ...p, signA: opt.value }))}
+                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 1000002 }) }}
+                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                      menuPosition="fixed"
                     />
-                  </label>
-                  <label className="text-sm space-y-1">
-                    <span className="font-medium">Sign B</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Sign B</label>
                     <Select
+                      classNamePrefix="lang-select"
                       options={ZODIAC_SIGN_OPTIONS}
                       value={ZODIAC_SIGN_OPTIONS.find((o) => o.value === formData.signB)}
                       onChange={(opt) => opt && setFormData((p) => ({ ...p, signB: opt.value }))}
+                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 1000002 }) }}
+                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                      menuPosition="fixed"
                     />
-                  </label>
-                  <label className="text-sm space-y-1">
-                    <span className="font-medium">Score (0–100)</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Score (0–100)</label>
                     <input
                       type="number"
                       min={0}
@@ -669,17 +680,21 @@ export default function ZodiacMatchingPage() {
                                   : 'CHALLENGING',
                         }))
                       }
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                      className="form-input"
                     />
-                  </label>
-                  <label className="text-sm space-y-1">
-                    <span className="font-medium">Level</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Level</label>
                     <Select
+                      classNamePrefix="lang-select"
                       options={LEVEL_OPTIONS}
                       value={LEVEL_OPTIONS.find((o) => o.value === formData.level)}
                       onChange={(opt) => opt && setFormData((p) => ({ ...p, level: opt.value }))}
+                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 1000002 }) }}
+                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                      menuPosition="fixed"
                     />
-                  </label>
+                  </div>
                 </div>
                 {(
                   [
@@ -689,74 +704,80 @@ export default function ZodiacMatchingPage() {
                     ['workAdvice', 'Work advice'],
                   ] as const
                 ).map(([key, label]) => (
-                  <label key={key} className="block text-sm space-y-1">
-                    <span className="font-medium">{label}</span>
+                  <div key={key} className="form-group">
+                    <label className="form-label">{label}</label>
                     <textarea
                       rows={3}
                       value={(formData[key] as string) ?? ''}
                       onChange={(e) => setFormData((p) => ({ ...p, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                      className="form-input"
                     />
-                  </label>
+                  </div>
                 ))}
-                <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border">
+                <div className="form-actions">
+                  <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-60"
-                  >
+                  <button type="submit" disabled={submitting} className="btn-primary">
                     {submitting ? 'Saving…' : editingId ? 'Update' : 'Create'}
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="p-5 space-y-5">
-                <div className="rounded-lg bg-gray-50 dark:bg-slate-900/50 p-3 text-sm text-gray-600 dark:text-gray-300">
-                  <strong className="text-gray-800 dark:text-white">EN summary:</strong> {formData.summary || '—'}
+              <div className="organization-form" style={{ display: 'grid', gap: 20 }}>
+                <div className="dash-info-panel" style={{ marginBottom: 0 }}>
+                  <strong className="dash-info-panel__title" style={{ fontSize: 14 }}>
+                    EN summary:
+                  </strong>{' '}
+                  <span className="dash-muted">{formData.summary || '—'}</span>
                 </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-gray-800 dark:text-white">Saved translations</h3>
-                  {locales.length === 0 && <p className="text-sm text-gray-500">No locale rows yet.</p>}
-                  {locales.map((loc) => (
-                    <div
-                      key={String(loc.id)}
-                      className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-gray-200 dark:border-slate-600 p-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-indigo-600 dark:text-indigo-300">{loc.language}</div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{loc.summary}</p>
+                <div>
+                  <h3 className="dash-section-label" style={{ marginBottom: 8, fontSize: 15, color: 'var(--naad-fg)' }}>
+                    Saved translations
+                  </h3>
+                  {locales.length === 0 && <p className="dash-locale-empty">No locale rows yet.</p>}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {locales.map((loc) => (
+                      <div
+                        key={String(loc.id)}
+                        className="dash-locale-row"
+                        style={{ alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}
+                      >
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div className="dash-locale-row__code" style={{ color: 'var(--naad-primary)', marginBottom: 4 }}>
+                            {loc.language}
+                          </div>
+                          <p className="dash-muted" style={{ margin: 0, fontSize: 13 }}>
+                            {loc.summary}
+                          </p>
+                        </div>
+                        <div className="action-buttons">
+                          <button type="button" className="btn-secondary btn-small" onClick={() => selectLocaleForEdit(loc)}>
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary btn-small"
+                            style={{ color: 'var(--naad-error)' }}
+                            onClick={() => loc.id && handleLocaleDelete(String(loc.id))}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <button
-                          type="button"
-                          className="px-2 py-1 text-xs rounded border"
-                          onClick={() => selectLocaleForEdit(loc)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="px-2 py-1 text-xs rounded border text-rose-600"
-                          onClick={() => loc.id && handleLocaleDelete(String(loc.id))}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-slate-700 pt-4 space-y-3">
-                  <h3 className="font-semibold text-gray-800 dark:text-white">
+                <div style={{ borderTop: '1px solid var(--naad-line)', paddingTop: 16, display: 'grid', gap: 12 }}>
+                  <h3 className="dash-section-label" style={{ fontSize: 15, color: 'var(--naad-fg)' }}>
                     {editingLocaleId ? 'Edit translation' : 'Add translation'}
                   </h3>
-                  <label className="block text-sm space-y-1">
-                    <span className="font-medium">Language</span>
+                  <div className="form-group">
+                    <label className="form-label">Language</label>
                     <Select
+                      classNamePrefix="lang-select"
                       options={
                         editingLocaleId
                           ? localeLanguageOptions.filter(
@@ -768,8 +789,7 @@ export default function ZodiacMatchingPage() {
                           : missingLocaleOptions
                       }
                       isDisabled={
-                        Boolean(editingLocaleId) ||
-                        (!editingLocaleId && missingLocaleOptions.length === 0)
+                        Boolean(editingLocaleId) || (!editingLocaleId && missingLocaleOptions.length === 0)
                       }
                       placeholder={
                         missingLocaleOptions.length === 0 && !editingLocaleId
@@ -788,8 +808,11 @@ export default function ZodiacMatchingPage() {
                       }
                       onChange={(opt) => opt && setLocaleForm((p) => ({ ...p, language: opt.value }))}
                       noOptionsMessage={() => 'No languages left to add'}
+                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 1000002 }) }}
+                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                      menuPosition="fixed"
                     />
-                  </label>
+                  </div>
                   {(
                     [
                       ['summary', 'Summary'],
@@ -798,25 +821,25 @@ export default function ZodiacMatchingPage() {
                       ['workAdvice', 'Work advice'],
                     ] as const
                   ).map(([key, label]) => (
-                    <label key={key} className="block text-sm space-y-1">
-                      <span className="font-medium">{label}</span>
+                    <div key={key} className="form-group">
+                      <label className="form-label">{label}</label>
                       <textarea
                         rows={2}
                         value={localeForm[key]}
                         onChange={(e) => setLocaleForm((p) => ({ ...p, [key]: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                        className="form-input"
                       />
-                    </label>
+                    </div>
                   ))}
-                  <div className="flex justify-end gap-2">
+                  <div className="form-actions" style={{ marginBottom: 0 }}>
                     {editingLocaleId && (
                       <button
                         type="button"
-                        className="px-3 py-2 rounded-lg border text-sm"
+                        className="btn-secondary"
                         onClick={() => {
                           setEditingLocaleId(null);
                           setLocaleForm({
-                            language: missingLocaleOptions[0]?.value ?? 'NE',
+                            language: missingLocaleOptions[0]?.value ?? '',
                             summary: '',
                             loveAdvice: '',
                             friendshipAdvice: '',
@@ -831,7 +854,7 @@ export default function ZodiacMatchingPage() {
                       type="button"
                       disabled={localeSubmitting || (!editingLocaleId && missingLocaleOptions.length === 0)}
                       onClick={handleLocaleSave}
-                      className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm disabled:opacity-60"
+                      className="btn-primary"
                     >
                       {localeSubmitting ? 'Saving…' : editingLocaleId ? 'Update locale' : 'Add locale'}
                     </button>

@@ -221,3 +221,220 @@ html[data-theme='cosmic'] .dashboard-layout {
 html[data-theme='celestial'] .dashboard-layout {
   background-image: none;
 }
+
+/* —— Admin panels / locale rows (zodiac-sign & similar) —— */
+.dash-info-panel {
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--naad-bg-muted);
+  border-radius: 8px;
+  border: 1px solid var(--naad-line);
+  color: var(--naad-fg);
+}
+
+.dash-info-panel__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--naad-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.dash-info-panel__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--naad-fg);
+}
+
+.dash-info-panel__meta {
+  font-size: 13px;
+  color: var(--naad-fg-muted);
+  margin-top: 4px;
+}
+
+.dash-muted {
+  color: var(--naad-fg-muted);
+}
+
+.dash-locale-empty {
+  font-size: 13px;
+  color: var(--naad-fg-muted);
+  padding: 0.75rem;
+  background: var(--naad-bg-muted);
+  border-radius: 8px;
+}
+
+.dash-locale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--naad-card-bg);
+  border: 1px solid var(--naad-line);
+  border-radius: 8px;
+  color: var(--naad-fg);
+}
+
+.dash-locale-row__code {
+  font-weight: 600;
+  color: var(--naad-fg-muted);
+  min-width: 36px;
+}
+
+.dash-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--naad-fg-muted);
+  margin-bottom: 0.5rem;
+}
+
+.dash-loading-note {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: var(--naad-bg-muted);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--naad-fg-muted);
+  border: 1px solid var(--naad-line);
+}
+
+/* react-select (lang-select) follows theme */
+.lang-select__control {
+  background: var(--naad-bg-muted) !important;
+  border-color: var(--naad-line) !important;
+  color: var(--naad-fg) !important;
+  box-shadow: none !important;
+  min-height: 32px !important;
+}
+
+.lang-select__control--is-focused {
+  border-color: var(--naad-primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--naad-primary) 22%, transparent) !important;
+}
+
+.lang-select__single-value,
+.lang-select__input-container,
+.lang-select__placeholder {
+  color: var(--naad-fg) !important;
+}
+
+.lang-select__placeholder {
+  color: var(--naad-fg-muted) !important;
+}
+
+.lang-select__menu {
+  background: var(--naad-bg-elevated) !important;
+  border: 1px solid var(--naad-line) !important;
+  z-index: 1000002 !important;
+}
+
+.lang-select__option {
+  background: transparent !important;
+  color: var(--naad-fg) !important;
+}
+
+.lang-select__option--is-focused {
+  background: color-mix(in srgb, var(--naad-primary) 16%, transparent) !important;
+}
+
+.lang-select__option--is-selected {
+  background: color-mix(in srgb, var(--naad-primary) 28%, transparent) !important;
+  color: var(--naad-fg) !important;
+}
+
+.lang-select__indicator,
+.lang-select__dropdown-indicator,
+.lang-select__clear-indicator {
+  color: var(--naad-fg-muted) !important;
+}
+
+.lang-select__indicator-separator {
+  background: var(--naad-line) !important;
+}
+
+html[data-theme='cosmic'] .organization-page,
+html[data-theme='divine'] .organization-page,
+html[data-theme='celestial'] .organization-page {
+  color: var(--naad-fg);
+}
+
+/* Zodiac matching level badges — readable on Cosmic / Celestial / Divine */
+.zm-level {
+  background: var(--naad-bg-muted) !important;
+  color: var(--naad-fg) !important;
+  border: 1px solid var(--naad-line);
+}
+
+.zm-level--excellent {
+  background: color-mix(in srgb, #22c55e 22%, var(--naad-card-bg)) !important;
+  color: color-mix(in srgb, #16a34a 55%, var(--naad-fg)) !important;
+  border-color: color-mix(in srgb, #22c55e 35%, var(--naad-line));
+}
+
+.zm-level--good {
+  background: color-mix(in srgb, var(--naad-secondary) 22%, var(--naad-card-bg)) !important;
+  color: color-mix(in srgb, var(--naad-secondary) 50%, var(--naad-fg)) !important;
+  border-color: color-mix(in srgb, var(--naad-secondary) 35%, var(--naad-line));
+}
+
+.zm-level--moderate {
+  background: color-mix(in srgb, var(--naad-accent) 22%, var(--naad-card-bg)) !important;
+  color: color-mix(in srgb, var(--naad-accent) 45%, var(--naad-fg)) !important;
+  border-color: color-mix(in srgb, var(--naad-accent) 35%, var(--naad-line));
+}
+
+.zm-level--challenging {
+  background: color-mix(in srgb, var(--naad-error) 18%, var(--naad-card-bg)) !important;
+  color: color-mix(in srgb, var(--naad-error) 55%, var(--naad-fg)) !important;
+  border-color: color-mix(in srgb, var(--naad-error) 35%, var(--naad-line));
+}
+
+
+/* Extra Tailwind remaps for remaining dashboard pages */
+.dashboard-layout :is(.text-black, .dark\:text-white) {
+  color: var(--naad-fg) !important;
+}
+
+html.dark .dashboard-layout :is(.dark\:text-gray-200, .dark\:text-slate-100) {
+  color: var(--naad-fg) !important;
+}
+
+.dashboard-layout :is(.border-slate-200, .border-slate-600, .dark\:border-slate-600) {
+  border-color: var(--naad-line) !important;
+}
+
+html.dark .dashboard-layout :is(.dark\:hover\:bg-slate-700:hover, .hover\:bg-gray-100:hover) {
+  background-color: color-mix(in srgb, var(--naad-primary) 12%, var(--naad-bg-muted)) !important;
+}
+
+.dashboard-layout :is(.bg-indigo-600, .bg-blue-600, .hover\:bg-indigo-700:hover) {
+  background-color: var(--naad-primary) !important;
+  color: var(--naad-btn-on-primary) !important;
+}
+
+.dashboard-layout .react-select__control,
+.dashboard-layout .rs__control {
+  background: var(--naad-bg-muted) !important;
+  border-color: var(--naad-line) !important;
+  color: var(--naad-fg) !important;
+}
+
+.dashboard-layout .react-select__menu,
+.dashboard-layout .rs__menu {
+  background: var(--naad-bg-elevated) !important;
+  border: 1px solid var(--naad-line) !important;
+  color: var(--naad-fg) !important;
+}
+
+.dashboard-layout .react-select__option--is-focused,
+.dashboard-layout .rs__option--is-focused {
+  background: color-mix(in srgb, var(--naad-primary) 16%, transparent) !important;
+}
+
+.dashboard-layout .react-select__single-value,
+.dashboard-layout .rs__single-value,
+.dashboard-layout .react-select__input-container,
+.dashboard-layout .rs__input-container {
+  color: var(--naad-fg) !important;
+}

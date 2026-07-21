@@ -270,7 +270,7 @@ export function HoroscopeColorPicker({
   return (
     <div className={`flex flex-col gap-2 min-w-0 ${className}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold horoscope-key text-black dark:text-white">{displayLabel}</span>
+        <span className="text-xs font-semibold horoscope-key">{displayLabel}</span>
         <span className="text-[10px] horoscope-muted">
           {loading ? 'Loading…' : `${selected.length}/${max} selected`}
         </span>
@@ -361,11 +361,11 @@ export function HoroscopeColorPicker({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/80 pl-1.5 pr-2 py-0.5 text-[11px] font-medium text-black dark:text-white"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/80 pl-1.5 pr-2 py-0.5 text-[11px] font-medium"
               >
                 <span
                   className="h-3.5 w-3.5 rounded-full border border-black/10 dark:border-white/20 shrink-0"
-                  style={{ backgroundColor: swatch?.hex ?? '#64748b' }}
+                  style={{ backgroundColor: swatch?.hex ?? 'var(--naad-fg-muted)' }}
                 />
                 {display}
                 <button

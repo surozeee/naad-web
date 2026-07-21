@@ -25,7 +25,7 @@ import type { PermissionGroupResponse, PermissionResponse } from '@/app/lib/user
 const PAGE_SIZE = 20;
 type SelectOption = { value: string; label: string };
 
-const iconTooltipBg = '#2563eb';
+const iconTooltipBg = 'var(--naad-primary)';
 const TOOLTIP_GAP = 10;
 
 function IconTooltip({ text, children }: { text: string; children: React.ReactNode }) {
@@ -409,7 +409,7 @@ export default function PermissionGroupManagement() {
             style={{
               width: '100%',
               border: 'none',
-              background: depth === 0 ? '#f8fafc' : '#fafafa',
+              background: depth === 0 ? 'var(--naad-bg-muted)' : '#fafafa',
               padding: '0.65rem 0.75rem',
               display: 'flex',
               alignItems: 'center',
@@ -478,19 +478,19 @@ export default function PermissionGroupManagement() {
             </div>
           </div>
           {expanded && (
-            <div style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
+            <div style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', background: 'var(--naad-card-bg)' }}>
               {!isLastChild && (
                 children.length > 0 ? (
                   <div style={{ display: 'grid', gap: 4 }}>
                     {children.map((child) => renderGroupNode(child, depth + 1))}
                   </div>
                 ) : (
-                  <div style={{ color: '#64748b', fontSize: 14 }}>No sub groups. Use &quot;Add Sub Group&quot; on the row to add one.</div>
+                  <div style={{ color: 'var(--naad-fg-muted)', fontSize: 14 }}>No sub groups. Use &quot;Add Sub Group&quot; on the row to add one.</div>
                 )
               )}
               {isLastChild && (
                 subPermissions.length === 0 ? (
-                  <div style={{ color: '#64748b', fontSize: 14 }}>No permissions in this group. Use Edit to add permissions.</div>
+                  <div style={{ color: 'var(--naad-fg-muted)', fontSize: 14 }}>No permissions in this group. Use Edit to add permissions.</div>
                 ) : (
                   <div style={{ display: 'grid', gap: '0.5rem' }}>
                     {subPermissions.map((permission) => (
@@ -508,7 +508,7 @@ export default function PermissionGroupManagement() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: 13 }}>{permission.name}</div>
-                            <div style={{ fontSize: 12, color: '#64748b' }}>{permission.code || '—'}</div>
+                            <div style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }}>{permission.code || '—'}</div>
                           </div>
                         </div>
                         <IconTooltip text="Remove from group">
@@ -578,14 +578,14 @@ export default function PermissionGroupManagement() {
                 aria-label="Permission groups information"
                 style={{
                   border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
+                  background: 'var(--naad-bg-muted)',
                   padding: 2,
                   borderRadius: 999,
                   cursor: 'help',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#334155',
+                  color: 'var(--naad-fg-muted)',
                   boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
                 }}
               >
@@ -647,7 +647,7 @@ export default function PermissionGroupManagement() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 0.9fr) minmax(0, 2.1fr)', gap: '1rem', alignItems: 'start' }}>
-            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: '#fff' }}>
+            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: 'var(--naad-card-bg)' }}>
               <div style={{ padding: '0rem 0rem', borderBottom: '1px solid #e2e8f0' }}>
                 <div className="search-wrapper" style={{ marginBottom: '0.75rem' }}>
                   <Search size={20} />
@@ -668,7 +668,7 @@ export default function PermissionGroupManagement() {
                       key={parent.id}
                       onClick={() => setSelectedParentId(parent.id)}
                       style={{
-                        border: `1px solid ${isSelected ? '#93c5fd' : '#e2e8f0'}`,
+                        border: `1px solid ${isSelected ? '#93c5fd' : 'var(--naad-line)'}`,
                         borderRadius: 10,
                         padding: '0.625rem 0.75rem',
                         display: 'flex',
@@ -713,9 +713,9 @@ export default function PermissionGroupManagement() {
               </div>
             </section>
 
-            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: '#fff', padding: '1rem' }}>
+            <section style={{ border: '1px solid #e2e8f0', borderRadius: 12, background: 'var(--naad-card-bg)', padding: '1rem' }}>
               {!selectedParent ? (
-                <div style={{ color: '#64748b' }}>Select a parent permission group to view details.</div>
+                <div style={{ color: 'var(--naad-fg-muted)' }}>Select a parent permission group to view details.</div>
               ) : (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -731,14 +731,14 @@ export default function PermissionGroupManagement() {
                           aria-label="Group description"
                           style={{
                             border: '1px solid #cbd5e1',
-                            background: '#f8fafc',
+                            background: 'var(--naad-bg-muted)',
                             padding: 2,
                             borderRadius: 999,
                             cursor: 'help',
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#334155',
+                            color: 'var(--naad-fg-muted)',
                             boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
                           }}
                         >
@@ -802,7 +802,7 @@ export default function PermissionGroupManagement() {
 
                   <div style={{ borderTop: '1px dashed #e2e8f0', marginTop: '0.875rem', paddingTop: '0.875rem' }}>
                     {(subGroupsByParent[selectedParent.id] ?? []).length === 0 ? (
-                      <div style={{ color: '#64748b', fontSize: 14 }}>
+                      <div style={{ color: 'var(--naad-fg-muted)', fontSize: 14 }}>
                         {selectedParent.hasSubChild === 'FALSE'
                           ? 'No permissions in this group.'
                           : 'No sub permission groups yet. Use "Add Sub Permission Group" above to add one.'}

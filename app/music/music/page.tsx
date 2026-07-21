@@ -268,12 +268,12 @@ export default function MusicPage() {
         {children}
         {sortKey === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -346,7 +346,7 @@ export default function MusicPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</td>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading...</td>
                 </tr>
               ) : hasNoData ? (
                 <tr>
@@ -460,7 +460,7 @@ export default function MusicPage() {
               <form onSubmit={handleSubmit} className="organization-form">
                 {errors.submit && <div className="form-error" style={{ marginBottom: '1rem' }}>{errors.submit}</div>}
                 {!editingId && (
-                  <p className="form-label" style={{ marginBottom: 8, fontWeight: 500, color: '#64748b' }}>
+                  <p className="form-label" style={{ marginBottom: 8, fontWeight: 500, color: 'var(--naad-fg-muted)' }}>
                     Create by selecting an audio file (MP3) only.
                   </p>
                 )}
@@ -479,7 +479,7 @@ export default function MusicPage() {
                       onChange={(e) => { setUploadFile(e.target.files?.[0] ?? null); if (errors.file) setErrors((p) => ({ ...p, file: '' })); }}
                       className={`form-input ${errors.file ? 'error' : ''}`}
                     />
-                    {uploadFile && <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginTop: 4 }}>{uploadFile.name}</span>}
+                    {uploadFile && <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)', display: 'block', marginTop: 4 }}>{uploadFile.name}</span>}
                     {errors.file && <span className="form-error">{errors.file}</span>}
                   </div>
                 )}
@@ -493,13 +493,13 @@ export default function MusicPage() {
                       onChange={(e) => setUpdateFile(e.target.files?.[0] ?? null)}
                       className="form-input"
                     />
-                    {updateFile && <span style={{ fontSize: 12, color: '#64748b' }}>{updateFile.name}</span>}
+                    {updateFile && <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }}>{updateFile.name}</span>}
                   </div>
                 )}
                 {editingId && (
                   <div className="form-group">
                     <label htmlFor="mp3Url" className="form-label">MP3 URL</label>
-                    <input type="url" id="mp3Url" name="mp3Url" value={formData.mp3Url ?? ''} readOnly className="form-input" style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }} placeholder="https://..." title="URL is set by the uploaded file and cannot be edited" />
+                    <input type="url" id="mp3Url" name="mp3Url" value={formData.mp3Url ?? ''} readOnly className="form-input" style={{ backgroundColor: 'var(--naad-bg-muted)', cursor: 'not-allowed' }} placeholder="https://..." title="URL is set by the uploaded file and cannot be edited" />
                   </div>
                 )}
                 <div className="form-group">
@@ -548,15 +548,15 @@ export default function MusicPage() {
               <div className="organization-form" style={{ padding: '20px 24px 24px' }}>
                 <div className="form-group">
                   <label className="form-label">Name</label>
-                  <p style={{ margin: 0, fontSize: '0.9375rem', color: '#1e293b' }}>{detailRow.name}</p>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: 'var(--naad-fg)' }}>{detailRow.name}</p>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <p style={{ margin: 0, fontSize: '0.9375rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>{detailRow.description || '—'}</p>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: 'var(--naad-fg)', whiteSpace: 'pre-wrap' }}>{detailRow.description || '—'}</p>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Music type</label>
-                  <p style={{ margin: 0, fontSize: '0.9375rem', color: '#1e293b' }}>{detailRow.musicTypeName || '—'}</p>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: 'var(--naad-fg)' }}>{detailRow.musicTypeName || '—'}</p>
                 </div>
                 <div className="form-group">
                   <label className="form-label">MP3 URL</label>
@@ -565,7 +565,7 @@ export default function MusicPage() {
                       {detailRow.mp3Url}
                     </a>
                   ) : (
-                    <p style={{ margin: 0, fontSize: '0.9375rem', color: '#64748b' }}>—</p>
+                    <p style={{ margin: 0, fontSize: '0.9375rem', color: 'var(--naad-fg-muted)' }}>—</p>
                   )}
                 </div>
                 <div className="form-group">

@@ -48,7 +48,7 @@ export function HoroscopeRatingSelect({
       {label || hint ? (
         <div className="min-w-0">
           {label ? (
-            <div className="text-xs font-semibold text-black dark:text-white">
+            <div className="text-xs font-semibold">
               {label}
               {required ? <span className="text-red-600"> *</span> : null}
             </div>
@@ -120,7 +120,7 @@ export function HoroscopeRatingSelect({
             );
           })}
         </div>
-        <span className="w-8 text-right text-[11px] font-semibold tabular-nums text-black dark:text-white">
+        <span className="w-8 text-right text-[11px] font-semibold tabular-nums">
           {hasValue ? current.toFixed(1) : '—'}
         </span>
       </div>

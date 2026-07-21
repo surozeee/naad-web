@@ -35,7 +35,7 @@ export function HoroscopeLanguageTabs({
   if (variant === 'underline') {
     return (
       <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-        <Globe size={14} className="text-black dark:text-white shrink-0" aria-hidden />
+        <Globe size={14} className="shrink-0" aria-hidden />
         <div
           className="inline-flex flex-wrap gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600"
           role="tablist"
@@ -79,7 +79,7 @@ export function HoroscopeLanguageTabs({
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
-      <Globe size={compact ? 14 : 16} className="text-black dark:text-white shrink-0" aria-hidden />
+      <Globe size={compact ? 14 : 16} className="shrink-0" aria-hidden />
       <div
         className={`inline-flex flex-wrap gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 ${
           compact ? '' : ''

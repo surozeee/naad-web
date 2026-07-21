@@ -263,12 +263,12 @@ export default function PermissionPage() {
         <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 14 }}>
           {sortBy === columnKey ? (
             sortDirection === 'asc' ? (
-              <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+              <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
             ) : (
-              <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+              <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
             )
           ) : (
-            <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+            <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
           )}
         </span>
       </span>
@@ -294,14 +294,14 @@ export default function PermissionPage() {
                 aria-label="Permissions information"
                 style={{
                   border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
+                  background: 'var(--naad-bg-muted)',
                   padding: 2,
                   borderRadius: 999,
                   cursor: 'help',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#334155',
+                  color: 'var(--naad-fg-muted)',
                   boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
                 }}
               >
@@ -319,8 +319,8 @@ export default function PermissionPage() {
                     padding: '10px 12px',
                     borderRadius: 12,
                     border: '1px solid #dbe2ea',
-                    background: '#ffffff',
-                    color: '#334155',
+                    background: 'var(--naad-card-bg)',
+                    color: 'var(--naad-fg-muted)',
                     boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)',
                     fontSize: 12,
                     lineHeight: 1.5,
@@ -334,7 +334,7 @@ export default function PermissionPage() {
                       top: '50%',
                       width: 10,
                       height: 10,
-                      background: '#ffffff',
+                      background: 'var(--naad-card-bg)',
                       borderLeft: '1px solid #dbe2ea',
                       borderBottom: '1px solid #dbe2ea',
                       transform: 'translateY(-50%) rotate(45deg)',

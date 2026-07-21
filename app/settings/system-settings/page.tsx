@@ -202,7 +202,7 @@ export default function SystemSettingsPage() {
 
         <div className="page-header-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Settings2 size={28} style={{ color: '#64748b' }} />
+            <Settings2 size={28} style={{ color: 'var(--naad-fg-muted)' }} />
             <div>
               <h1 className="page-title" style={{ margin: 0 }}>
                 System Settings
@@ -230,9 +230,9 @@ export default function SystemSettingsPage() {
         )}
 
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading settings...</div>
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading settings...</div>
         ) : settings.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No settings found.</div>
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>No settings found.</div>
         ) : (
           <>
             <div
@@ -258,7 +258,7 @@ export default function SystemSettingsPage() {
                     border: 'none',
                     borderBottom: selectedSettingId === s.id ? '2px solid #2563eb' : '2px solid transparent',
                     background: selectedSettingId === s.id ? '#eff6ff' : 'transparent',
-                    color: selectedSettingId === s.id ? '#1d4ed8' : '#475569',
+                    color: selectedSettingId === s.id ? 'var(--naad-primary)' : 'var(--naad-fg-muted)',
                     fontWeight: selectedSettingId === s.id ? 600 : 500,
                     cursor: 'pointer',
                     borderRadius: '8px 8px 0 0',
@@ -273,17 +273,17 @@ export default function SystemSettingsPage() {
             {selectedSettingId && (
               <div style={{ maxWidth: 900 }}>
                 {selectedSetting?.description && (
-                  <p style={{ color: '#64748b', marginBottom: 16, fontSize: '0.875rem' }}>
+                  <p style={{ color: 'var(--naad-fg-muted)', marginBottom: 16, fontSize: '0.875rem' }}>
                     {selectedSetting.description}
                   </p>
                 )}
 
                 {categoriesLoading ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     Loading categories...
                   </div>
                 ) : categories.length === 0 ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     No categories for this setting.
                   </div>
                 ) : (
@@ -300,7 +300,7 @@ export default function SystemSettingsPage() {
                             border: '1px solid #e2e8f0',
                             borderRadius: 10,
                             overflow: 'hidden',
-                            background: '#fff',
+                            background: 'var(--naad-card-bg)',
                           }}
                         >
                           <button
@@ -313,22 +313,22 @@ export default function SystemSettingsPage() {
                               gap: 10,
                               padding: '14px 16px',
                               border: 'none',
-                              background: isExpanded ? '#f8fafc' : '#fafafa',
+                              background: isExpanded ? 'var(--naad-bg-muted)' : '#fafafa',
                               cursor: 'pointer',
                               textAlign: 'left',
                               fontWeight: 500,
-                              color: '#334155',
+                              color: 'var(--naad-fg-muted)',
                             }}
                           >
                             {isExpanded ? (
-                              <ChevronDown size={20} style={{ flexShrink: 0, color: '#64748b' }} />
+                              <ChevronDown size={20} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />
                             ) : (
-                              <ChevronRight size={20} style={{ flexShrink: 0, color: '#64748b' }} />
+                              <ChevronRight size={20} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />
                             )}
-                            <FolderOpen size={18} style={{ flexShrink: 0, color: '#64748b' }} />
+                            <FolderOpen size={18} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />
                             <span>{cat.name}</span>
                             {cat.description && (
-                              <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: '0.875rem' }}>
+                              <span style={{ color: 'var(--naad-fg-muted)', fontWeight: 400, fontSize: '0.875rem' }}>
                                 — {cat.description}
                               </span>
                             )}
@@ -339,15 +339,15 @@ export default function SystemSettingsPage() {
                               style={{
                                 padding: '12px 16px 16px 44px',
                                 borderTop: '1px solid #e2e8f0',
-                                background: '#fff',
+                                background: 'var(--naad-card-bg)',
                               }}
                             >
                               {loadingDetails ? (
-                                <div style={{ padding: '12px 0', color: '#64748b', fontSize: '0.875rem' }}>
+                                <div style={{ padding: '12px 0', color: 'var(--naad-fg-muted)', fontSize: '0.875rem' }}>
                                   Loading details...
                                 </div>
                               ) : details.length === 0 ? (
-                                <div style={{ padding: '12px 0', color: '#94a3b8', fontSize: '0.875rem' }}>
+                                <div style={{ padding: '12px 0', color: 'var(--naad-fg-muted)', fontSize: '0.875rem' }}>
                                   No details.
                                 </div>
                               ) : (
@@ -373,13 +373,13 @@ export default function SystemSettingsPage() {
                                         }}
                                       >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                          <Key size={14} style={{ flexShrink: 0, color: '#94a3b8' }} />
-                                          <span style={{ fontWeight: 500, color: '#334155', fontSize: '0.8125rem' }}>
+                                          <Key size={14} style={{ flexShrink: 0, color: 'var(--naad-fg-muted)' }} />
+                                          <span style={{ fontWeight: 500, color: 'var(--naad-fg-muted)', fontSize: '0.8125rem' }}>
                                             {d.displayName || d.key}
                                           </span>
                                         </div>
                                         {d.displayName && d.displayName !== d.key && (
-                                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{d.key}</div>
+                                          <div style={{ fontSize: '0.7rem', color: 'var(--naad-fg-muted)' }}>{d.key}</div>
                                         )}
                                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
                                           <input
@@ -394,7 +394,7 @@ export default function SystemSettingsPage() {
                                               fontSize: '0.8125rem',
                                               border: '1px solid #e2e8f0',
                                               borderRadius: 6,
-                                              background: '#fff',
+                                              background: 'var(--naad-card-bg)',
                                             }}
                                           />
                                           <button
@@ -409,7 +409,7 @@ export default function SystemSettingsPage() {
                                               padding: '6px 10px',
                                               fontSize: '0.75rem',
                                               fontWeight: 500,
-                                              color: '#2563eb',
+                                              color: 'var(--naad-primary)',
                                               background: '#eff6ff',
                                               border: '1px solid #bfdbfe',
                                               borderRadius: 6,
@@ -440,7 +440,7 @@ export default function SystemSettingsPage() {
                                         fontSize: '0.8125rem',
                                         fontWeight: 600,
                                         color: '#fff',
-                                        background: '#2563eb',
+                                        background: 'var(--naad-primary)',
                                         border: 'none',
                                         borderRadius: 8,
                                         cursor: savingCategoryId !== null ? 'not-allowed' : 'pointer',

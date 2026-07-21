@@ -129,7 +129,7 @@ function LuckyColorDisplay({
           <span key={name} className="hl-lucky-color-chip" title={label}>
             <span
               className="hl-lucky-color-swatch"
-              style={{ backgroundColor: hex || '#94a3b8' }}
+              style={{ backgroundColor: hex || 'var(--naad-fg-muted)' }}
               aria-hidden
             />
             <span>{label}</span>

@@ -545,7 +545,7 @@ export default function MessagingTemplatePage() {
       confirmButtonText: 'Yes, update',
       cancelButtonText: 'No',
       confirmButtonColor: '#0f766e',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: 'var(--naad-fg-muted)',
     });
     if (!result.isConfirmed) return;
     setError(null);
@@ -579,7 +579,7 @@ export default function MessagingTemplatePage() {
       confirmButtonText: 'Yes, delete',
       cancelButtonText: 'No',
       confirmButtonColor: '#b91c1c',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: 'var(--naad-fg-muted)',
     });
     if (!result.isConfirmed) return;
     setError(null);
@@ -674,12 +674,12 @@ export default function MessagingTemplatePage() {
         {children}
         {sortBy === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -727,14 +727,14 @@ export default function MessagingTemplatePage() {
               aria-label="Message template information"
               style={{
                 border: '1px solid #cbd5e1',
-                background: '#f8fafc',
+                background: 'var(--naad-bg-muted)',
                 padding: 2,
                 borderRadius: 999,
                 cursor: 'help',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#334155',
+                color: 'var(--naad-fg-muted)',
                 boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
               }}
             >
@@ -752,8 +752,8 @@ export default function MessagingTemplatePage() {
                   padding: '10px 12px',
                   borderRadius: 12,
                   border: '1px solid #dbe2ea',
-                  background: '#ffffff',
-                  color: '#334155',
+                  background: 'var(--naad-card-bg)',
+                  color: 'var(--naad-fg-muted)',
                   boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)',
                   fontSize: 12,
                   lineHeight: 1.5,
@@ -767,7 +767,7 @@ export default function MessagingTemplatePage() {
                     top: '50%',
                     width: 10,
                     height: 10,
-                    background: '#ffffff',
+                    background: 'var(--naad-card-bg)',
                     borderLeft: '1px solid #dbe2ea',
                     borderBottom: '1px solid #dbe2ea',
                     transform: 'translateY(-50%) rotate(45deg)',
@@ -833,7 +833,7 @@ export default function MessagingTemplatePage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
+                <td colSpan={6} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                   Loading templates...
                 </td>
               </tr>
@@ -1191,7 +1191,7 @@ export default function MessagingTemplatePage() {
                 <label htmlFor="topic" className="form-label">
                   Topic <span className="required">*</span>
                 </label>
-                <p className="form-description" style={{ margin: '0 0 8px 0', fontSize: 13, color: '#64748b', lineHeight: 1.4 }}>
+                <p className="form-description" style={{ margin: '0 0 8px 0', fontSize: 13, color: 'var(--naad-fg-muted)', lineHeight: 1.4 }}>
                   A unique identifier for when this template is used (e.g. REGISTER, FORGOT_PASSWORD, OTP). Use UPPERCASE with underscores.
                 </p>
                 <input
@@ -1208,7 +1208,7 @@ export default function MessagingTemplatePage() {
 
               <div className="form-group" style={{ marginTop: 20 }}>
                 <span className="form-label" style={{ display: 'block', marginBottom: 8 }}>Delivery channels</span>
-                <p className="form-description" style={{ margin: '0 0 12px 0', fontSize: 13, color: '#64748b', lineHeight: 1.4 }}>
+                <p className="form-description" style={{ margin: '0 0 12px 0', fontSize: 13, color: 'var(--naad-fg-muted)', lineHeight: 1.4 }}>
                   Choose which channels will be used for this template. You can edit subject and body per channel in the content step.
                 </p>
                 <div
@@ -1227,8 +1227,8 @@ export default function MessagingTemplatePage() {
                       gap: 8,
                       padding: 16,
                       borderRadius: 12,
-                      border: `2px solid ${formData.enableEmail ? '#2563eb' : '#e2e8f0'}`,
-                      background: formData.enableEmail ? '#eff6ff' : '#f8fafc',
+                      border: `2px solid ${formData.enableEmail ? 'var(--naad-primary)' : 'var(--naad-line)'}`,
+                      background: formData.enableEmail ? '#eff6ff' : 'var(--naad-bg-muted)',
                       cursor: 'pointer',
                       transition: 'border-color 0.15s, background 0.15s',
                     }}
@@ -1242,10 +1242,10 @@ export default function MessagingTemplatePage() {
                         onChange={(e) => setFormData((p) => ({ ...p, enableEmail: e.target.checked }))}
                         style={{ width: 18, height: 18, margin: 0 }}
                       />
-                      <Mail size={20} style={{ color: formData.enableEmail ? '#2563eb' : '#64748b' }} />
-                      <span style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Email</span>
+                      <Mail size={20} style={{ color: formData.enableEmail ? 'var(--naad-primary)' : 'var(--naad-fg-muted)' }} />
+                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--naad-fg)' }}>Email</span>
                     </span>
-                    <span style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>
+                    <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)', lineHeight: 1.4 }}>
                       Send template content by email (subject + body).
                     </span>
                   </label>
@@ -1258,8 +1258,8 @@ export default function MessagingTemplatePage() {
                       gap: 8,
                       padding: 16,
                       borderRadius: 12,
-                      border: `2px solid ${formData.enableSms ? '#2563eb' : '#e2e8f0'}`,
-                      background: formData.enableSms ? '#eff6ff' : '#f8fafc',
+                      border: `2px solid ${formData.enableSms ? 'var(--naad-primary)' : 'var(--naad-line)'}`,
+                      background: formData.enableSms ? '#eff6ff' : 'var(--naad-bg-muted)',
                       cursor: 'pointer',
                       transition: 'border-color 0.15s, background 0.15s',
                     }}
@@ -1273,10 +1273,10 @@ export default function MessagingTemplatePage() {
                         onChange={(e) => setFormData((p) => ({ ...p, enableSms: e.target.checked }))}
                         style={{ width: 18, height: 18, margin: 0 }}
                       />
-                      <MessageSquare size={20} style={{ color: formData.enableSms ? '#2563eb' : '#64748b' }} />
-                      <span style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>SMS</span>
+                      <MessageSquare size={20} style={{ color: formData.enableSms ? 'var(--naad-primary)' : 'var(--naad-fg-muted)' }} />
+                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--naad-fg)' }}>SMS</span>
                     </span>
-                    <span style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>
+                    <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)', lineHeight: 1.4 }}>
                       Send template as a short text message.
                     </span>
                   </label>
@@ -1289,8 +1289,8 @@ export default function MessagingTemplatePage() {
                       gap: 8,
                       padding: 16,
                       borderRadius: 12,
-                      border: `2px solid ${formData.enableNotification ? '#2563eb' : '#e2e8f0'}`,
-                      background: formData.enableNotification ? '#eff6ff' : '#f8fafc',
+                      border: `2px solid ${formData.enableNotification ? 'var(--naad-primary)' : 'var(--naad-line)'}`,
+                      background: formData.enableNotification ? '#eff6ff' : 'var(--naad-bg-muted)',
                       cursor: 'pointer',
                       transition: 'border-color 0.15s, background 0.15s',
                     }}
@@ -1304,10 +1304,10 @@ export default function MessagingTemplatePage() {
                         onChange={(e) => setFormData((p) => ({ ...p, enableNotification: e.target.checked }))}
                         style={{ width: 18, height: 18, margin: 0 }}
                       />
-                      <Bell size={20} style={{ color: formData.enableNotification ? '#2563eb' : '#64748b' }} />
-                      <span style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Notification</span>
+                      <Bell size={20} style={{ color: formData.enableNotification ? 'var(--naad-primary)' : 'var(--naad-fg-muted)' }} />
+                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--naad-fg)' }}>Notification</span>
                     </span>
-                    <span style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>
+                    <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)', lineHeight: 1.4 }}>
                       Show in-app or push notifications (subject + body).
                     </span>
                   </label>
@@ -1388,7 +1388,7 @@ export default function MessagingTemplatePage() {
                         border: 'none',
                         borderBottom: addDetailTab === key ? '2px solid #2563eb' : '2px solid transparent',
                         background: addDetailTab === key ? '#eff6ff' : 'transparent',
-                        color: addDetailTab === key ? '#1d4ed8' : '#64748b',
+                        color: addDetailTab === key ? 'var(--naad-primary)' : 'var(--naad-fg-muted)',
                         cursor: 'pointer',
                         fontWeight: addDetailTab === key ? 600 : 500,
                         fontSize: 14,
@@ -1402,9 +1402,9 @@ export default function MessagingTemplatePage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {addDetailLanguagesLoading ? (
-                    <span style={{ fontSize: 13, color: '#64748b' }}>Loading...</span>
+                    <span style={{ fontSize: 13, color: 'var(--naad-fg-muted)' }}>Loading...</span>
                   ) : addDetailAvailableLanguages.length === 0 ? (
-                    <span style={{ fontSize: 13, color: '#64748b' }}>No languages available</span>
+                    <span style={{ fontSize: 13, color: 'var(--naad-fg-muted)' }}>No languages available</span>
                   ) : (
                     <div style={{ minWidth: 120 }}>
                       <Select<{ value: string; label: string }>
@@ -1418,7 +1418,7 @@ export default function MessagingTemplatePage() {
                         menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                         menuPosition="fixed"
                         styles={{
-                          control: (base) => ({ ...base, minHeight: 40, height: 40, borderColor: '#e2e8f0' }),
+                          control: (base) => ({ ...base, minHeight: 40, height: 40, borderColor: 'var(--naad-line)' }),
                           valueContainer: (base) => ({ ...base, height: 40, padding: '0 10px' }),
                           indicatorsContainer: (base) => ({ ...base, height: 40 }),
                           menuPortal: (base) => ({ ...base, zIndex: 1000000 }),
@@ -1606,7 +1606,7 @@ export default function MessagingTemplatePage() {
                               border: 'none',
                               borderBottom: activeTab === key ? '2px solid #2563eb' : '2px solid transparent',
                               background: activeTab === key ? '#eff6ff' : 'transparent',
-                              color: activeTab === key ? '#1d4ed8' : '#64748b',
+                              color: activeTab === key ? 'var(--naad-primary)' : 'var(--naad-fg-muted)',
                               cursor: 'pointer',
                               fontWeight: activeTab === key ? 600 : 500,
                               fontSize: 14,
@@ -1644,7 +1644,7 @@ export default function MessagingTemplatePage() {
                                       ...base,
                                       minHeight: 40,
                                       height: 40,
-                                      borderColor: '#e2e8f0',
+                                      borderColor: 'var(--naad-line)',
                                     }),
                                     valueContainer: (base) => ({
                                       ...base,
@@ -1665,7 +1665,7 @@ export default function MessagingTemplatePage() {
                             );
                           })()
                         ) : (
-                          <span style={{ fontSize: 13, color: '#64748b' }}>No languages yet. Use &quot;Add message detail&quot; in the table row to add a language.</span>
+                          <span style={{ fontSize: 13, color: 'var(--naad-fg-muted)' }}>No languages yet. Use &quot;Add message detail&quot; in the table row to add a language.</span>
                         )}
                       </div>
                     </div>
@@ -1781,7 +1781,7 @@ export default function MessagingTemplatePage() {
                     <div
                       style={{
                         padding: 12,
-                        backgroundColor: '#f8fafc',
+                        backgroundColor: 'var(--naad-bg-muted)',
                         borderRadius: 8,
                         border: '1px solid #e2e8f0',
                         display: 'flex',
@@ -1806,7 +1806,7 @@ export default function MessagingTemplatePage() {
                       className="rich-text-editor-preview"
                       style={{
                         padding: 12,
-                        backgroundColor: '#f8fafc',
+                        backgroundColor: 'var(--naad-bg-muted)',
                         borderRadius: 8,
                         border: '1px solid #e2e8f0',
                         maxHeight: 300,

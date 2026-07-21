@@ -258,7 +258,7 @@ export default function HoroscopeDraftManager({
           {totals.map((item) => (
             <div key={item.value} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-lg">
               <div className="text-sm text-slate-500 dark:text-slate-400">{item.label}</div>
-              <div className="text-3xl font-bold text-black dark:text-white mt-2">{item.count}</div>
+              <div className="text-3xl font-bold mt-2">{item.count}</div>
               <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">Draft entries</div>
             </div>
           ))}
@@ -267,7 +267,7 @@ export default function HoroscopeDraftManager({
         <div className={`grid grid-cols-1 ${enableCsv ? 'xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]' : ''} gap-6`}>
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg p-6 space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-black dark:text-white">{editingId ? 'Edit Draft' : 'Add Single Horoscope'}</h2>
+              <h2 className="text-xl font-bold">{editingId ? 'Edit Draft' : 'Add Single Horoscope'}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Create horoscope entries manually. This screen is frontend-ready and can later be connected to backend horoscope APIs.
               </p>
@@ -332,12 +332,12 @@ export default function HoroscopeDraftManager({
                 <div className="flex items-center gap-3">
                   <FileSpreadsheet size={20} className="text-emerald-600" />
                   <div>
-                    <h2 className="text-xl font-bold text-black dark:text-white">CSV Upload</h2>
+                    <h2 className="text-xl font-bold">CSV Upload</h2>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Import multiple horoscope rows in one step.</p>
                   </div>
                 </div>
 
-                <div style={{ border: '1px dashed #94a3b8', borderRadius: 14, padding: 20, background: '#f8fafc' }}>
+                <div style={{ border: '1px dashed #94a3b8', borderRadius: 14, padding: 20, background: 'var(--naad-bg-muted)' }}>
                   <div className="text-sm font-semibold text-black">Required CSV columns</div>
                   <div className="text-sm text-slate-600 mt-2">{CSV_HEADERS.join(', ')}</div>
                   <label className="btn-secondary btn-small" style={{ marginTop: 16, cursor: 'pointer' }}>
@@ -359,7 +359,7 @@ export default function HoroscopeDraftManager({
 
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg p-6 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-xl font-bold text-black dark:text-white">Horoscope Draft Table</h2>
+            <h2 className="text-xl font-bold">Horoscope Draft Table</h2>
             <input
               type="text"
               value={searchTerm}
@@ -393,7 +393,7 @@ export default function HoroscopeDraftManager({
                 ) : (
                   filteredDrafts.map((draft) => (
                     <tr key={draft.id} className="border-b border-slate-100 dark:border-slate-800 align-top">
-                      <td className="py-3 pr-4 font-medium text-black dark:text-white">
+                      <td className="py-3 pr-4 font-medium">
                         {PERIOD_OPTIONS.find((item) => item.value === draft.period)?.label ?? draft.period}
                       </td>
                       <td className="py-3 pr-4">{ZODIAC_OPTIONS.find((item) => item.value === draft.zodiacSign)?.label ?? draft.zodiacSign}</td>

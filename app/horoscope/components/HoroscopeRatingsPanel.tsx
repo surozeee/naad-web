@@ -86,7 +86,7 @@ export function HoroscopeRatingsPanel({
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <div className="text-right leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-black dark:text-white">
+              <div className="text-[10px] font-semibold uppercase tracking-wider">
                 {t('common.overall')}
               </div>
               <p className="text-[9px] horoscope-muted m-0">{t('add.autoAverage')}</p>

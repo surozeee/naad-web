@@ -131,15 +131,15 @@ export default function TicketPage() {
         <Breadcrumb items={[{ label: 'Message Management', href: '/support' }, { label: 'Ticket' }]} />
         <div className="page-header-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <TicketIcon size={28} style={{ color: '#64748b' }} />
+            <TicketIcon size={28} style={{ color: 'var(--naad-fg-muted)' }} />
             <div>
               <h1 className="page-title" style={{ margin: 0 }}>Ticket</h1>
               <p className="page-subtitle" style={{ margin: 0 }}>Manage support tickets.</p>
             </div>
             <div style={{ marginTop: -12, position: 'relative' }} onMouseEnter={() => setShowInfoTooltip(true)} onMouseLeave={() => setShowInfoTooltip(false)}>
-              <button type="button" aria-label="Info" style={{ border: '1px solid #cbd5e1', background: '#f8fafc', padding: 2, borderRadius: 999, cursor: 'help' }}><Info size={18} /></button>
+              <button type="button" aria-label="Info" style={{ border: '1px solid #cbd5e1', background: 'var(--naad-bg-muted)', padding: 2, borderRadius: 999, cursor: 'help' }}><Info size={18} /></button>
               {showInfoTooltip && (
-                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 240, padding: 10, borderRadius: 12, border: '1px solid #dbe2ea', background: '#fff', fontSize: 12, boxShadow: '0 14px 30px rgba(15,23,42,0.16)' }}>Create and manage support tickets (status, priority, type, channel).</div>
+                <div style={{ position: 'absolute', top: '50%', left: 'calc(100% + 10px)', transform: 'translateY(-50%)', zIndex: 1200, width: 240, padding: 10, borderRadius: 12, border: '1px solid #dbe2ea', background: 'var(--naad-card-bg)', fontSize: 12, boxShadow: '0 14px 30px rgba(15,23,42,0.16)' }}>Create and manage support tickets (status, priority, type, channel).</div>
               )}
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function TicketPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>Loading...</td></tr>
+                <tr><td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>Loading...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} className="empty-state"><p>No tickets found</p></td></tr>
               ) : (

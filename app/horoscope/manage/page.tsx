@@ -313,7 +313,7 @@ export default function HoroscopeManagePage() {
 
   return (
     <DashboardLayout>
-      <div className="horoscope-csv-page space-y-5 text-black dark:text-white">
+      <div className="horoscope-csv-page space-y-5">
         <Breadcrumb items={[{ label: 'Horoscope', href: '/horoscope' }, { label: 'Manage Horoscope' }]} />
         <PageHeaderWithInfo
           title="Horoscope Content Manager"

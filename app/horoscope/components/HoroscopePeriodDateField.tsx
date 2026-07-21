@@ -198,7 +198,7 @@ export function HoroscopePeriodDateField({
           ? 'Month'
           : 'Year';
 
-  const labelClass = 'text-xs font-semibold horoscope-key text-black dark:text-white';
+  const labelClass = 'text-xs font-semibold horoscope-key';
   const rangeHint =
     horoscopeType === 'WEEKLY' && weekResolved
       ? `${d(weekResolved.startBs)} → ${d(weekResolved.endBs)}`
@@ -352,7 +352,7 @@ export function HoroscopePeriodDateField({
     <div className={`flex flex-col ${compact ? 'gap-0' : 'gap-1.5'} min-w-0 ${className}`}>
       {!compact ? (
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-xs font-semibold horoscope-key text-black dark:text-white">{title}</span>
+          <span className="text-xs font-semibold horoscope-key">{title}</span>
           <span className="text-[10px] horoscope-muted shrink-0">{periodDateHint(horoscopeType)}</span>
         </div>
       ) : null}
@@ -381,7 +381,7 @@ export function HoroscopePeriodDateField({
           {!compact && displayBs ? (
             <p className="text-[10px] horoscope-muted">
               Stored as one day ·{' '}
-              <span className="font-medium text-black dark:text-white">{d(displayBs)}</span>
+              <span className="font-medium">{d(displayBs)}</span>
             </p>
           ) : null}
         </>
@@ -438,9 +438,9 @@ export function HoroscopePeriodDateField({
           {weekResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Week ·{' '}
-              <span className="font-medium text-black dark:text-white">{d(weekResolved.startBs)}</span>
+              <span className="font-medium">{d(weekResolved.startBs)}</span>
               {' → '}
-              <span className="font-medium text-black dark:text-white">{d(weekResolved.endBs)}</span>
+              <span className="font-medium">{d(weekResolved.endBs)}</span>
             </p>
           ) : null}
         </>
@@ -483,7 +483,7 @@ export function HoroscopePeriodDateField({
           {monthResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Month ·{' '}
-              <span className="font-medium text-black dark:text-white">
+              <span className="font-medium">
                 {d(monthResolved.startBs)} → {d(monthResolved.endBs)}
               </span>
             </p>
@@ -511,7 +511,7 @@ export function HoroscopePeriodDateField({
           {yearResolved && !compact ? (
             <p className="text-[10px] horoscope-muted">
               Year ·{' '}
-              <span className="font-medium text-black dark:text-white">
+              <span className="font-medium">
                 {d(yearResolved.startBs)} → {d(yearResolved.endBs)}
               </span>
             </p>

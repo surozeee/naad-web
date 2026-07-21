@@ -190,12 +190,12 @@ export default function NepaliCalendarSetupPage() {
         {children}
         {sortBy === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -349,7 +349,7 @@ export default function NepaliCalendarSetupPage() {
           <table className="data-table" style={{ minWidth: 1100 }}>
             <thead>
               <tr>
-                <SortableTh columnKey="year" style={{ position: 'sticky', left: 0, background: '#f8fafc', zIndex: 1 }}>
+                <SortableTh columnKey="year" style={{ position: 'sticky', left: 0, background: 'var(--naad-bg-muted)', zIndex: 1 }}>
                   Year
                 </SortableTh>
                 {MONTH_FIELDS.map((m) => (
@@ -364,7 +364,7 @@ export default function NepaliCalendarSetupPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={15} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={15} style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     Loading...
                   </td>
                 </tr>
@@ -377,7 +377,7 @@ export default function NepaliCalendarSetupPage() {
               ) : (
                 paginated.map((row) => (
                   <tr key={row.id}>
-                    <td style={{ position: 'sticky', left: 0, background: '#fff', fontWeight: 600 }}>{row.year}</td>
+                    <td style={{ position: 'sticky', left: 0, background: 'var(--naad-card-bg)', fontWeight: 600 }}>{row.year}</td>
                     {MONTH_FIELDS.map((m) => (
                       <td key={m.key} style={{ textAlign: 'center' }}>
                         {row[m.key]}

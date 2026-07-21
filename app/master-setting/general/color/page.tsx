@@ -477,7 +477,7 @@ export default function ColorSetupPage() {
     const newLabel = newStatus === 'ACTIVE' ? 'Active' : 'Inactive';
     const result = await Swal.fire({
       title: 'Update status?',
-      html: `Set <strong>"${color.name}"</strong> to <strong>${newLabel}</strong>?<br/><span style="font-size:12px;color:#64748b">Only active colors appear in horoscope lucky-color pickers.</span>`,
+      html: `Set <strong>"${color.name}"</strong> to <strong>${newLabel}</strong>?<br/><span style="font-size:12px;color:var(--naad-fg-muted)">Only active colors appear in horoscope lucky-color pickers.</span>`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Yes, update',
@@ -593,12 +593,12 @@ export default function ColorSetupPage() {
         {children}
         {sortBy === columnKey ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronUp size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           ) : (
-            <ChevronDown size={14} color="#2563eb" strokeWidth={2.4} />
+            <ChevronDown size={14} color='var(--naad-primary)' strokeWidth={2.4} />
           )
         ) : (
-          <ArrowUpDown size={14} color="#94a3b8" strokeWidth={1.9} />
+          <ArrowUpDown size={14} color='var(--naad-fg-muted)' strokeWidth={1.9} />
         )}
       </span>
     </th>
@@ -630,14 +630,14 @@ export default function ColorSetupPage() {
                 aria-label="Color setup information"
                 style={{
                   border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
+                  background: 'var(--naad-bg-muted)',
                   padding: 2,
                   borderRadius: 999,
                   cursor: 'help',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#334155',
+                  color: 'var(--naad-fg-muted)',
                 }}
               >
                 <Info size={18} />
@@ -654,8 +654,8 @@ export default function ColorSetupPage() {
                     padding: '10px 12px',
                     borderRadius: 12,
                     border: '1px solid #dbe2ea',
-                    background: '#ffffff',
-                    color: '#334155',
+                    background: 'var(--naad-card-bg)',
+                    color: 'var(--naad-fg-muted)',
                     boxShadow: '0 14px 30px rgba(15, 23, 42, 0.16)',
                     fontSize: 12,
                     lineHeight: 1.5,
@@ -721,7 +721,7 @@ export default function ColorSetupPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                     Loading colors...
                   </td>
                 </tr>
@@ -753,7 +753,7 @@ export default function ColorSetupPage() {
                       <span className="org-code">{color.hexCode}</span>
                     </td>
                     <td>
-                      <span style={{ fontSize: 12, color: '#475569' }} title={localesSummary(color.locales)}>
+                      <span style={{ fontSize: 12, color: 'var(--naad-fg-muted)' }} title={localesSummary(color.locales)}>
                         {localesSummary(color.locales)}
                       </span>
                     </td>
@@ -931,7 +931,7 @@ export default function ColorSetupPage() {
                 <div className="color-locale-modal-body">
                   {errors.submit ? <div className="form-error">{errors.submit}</div> : null}
                   {fetchingDetail ? (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--naad-fg-muted)' }}>
                       Loading...
                     </div>
                   ) : (
@@ -988,7 +988,7 @@ export default function ColorSetupPage() {
                                 minHeight: 42,
                                 fontSize: 14,
                                 borderRadius: 8,
-                                borderColor: '#e2e8f0',
+                                borderColor: 'var(--naad-line)',
                               }),
                               valueContainer: (base) => ({ ...base, padding: '0 10px' }),
                               menuPortal: (base) => ({ ...base, zIndex: 1000000 }),
