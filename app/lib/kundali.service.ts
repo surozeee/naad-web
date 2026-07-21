@@ -3,7 +3,12 @@
  */
 
 import type { GlobalResponse } from '@/app/lib/master.types';
-import type { KundaliChart, KundaliGenerateRequest } from '@/app/lib/kundali.types';
+import type {
+  KundaliChart,
+  KundaliGenerateRequest,
+  KundaliMatchRequest,
+  KundaliMatchResult,
+} from '@/app/lib/kundali.types';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { getStoredUiLanguage } from '@/app/lib/ui-language';
 
@@ -49,5 +54,42 @@ export const kundaliApi = {
     const chart = json.data ?? json.result;
     if (!chart) throw new Error('Empty kundali response');
     return chart;
+  },
+
+  match: async (body: KundaliMatchRequest): Promise<KundaliMatchResult> => {
+    const res = await publicFetch('/api/public/kundali/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: getStoredUiLanguage(),
+        ayanamsa: 'LAHIRI',
+        houseSystem: 'WHOLE_SIGN',
+        includeCharts: body.includeCharts !== false,
+        ...body,
+        male: {
+          timezone: 'Asia/Kathmandu',
+          ...body.male,
+          birthTime:
+            body.male.birthTime && body.male.birthTime.length === 5
+              ? `${body.male.birthTime}:00`
+              : body.male.birthTime,
+        },
+        female: {
+          timezone: 'Asia/Kathmandu',
+          ...body.female,
+          birthTime:
+            body.female.birthTime && body.female.birthTime.length === 5
+              ? `${body.female.birthTime}:00`
+              : body.female.birthTime,
+        },
+      }),
+    });
+    const json = (await res.json().catch(() => ({}))) as GlobalResponse<KundaliMatchResult> & {
+      result?: KundaliMatchResult;
+    };
+    if (!res.ok) throw new Error(formatApiError(json, res.status));
+    const match = json.data ?? json.result;
+    if (!match) throw new Error('Empty kundali match response');
+    return match;
   },
 };

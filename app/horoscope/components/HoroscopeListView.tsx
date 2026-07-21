@@ -22,61 +22,31 @@ import Swal from 'sweetalert2';
 import { HoroscopePeriodDateField } from '@/app/horoscope/components/HoroscopePeriodDateField';
 import { BsDateText } from '@/app/horoscope/components/BsDateText';
 import { horoscopeApi, zodiacSignApi } from '@/app/lib/crm.service';
+import { publicZodiacSignApi } from '@/app/lib/public-horoscope';
 import type {
   HoroscopeResponse,
   HoroscopeTypeEnum,
-  LanguageEnumCode,
   ZodiacSignEnum,
   ZodiacSignResponse,
 } from '@/app/lib/crm.types';
 import { formatIsoDate, resolveHoroscopePeriodDates } from '@/app/lib/horoscope-date-period';
 import { HOROSCOPE_LUCKY_COLORS, parseLuckyColors } from '@/app/horoscope/components/HoroscopeColorPicker';
 import { useLocale } from '@/app/components/LocaleProvider';
-import { normalizeUiLanguageCode } from '@/app/lib/ui-language';
 import { translateHoroscope, useHoroscopeI18n } from '@/app/lib/horoscope-i18n';
 import { localizeDigits } from '@/app/lib/nepali-digits';
 import { resolveColorDisplayName } from '@/app/lib/color-i18n';
+import {
+  ZODIAC_META,
+  ZODIAC_SIGN_ORDER,
+  resolveZodiacDisplayName,
+  uiCodeToBackendLanguage,
+} from '@/app/lib/zodiac-i18n';
 import { colorApi } from '@/app/lib/master.service';
 import type { ColorResponse } from '@/app/lib/master.types';
 
 export type HoroscopeListViewProps = {
   /** Public page: skip logout-on-401 so guests can browse published readings. */
   publicMode?: boolean;
-};
-
-type ElementTone = 'fire' | 'earth' | 'air' | 'water';
-
-const ZODIAC_ORDER: ZodiacSignEnum[] = [
-  'ARIES',
-  'TAURUS',
-  'GEMINI',
-  'CANCER',
-  'LEO',
-  'VIRGO',
-  'LIBRA',
-  'SCORPIO',
-  'SAGITTARIUS',
-  'CAPRICORN',
-  'AQUARIUS',
-  'PISCES',
-];
-
-const ZODIAC_META: Record<
-  ZodiacSignEnum,
-  { symbol: string; tone: ElementTone }
-> = {
-  ARIES: { symbol: '♈', tone: 'fire' },
-  TAURUS: { symbol: '♉', tone: 'earth' },
-  GEMINI: { symbol: '♊', tone: 'air' },
-  CANCER: { symbol: '♋', tone: 'water' },
-  LEO: { symbol: '♌', tone: 'fire' },
-  VIRGO: { symbol: '♍', tone: 'earth' },
-  LIBRA: { symbol: '♎', tone: 'air' },
-  SCORPIO: { symbol: '♏', tone: 'water' },
-  SAGITTARIUS: { symbol: '♐', tone: 'fire' },
-  CAPRICORN: { symbol: '♑', tone: 'earth' },
-  AQUARIUS: { symbol: '♒', tone: 'air' },
-  PISCES: { symbol: '♓', tone: 'water' },
 };
 
 const SECTION_FIELDS: Array<{
@@ -180,56 +150,8 @@ function RatingStars({ value, uiCode }: { value?: number | null; uiCode?: string
   );
 }
 
-function uiCodeToBackendLanguage(uiCode: string): LanguageEnumCode {
-  return normalizeUiLanguageCode(uiCode).toUpperCase() as LanguageEnumCode;
-}
-
-function localeLanguageCode(raw: unknown): string {
-  if (raw == null) return '';
-  if (typeof raw === 'string') return raw.trim().toUpperCase();
-  if (typeof raw === 'object' && 'name' in (raw as object)) {
-    return String((raw as { name?: string }).name ?? '').trim().toUpperCase();
-  }
-  return String(raw).trim().toUpperCase();
-}
-
-function findLocaleName(
-  locales: ZodiacSignResponse['locales'] | undefined,
-  language: LanguageEnumCode
-): string | null {
-  if (!locales?.length) return null;
-  const want = String(language).toUpperCase();
-  const match = locales.find((l) => localeLanguageCode(l.language) === want);
-  const name = match?.name?.trim();
-  return name || null;
-}
-
-function resolveZodiacDisplayName(
-  sign: ZodiacSignEnum,
-  zodiacRows: ZodiacSignResponse[],
-  backendLanguage: LanguageEnumCode,
-  uiCode: string
-): string {
-  const row = zodiacRows.find((z) => String(z.zodiacSign).toUpperCase() === sign);
-
-  // 1) API locale for selected language
-  const localized = findLocaleName(row?.locales, backendLanguage);
-  if (localized) return localized;
-
-  // 2) JSON file name for UI language
-  const fromJson = translateHoroscope(uiCode, `zodiac.${sign}`).trim();
-  if (fromJson && fromJson !== `zodiac.${sign}`) return fromJson;
-
-  // 3) Default: EN locale → entity name → English JSON
-  const enName = findLocaleName(row?.locales, 'EN');
-  if (enName) return enName;
-  if (row?.name?.trim()) return row.name.trim();
-  return translateHoroscope('en', `zodiac.${sign}`);
-}
-
 export function HoroscopeListView({ publicMode = false }: HoroscopeListViewProps) {
   const { language } = useLocale();
-  const { t, typeLabel, elementLabel, uiCode } = useHoroscopeI18n();
   const backendLanguage = useMemo(() => uiCodeToBackendLanguage(language), [language]);
   const ignoreAuthFailure = publicMode;
 
@@ -237,6 +159,7 @@ export function HoroscopeListView({ publicMode = false }: HoroscopeListViewProps
   const [period, setPeriod] = useState(() => resolveHoroscopePeriodDates('DAILY', formatIsoDate(new Date())));
   const [items, setItems] = useState<HoroscopeResponse[]>([]);
   const [zodiacRows, setZodiacRows] = useState<ZodiacSignResponse[]>([]);
+  const { t, typeLabel, elementLabel, uiCode } = useHoroscopeI18n(zodiacRows);
   const [colorRows, setColorRows] = useState<ColorResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -258,14 +181,16 @@ export function HoroscopeListView({ publicMode = false }: HoroscopeListViewProps
 
   const loadZodiacNames = useCallback(async () => {
     try {
-      const res = await zodiacSignApi.listActive(
-        ignoreAuthFailure ? { ignoreAuthFailure: true } : undefined
-      );
+      const res = publicMode
+        ? await publicZodiacSignApi.listActive()
+        : await zodiacSignApi.listActive(
+            ignoreAuthFailure ? { ignoreAuthFailure: true } : undefined
+          );
       setZodiacRows(Array.isArray(res?.data) ? (res.data as ZodiacSignResponse[]) : []);
     } catch {
       setZodiacRows([]);
     }
-  }, [ignoreAuthFailure]);
+  }, [publicMode, ignoreAuthFailure]);
 
   const loadColorNames = useCallback(async () => {
     try {
@@ -405,7 +330,7 @@ export function HoroscopeListView({ publicMode = false }: HoroscopeListViewProps
           >
             {!selectedSign && (
               <div className="hl-grid">
-                {ZODIAC_ORDER.map((sign) => {
+                {ZODIAC_SIGN_ORDER.map((sign) => {
                   const meta = ZODIAC_META[sign];
                   const row = byZodiac.get(sign);
                   const hasContent = Boolean(row);
@@ -446,7 +371,7 @@ export function HoroscopeListView({ publicMode = false }: HoroscopeListViewProps
                     {t('allSigns')}
                   </button>
                   <div className="hl-sign-strip" role="list">
-                    {ZODIAC_ORDER.map((sign) => {
+                    {ZODIAC_SIGN_ORDER.map((sign) => {
                       const meta = ZODIAC_META[sign];
                       const has = byZodiac.has(sign);
                       return (

@@ -3,7 +3,8 @@
 import { useCallback, useMemo } from 'react';
 import { useLocale } from '@/app/components/LocaleProvider';
 import { normalizeUiLanguageCode } from '@/app/lib/ui-language';
-import type { HoroscopeTypeEnum, ZodiacSignEnum } from '@/app/lib/crm.types';
+import type { HoroscopeTypeEnum, ZodiacSignEnum, ZodiacSignResponse } from '@/app/lib/crm.types';
+import { resolveZodiacDisplayName, uiCodeToBackendLanguage } from '@/app/lib/zodiac-i18n';
 import en from '@/app/locales/horoscope/en.json';
 import ne from '@/app/locales/horoscope/ne.json';
 import hi from '@/app/locales/horoscope/hi.json';
@@ -98,9 +99,10 @@ export function translateHoroscope(
 /** @deprecated Use translateHoroscope */
 export const translateHoroscopeList = translateHoroscope;
 
-export function useHoroscopeI18n() {
+export function useHoroscopeI18n(zodiacRows?: ZodiacSignResponse[] | null) {
   const { language } = useLocale();
   const uiCode = normalizeUiLanguageCode(language);
+  const backendLanguage = useMemo(() => uiCodeToBackendLanguage(uiCode), [uiCode]);
   const dict = useMemo(() => getHoroscopeMessages(uiCode), [uiCode]);
 
   const t = useCallback(
@@ -109,7 +111,15 @@ export function useHoroscopeI18n() {
   );
 
   const typeLabel = useCallback((type: HoroscopeTypeEnum) => t(`common.types.${type}`), [t]);
-  const zodiacName = useCallback((sign: ZodiacSignEnum) => t(`common.zodiac.${sign}`), [t]);
+  const zodiacName = useCallback(
+    (sign: ZodiacSignEnum) => {
+      if (zodiacRows?.length) {
+        return resolveZodiacDisplayName(sign, zodiacRows, backendLanguage, uiCode);
+      }
+      return t(`common.zodiac.${sign}`);
+    },
+    [zodiacRows, backendLanguage, uiCode, t]
+  );
   const elementLabel = useCallback(
     (tone: 'fire' | 'earth' | 'air' | 'water') => t(`common.elements.${tone}`),
     [t]

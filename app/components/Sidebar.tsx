@@ -27,18 +27,41 @@ export type SidebarMenuItem = {
 
 const HOVER_CLOSE_DELAY_MS = 200;
 
+const HOROSCOPE_SUBMENU = [
+  { label: 'View Horoscope', href: '/horoscope/list' },
+  { label: 'Add Horoscope', href: '/horoscope/add-csv' },
+  { label: 'Manage Horoscope', href: '/horoscope/manage' },
+  { label: 'Horoscope Scope', href: '/horoscope/horoscope-scope' },
+];
+
+const ASTROLOGY_USER_SUBMENU = [
+  { label: 'Birth Kundali', href: '/astrology/birth-chart' },
+  { label: 'Kundali Matching', href: '/astrology/compatibility' },
+  { label: 'Planetary Positions', href: '/astrology/planets' },
+  { label: 'Transits', href: '/astrology/transits' },
+];
+
+const ASTROLOGY_ADMIN_SUBMENU = [
+  ...ASTROLOGY_USER_SUBMENU,
+  { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
+];
+
 /** Menus shown only to CUSTOMER role (Horoscope, Astrology, Puja, Music). */
 const CUSTOMER_MENU_ITEMS: SidebarMenuItem[] = [
-  { id: 'horoscope', icon: '♈', label: 'Horoscope', href: '/horoscope', submenu: [
-    { label: 'View Horoscope', href: '/horoscope/list' },
-    { label: 'Add Horoscope', href: '/horoscope/add-csv' },
-    { label: 'Manage Horoscope', href: '/horoscope/manage' },
-    { label: 'Horoscope Scope', href: '/horoscope/horoscope-scope' }, { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' },
-  ]},
-  { id: 'astrology', icon: '⭐', label: 'Astrology', href: '/astrology', submenu: [
-    { label: 'Zodiac Sign', href: '/astrology/zodiac-sign' }, { label: 'Birth Chart', href: '/astrology/birth-chart' }, { label: 'Planetary Positions', href: '/astrology/planets' },
-    { label: 'Transits', href: '/astrology/transits' }, { label: 'Compatibility', href: '/astrology/compatibility' },
-  ]},
+  {
+    id: 'horoscope',
+    icon: '♈',
+    label: 'Horoscope',
+    href: '/horoscope',
+    submenu: HOROSCOPE_SUBMENU,
+  },
+  {
+    id: 'astrology',
+    icon: '⭐',
+    label: 'Astrology',
+    href: '/astrology',
+    submenu: ASTROLOGY_USER_SUBMENU,
+  },
   { id: 'puja', icon: '🕉️', label: 'Puja', href: '/puja', submenu: [
     { label: 'Daily Puja', href: '/puja/daily' }, { label: 'Festival Puja', href: '/puja/festival' },
     { label: 'Special Puja', href: '/puja/special' }, { label: 'Puja Calendar', href: '/puja/calendar' },
@@ -63,7 +86,21 @@ const ASTROLOGER_MENU_ITEMS: SidebarMenuItem[] = [
 
 /** Fallback for Superadmin when menu tree API fails or returns empty (full admin CRUD menus). */
 const ADMIN_MENU_ITEMS: SidebarMenuItem[] = [
-  ...CUSTOMER_MENU_ITEMS,
+  {
+    id: 'horoscope',
+    icon: '♈',
+    label: 'Horoscope',
+    href: '/horoscope',
+    submenu: HOROSCOPE_SUBMENU,
+  },
+  {
+    id: 'astrology',
+    icon: '⭐',
+    label: 'Astrology',
+    href: '/astrology',
+    submenu: ASTROLOGY_ADMIN_SUBMENU,
+  },
+  ...CUSTOMER_MENU_ITEMS.filter((item) => item.id !== 'horoscope' && item.id !== 'astrology'),
   { id: 'master-setting', icon: '⚙️', label: 'Master Setting', href: '/master-setting', submenu: [
     { label: 'Nepali Calendar Days', href: '/master-setting/general/nepali-calendar' },
     { label: 'General', href: '/master-setting/general', submenu: [
@@ -123,11 +160,15 @@ const KNOWN_MENU_LABELS: Record<string, string> = {
   '/support/messaging-template': 'Message Template',
   '/support/bulk-message': 'Bulk Message',
   '/horoscope': 'Horoscope',
-  '/horoscope/list': 'Horoscope List',
+  '/horoscope/list': 'View Horoscope',
   '/horoscope/add-csv': 'Add Horoscope',
   '/horoscope/manage': 'Manage Horoscope',
   '/horoscope/horoscope-scope': 'Horoscope Scope',
   '/astrology': 'Astrology',
+  '/astrology/birth-chart': 'Birth Kundali',
+  '/astrology/compatibility': 'Kundali Matching',
+  '/astrology/planets': 'Planetary Positions',
+  '/astrology/transits': 'Transits',
   '/astrology/zodiac-sign': 'Zodiac Sign',
   '/puja': 'Puja',
   '/music': 'Music',

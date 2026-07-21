@@ -24,6 +24,58 @@ export interface KundaliGenerateRequest {
   language?: string;
 }
 
+export interface KundaliMatchRequest {
+  male: KundaliGenerateRequest;
+  female: KundaliGenerateRequest;
+  language?: string;
+  ayanamsa?: AyanamsaType;
+  houseSystem?: HouseSystemType;
+  includeCharts?: boolean;
+}
+
+export interface GunaScore {
+  code: string;
+  label: string;
+  obtained: number;
+  maximum: number;
+  summary: string;
+}
+
+export interface KundaliMatchResult {
+  totalScore: number;
+  maximumScore: number;
+  percentage: number;
+  verdict: string;
+  recommendation: string;
+  gunas: GunaScore[];
+  male: {
+    name?: string;
+    moonSign: string;
+    moonNakshatra: string;
+    lagna: string;
+    mangalik: boolean;
+    mangalikSeverity?: string;
+  };
+  female: {
+    name?: string;
+    moonSign: string;
+    moonNakshatra: string;
+    lagna: string;
+    mangalik: boolean;
+    mangalikSeverity?: string;
+  };
+  mangalikCompatibility: {
+    maleMangalik: boolean;
+    femaleMangalik: boolean;
+    compatible: boolean;
+    note: string;
+  };
+  charts?: {
+    male: KundaliChart;
+    female: KundaliChart;
+  };
+}
+
 export interface SignPosition {
   sign: string;
   signLabel: string;
