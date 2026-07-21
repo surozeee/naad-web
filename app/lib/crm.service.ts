@@ -50,10 +50,18 @@ const BUCKET_BASE = '/api/bucket';
 async function request<T>(
   method: string,
   path: string,
-  options: { body?: object; headers?: Record<string, string>; base?: string } = {}
+  options: {
+    body?: object;
+    headers?: Record<string, string>;
+    base?: string;
+    /** When true, 401 does not trigger global logout (e.g. public horoscope page). */
+    ignoreAuthFailure?: boolean;
+  } = {}
 ): Promise<GlobalResponse<T>> {
   const base = options.base ?? BASE;
+  const ignoreAuthFailure = options.ignoreAuthFailure;
   delete (options as Record<string, unknown>).base;
+  delete (options as Record<string, unknown>).ignoreAuthFailure;
   const url = `${base}/${path.replace(/^\//, '')}`;
   const headers: Record<string, string> = {
     ...options.headers,
@@ -67,6 +75,7 @@ async function request<T>(
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     credentials: 'same-origin',
+    ignoreAuthFailure,
   });
   const json = (await res.json().catch(() => ({}))) as GlobalResponse<T> & {
     data?: unknown;
@@ -121,7 +130,8 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
       request<T>('GET', `${entityPath}/get-by-id`, { headers: { id }, ...opts() }),
 
     list: async (
-      body: TListReq
+      body: TListReq,
+      listOpts?: { ignoreAuthFailure?: boolean }
     ): Promise<
       GlobalResponse<PaginationResponse<T>> & {
         content: T[];
@@ -133,7 +143,7 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
       const response = await request<PaginationResponse<T>>(
         'POST',
         `${entityPath}/list`,
-        { body: body as object, ...opts() }
+        { body: body as object, ...opts(), ignoreAuthFailure: listOpts?.ignoreAuthFailure }
       );
       const payload = response.data ?? (response as unknown as { result?: T[]; totalElements?: number });
       const items = payload?.result ?? (payload as { content?: T[] })?.content ?? [];
@@ -146,8 +156,11 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends CrmListRequest = C
       };
     },
 
-    listActive: async (): Promise<{ data?: T[] }> => {
-      const r = await request<T[]>('GET', `${entityPath}/list-active`, opts());
+    listActive: async (listOpts?: { ignoreAuthFailure?: boolean }): Promise<{ data?: T[] }> => {
+      const r = await request<T[]>('GET', `${entityPath}/list-active`, {
+        ...opts(),
+        ignoreAuthFailure: listOpts?.ignoreAuthFailure,
+      });
       const raw =
         (Array.isArray(r.data) ? r.data : null) ??
         (Array.isArray((r as unknown as { result?: T[] }).result)

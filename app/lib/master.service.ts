@@ -44,7 +44,7 @@ const BASE = '/api/master';
 async function request<T>(
   method: string,
   path: string,
-  options: { body?: object; headers?: Record<string, string> } = {}
+  options: { body?: object; headers?: Record<string, string>; ignoreAuthFailure?: boolean } = {}
 ): Promise<GlobalResponse<T>> {
   const url = `${BASE}/${path.replace(/^\//, '')}`;
   const headers: Record<string, string> = {
@@ -56,6 +56,7 @@ async function request<T>(
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
     credentials: 'same-origin',
+    ignoreAuthFailure: options.ignoreAuthFailure,
   });
   const json = (await res.json().catch(() => ({}))) as GlobalResponse<T>;
   if (!res.ok) {
@@ -112,8 +113,10 @@ function crud<T, TCreate, TUpdate = TCreate, TListReq extends MasterListRequest 
       };
     },
 
-    listActive: async (): Promise<{ data?: T[] }> => {
-      const r = await request<T[] | { data?: T[] }>('GET', `${entityPath}/list-active`);
+    listActive: async (listOpts?: { ignoreAuthFailure?: boolean }): Promise<{ data?: T[] }> => {
+      const r = await request<T[] | { data?: T[] }>('GET', `${entityPath}/list-active`, {
+        ignoreAuthFailure: listOpts?.ignoreAuthFailure,
+      });
       const data = Array.isArray(r) ? r : (r as { data?: T[] }).data;
       return { data: data ?? [] };
     },

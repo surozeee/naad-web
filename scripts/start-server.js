@@ -59,6 +59,8 @@ const PROD_DEFAULTS = {
   NEXTAUTH_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
   NEXT_AUTH_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
   NEXT_PUBLIC_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'AIzaSyBP9Gw1tc3mGgHiTE3VAbXlMFrOM5rTBXg',
+  GOOGLE_MAPS_API_KEY: 'AIzaSyBP9Gw1tc3mGgHiTE3VAbXlMFrOM5rTBXg',
   BACKEND_URL: 'https://api-naad.jojolapatech.com',
   NEXT_PUBLIC_BACKEND_URL: 'https://api-naad.jojolapatech.com',
   NEXT_PUBLIC_API_URL: 'https://api-naad.jojolapatech.com',

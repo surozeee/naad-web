@@ -88,6 +88,12 @@ process.env.NEXT_AUTH_XSRF_TOKEN =
   process.env.NEXT_AUTH_XSRF_TOKEN || process.env.NEXTAUTH_XSRF_TOKEN;
 process.env.NEXT_PUBLIC_XSRF_TOKEN =
   process.env.NEXT_PUBLIC_XSRF_TOKEN || process.env.NEXTAUTH_XSRF_TOKEN;
+process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+  process.env.GOOGLE_MAPS_API_KEY ||
+  'AIzaSyBP9Gw1tc3mGgHiTE3VAbXlMFrOM5rTBXg';
+process.env.GOOGLE_MAPS_API_KEY =
+  process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 process.env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'true';
 process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE = 'false';
 process.env.PORT = process.env.PORT || '4000';
