@@ -61,6 +61,15 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-browser-key
 GOOGLE_MAPS_API_KEY=your-server-key
 ```
 
-Restrict the browser key by HTTP referrer (`localhost:4000/*`, your production domain).
-Restart `npm run dev` after changing env.
+Restrict the browser key by HTTP referrer (`localhost:4000/*`, `https://naad.jojolapatech.com/*`).
+
+**Production:** `NEXT_PUBLIC_*` is inlined at **build** time. Put the key in `.env.production` on the server, then:
+
+```bash
+npm run build
+pm2 restart naad-web
+```
+
+Changing only PM2 env without rebuilding will **not** enable the client map picker.
+Restart `npm run dev` after changing local env.
 

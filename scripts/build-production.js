@@ -6,10 +6,46 @@
  */
 
 const { execSync } = require('child_process');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 
 console.log('🚀 Starting production build...');
+
+/**
+ * Load KEY=VALUE from a file (later files override earlier).
+ * Required so NEXT_PUBLIC_* vars (e.g. Google Maps) are baked into the client bundle.
+ */
+function loadEnvFile(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.replace(/#.*$/, '').trim();
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if (!match) continue;
+      const key = match[1];
+      let value = match[2].trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1).replace(/\\n/g, '\n');
+      }
+      if (!value) continue;
+      process.env[key] = value;
+    }
+  } catch {
+    /* ignore missing files */
+  }
+}
+
+const projectRoot = process.cwd();
+for (const file of ['.env', '.env.local', '.env.production', '.env.production.local']) {
+  const p = path.join(projectRoot, file);
+  if (fs.existsSync(p)) {
+    loadEnvFile(p);
+    console.log(`📄 Loaded ${file}`);
+  }
+}
 
 const requiredPackages = ['next', 'next-auth', 'react', 'react-dom'];
 const missing = requiredPackages.filter((name) => {
@@ -29,7 +65,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-// Set production environment variables (do not overwrite secrets already in the shell)
+// Set production environment variables (do not overwrite secrets already in the shell / env files)
 process.env.NODE_ENV = 'production';
 process.env.NEXT_PUBLIC_ENVIRONMENT = 'production';
 process.env.BACKEND_URL = process.env.BACKEND_URL || 'https://api-naad.jojolapatech.com';
@@ -56,6 +92,12 @@ process.env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'true';
 process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE = 'false';
 process.env.PORT = process.env.PORT || '4000';
 
+const mapsKey = (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim();
+if (!mapsKey) {
+  console.warn('⚠ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set — birth chart map place selection will be disabled.');
+  console.warn('  Add it to .env.production before building (see ENV.md).');
+}
+
 console.log('📋 Environment variables set:');
 console.log(`  NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`  NEXT_PUBLIC_ENVIRONMENT: ${process.env.NEXT_PUBLIC_ENVIRONMENT}`);
@@ -65,6 +107,7 @@ console.log(`  NEXT_PUBLIC_OAUTH_BASE_URL: ${process.env.NEXT_PUBLIC_OAUTH_BASE_
 console.log(`  NEXTAUTH_URL: ${process.env.NEXTAUTH_URL}`);
 console.log(`  NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '***set***' : '(missing)'}`);
 console.log(`  NEXTAUTH_XSRF_TOKEN: ${process.env.NEXTAUTH_XSRF_TOKEN ? '***set***' : '(missing)'}`);
+console.log(`  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${mapsKey ? '***set***' : '(missing)'}`);
 console.log(`  PORT: ${process.env.PORT}`);
 
 try {

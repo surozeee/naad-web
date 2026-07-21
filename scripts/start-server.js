@@ -90,6 +90,14 @@ if (hasXsrf) {
   console.warn('   See ENV.md to fix "XSRF Token Missing" / 403');
 }
 
+const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim());
+if (hasMapsKey) {
+  console.log('   Google Maps key loaded (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)');
+} else {
+  console.warn('   ⚠ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY not set — map place selection disabled');
+  console.warn('   Set it in .env.production and rebuild (NEXT_PUBLIC_* is baked at build time)');
+}
+
 console.log('🚀 Starting Next.js server...');
 console.log(`   NEXTAUTH_URL=${process.env.NEXTAUTH_URL}`);
 console.log(
