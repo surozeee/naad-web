@@ -54,7 +54,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [sidebarCollapsed, mounted]);
 
   return (
-    <div className="dashboard-layout min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="dashboard-layout min-h-screen flex flex-col">
       <Header
         onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         menuCollapsed={headerMenuCollapsed}
@@ -84,7 +84,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             sidebarCollapsed ? 'md:ml-[90px]' : 'md:ml-[290px]'
           }`}
         >
-          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          <main className="flex-1 overflow-y-auto">
             <div className="p-1">{children}</div>
           </main>
           <SimpleFooter />

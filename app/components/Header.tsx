@@ -62,11 +62,11 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
   }, [profileDropdownOpen]);
 
   return (
-    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm w-full z-40 flex sticky top-0">
+    <header className="dashboard-header border-b shadow-sm w-full z-40 flex sticky top-0">
       <div className="flex w-full">
         {/* First Section - Sidebar width with Naad Official */}
         <div
-          className={`bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center transition-all duration-300 border-r border-slate-200 dark:border-slate-700 ${
+          className={`dashboard-header text-inherit flex items-center transition-all duration-300 border-r ${
             sidebarCollapsed ? 'w-20 justify-center' : 'w-[280px] px-[25px]'
           }`}
         >
@@ -74,8 +74,8 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
             <span className="text-3xl">✨</span>
           ) : (
             <Link href="/" className="flex items-center gap-3 w-full">
-              <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
-                <span className="text-xl text-white">💼</span>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--naad-primary)' }}>
+                <span className="text-xl" style={{ color: 'var(--naad-btn-on-primary)' }}>💼</span>
               </div>
               <span className="text-[22px] font-bold text-inherit">
                 Naad Official
@@ -148,7 +148,13 @@ export default function Header({ onSidebarToggle, menuCollapsed, onMenuToggle, s
                 aria-label="User menu"
                 title={displayName}
               >
-                <span className="w-9 h-9 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm select-none">
+                <span
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm select-none"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--naad-primary), var(--naad-accent))',
+                    color: 'var(--naad-btn-on-primary)',
+                  }}
+                >
                   {initials}
                 </span>
               </button>

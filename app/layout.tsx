@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import "./auth.css";
 import "./customer.css";
+import "./dashboard-theme.css";
 import Navigation from "./components/Navigation";
 import MainContent from "./components/MainContent";
 import { ThemeProvider } from "./components/ThemeProvider";

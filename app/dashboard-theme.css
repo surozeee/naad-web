@@ -1,0 +1,223 @@
+/**
+ * Dashboard theme bridge — Cosmic / Celestial / Divine (same tokens as homepage).
+ * Remaps common Tailwind slate/gray utilities inside .dashboard-layout to --naad-* vars.
+ */
+
+html[data-theme='cosmic'],
+html[data-theme='celestial'],
+html[data-theme='divine'] {
+  --background: var(--naad-bg);
+  --foreground: var(--naad-fg);
+}
+
+.dashboard-layout {
+  background: var(--naad-bg);
+  color: var(--naad-fg);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.dashboard-layout main {
+  background: var(--naad-bg) !important;
+}
+
+.dashboard-header,
+.dashboard-sidebar,
+.dashboard-footer {
+  background: var(--naad-bg-elevated) !important;
+  color: var(--naad-fg) !important;
+  border-color: var(--naad-line) !important;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.dashboard-header,
+.dashboard-sidebar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html[data-theme='cosmic'] .dashboard-header,
+html[data-theme='cosmic'] .dashboard-sidebar,
+html[data-theme='divine'] .dashboard-header,
+html[data-theme='divine'] .dashboard-sidebar {
+  background: var(--naad-nav-bg) !important;
+}
+
+/* —— Page canvas / muted wells —— */
+.dashboard-layout :is(.bg-gray-50, .bg-slate-50, .bg-gray-100, .bg-slate-100) {
+  background-color: var(--naad-bg-muted) !important;
+}
+
+.dashboard-layout :is(.bg-white, .bg-gray-50\/50) {
+  background-color: var(--naad-card-bg) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:bg-gray-900,
+  .dark\:bg-slate-950,
+  .dark\:bg-black
+) {
+  background-color: var(--naad-bg) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:bg-slate-800,
+  .dark\:bg-gray-800,
+  .dark\:bg-slate-900,
+  .dark\:bg-gray-900\/50,
+  .dark\:bg-slate-900\/50,
+  .dark\:bg-slate-900\/40,
+  .dark\:bg-slate-800\/80,
+  .dark\:bg-slate-800\/50
+) {
+  background-color: var(--naad-bg-elevated) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:bg-slate-700,
+  .dark\:bg-gray-700,
+  .dark\:bg-slate-700\/50,
+  .dark\:bg-slate-700\/40,
+  .dark\:bg-slate-700\/60
+) {
+  background-color: var(--naad-bg-muted) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:bg-slate-600,
+  .dark\:hover\:bg-slate-700:hover,
+  .dark\:hover\:bg-slate-700
+) {
+  background-color: color-mix(in srgb, var(--naad-bg-muted) 85%, var(--naad-primary)) !important;
+}
+
+/* —— Borders —— */
+.dashboard-layout :is(
+  .border-gray-100,
+  .border-gray-200,
+  .border-slate-100,
+  .border-slate-200,
+  .border-gray-300,
+  .border-slate-300
+) {
+  border-color: var(--naad-line) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:border-slate-600,
+  .dark\:border-slate-700,
+  .dark\:border-gray-700,
+  .dark\:border-gray-800,
+  .dark\:border-slate-800
+) {
+  border-color: var(--naad-line) !important;
+}
+
+/* —— Text —— */
+.dashboard-layout :is(.text-gray-900, .text-slate-900, .text-black, .text-slate-800) {
+  color: var(--naad-fg) !important;
+}
+
+.dashboard-layout :is(
+  .text-gray-600,
+  .text-gray-500,
+  .text-slate-500,
+  .text-slate-600,
+  .text-gray-400,
+  .text-slate-400
+) {
+  color: var(--naad-fg-muted) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:text-white,
+  .dark\:text-slate-100,
+  .dark\:text-slate-200
+) {
+  color: var(--naad-fg) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:text-slate-300,
+  .dark\:text-gray-300,
+  .dark\:text-slate-400,
+  .dark\:text-gray-400,
+  .dark\:text-slate-500,
+  .dark\:placeholder-slate-500
+) {
+  color: var(--naad-fg-muted) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:placeholder-gray-500,
+  .dark\:placeholder-slate-400
+)::placeholder {
+  color: var(--naad-fg-muted) !important;
+}
+
+/* —— Inputs / selects —— */
+.dashboard-layout :is(input, select, textarea, .form-input):not([type='checkbox']):not([type='radio']) {
+  background-color: var(--naad-bg-muted);
+  color: var(--naad-fg);
+  border-color: var(--naad-line);
+}
+
+.dashboard-layout :is(input, select, textarea, .form-input):focus {
+  border-color: color-mix(in srgb, var(--naad-primary) 55%, var(--naad-line));
+  outline-color: var(--naad-primary);
+}
+
+/* —— Accent links / focus rings —— */
+.dashboard-layout :is(.text-blue-600, .text-indigo-600, .text-purple-600) {
+  color: var(--naad-primary) !important;
+}
+
+html.dark .dashboard-layout :is(
+  .dark\:text-blue-400,
+  .dark\:text-indigo-400,
+  .dark\:text-purple-400,
+  .dark\:text-indigo-300
+) {
+  color: var(--naad-secondary) !important;
+}
+
+.dashboard-layout :is(.bg-indigo-600, .bg-blue-600, .bg-purple-600) {
+  background-color: var(--naad-primary) !important;
+  color: var(--naad-btn-on-primary) !important;
+}
+
+.dashboard-layout :is(.hover\:bg-indigo-700:hover, .hover\:bg-blue-700:hover) {
+  background-color: var(--naad-primary-hover) !important;
+}
+
+/* Active sidebar / menu emphasis handled in Sidebar styles via --naad-* */
+
+/* Theme select remains readable in dashboard chrome */
+.dashboard-layout .naad-theme-select-trigger {
+  border-color: var(--naad-line);
+  background: var(--naad-bg-muted);
+  color: var(--naad-fg);
+}
+
+.dashboard-layout .naad-theme-select-menu {
+  border-color: var(--naad-line);
+  background: var(--naad-bg-elevated);
+  z-index: 60;
+}
+
+/* Divine-specific warmth for chrome */
+html[data-theme='divine'] .dashboard-layout {
+  background-image:
+    radial-gradient(ellipse 60% 40% at 100% 0%, color-mix(in srgb, var(--naad-accent) 12%, transparent), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 0% 100%, color-mix(in srgb, var(--naad-primary) 14%, transparent), transparent 50%);
+  background-color: var(--naad-bg);
+}
+
+html[data-theme='cosmic'] .dashboard-layout {
+  background-image:
+    radial-gradient(ellipse 55% 35% at 90% 0%, color-mix(in srgb, var(--naad-primary) 16%, transparent), transparent 55%);
+  background-color: var(--naad-bg);
+}
+
+html[data-theme='celestial'] .dashboard-layout {
+  background-image: none;
+}

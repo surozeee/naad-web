@@ -461,7 +461,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
   if (collapsed) {
     return (
       <aside 
-        className="bg-white dark:bg-slate-800 text-black dark:text-slate-200 w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg border-r border-slate-200 dark:border-slate-700 hidden md:flex overflow-visible"
+        className="dashboard-sidebar text-inherit w-20 flex flex-col fixed left-0 top-[64px] bottom-0 z-50 shadow-lg border-r hidden md:flex overflow-visible"
         onClick={(e) => {
           // Prevent clicks inside sidebar from closing it
           e.stopPropagation();
@@ -566,7 +566,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
   return (
     <aside 
-      className="bg-white dark:bg-slate-800 text-black dark:text-slate-200 w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg border-r border-slate-200 dark:border-slate-700"
+      className="dashboard-sidebar text-inherit w-[280px] flex flex-col fixed left-0 top-[64px] bottom-0 z-[100] shadow-lg border-r"
       onClick={(e) => {
         // Prevent clicks inside sidebar from closing it
         e.stopPropagation();
@@ -751,36 +751,37 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             align-items: center;
             transition: all 0.2s ease;
             position: relative;
-            color: #000000;
+            color: var(--naad-fg);
             font-size: 14px;
             font-weight: bold;
           }
 
           .sidebar-menu-item:hover {
-            background: #f1f5f9;
+            background: color-mix(in srgb, var(--naad-primary) 12%, var(--naad-bg-muted));
           }
 
           .sidebar-menu-item.active {
-            background: #3b82f6;
-            color: white;
+            background: var(--naad-primary);
+            color: var(--naad-btn-on-primary);
           }
 
           .sidebar-submenu {
             position: fixed;
-            background: #ffffff;
+            background: var(--naad-bg-elevated);
             min-width: 220px;
             max-width: min(280px, calc(100vw - 24px));
             max-height: calc(100vh - 24px);
             overflow-y: auto;
             overflow-x: hidden;
             border-radius: 8px;
-            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 5px 5px 24px rgba(0, 0, 0, 0.22);
             display: none;
             z-index: 99999 !important;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--naad-line);
             pointer-events: auto;
             margin: 0;
             overscroll-behavior: contain;
+            color: var(--naad-fg);
           }
 
           .sidebar-submenu::before {
@@ -792,14 +793,14 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             height: 0;
             border-style: solid;
             border-width: 8px 8px 8px 0;
-            border-color: transparent #ffffff transparent transparent;
+            border-color: transparent var(--naad-bg-elevated) transparent transparent;
           }
 
           .sidebar-submenu.flyout-left::before {
             left: auto;
             right: -8px;
             border-width: 8px 0 8px 8px;
-            border-color: transparent transparent transparent #ffffff;
+            border-color: transparent transparent transparent var(--naad-bg-elevated);
           }
 
           .sidebar-submenu.is-open {
@@ -811,7 +812,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            color: #000000;
+            color: var(--naad-fg);
             font-size: 14px;
             font-weight: bold;
             border-left: 3px solid transparent;
@@ -821,15 +822,15 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
           .sidebar-submenu-item:hover,
           .sidebar-submenu-item.is-nested-open {
-            background: #f1f5f9;
-            color: #000000;
-            border-left: 3px solid #3b82f6;
+            background: color-mix(in srgb, var(--naad-primary) 14%, var(--naad-bg-muted));
+            color: var(--naad-fg);
+            border-left: 3px solid var(--naad-accent);
           }
 
           .sidebar-submenu-item.active {
-            background: #eff6ff;
-            border-left: 3px solid #3b82f6;
-            color: #1d4ed8;
+            background: color-mix(in srgb, var(--naad-primary) 18%, transparent);
+            border-left: 3px solid var(--naad-accent);
+            color: var(--naad-accent);
           }
 
           .sidebar-submenu-item-wrapper {
@@ -842,20 +843,21 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
 
           .nested-submenu {
             position: fixed;
-            background: #ffffff;
+            background: var(--naad-bg-elevated);
             min-width: 220px;
             max-width: min(280px, calc(100vw - 24px));
             max-height: calc(100vh - 24px);
             overflow-y: auto;
             overflow-x: hidden;
             border-radius: 8px;
-            box-shadow: 5px 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 5px 5px 24px rgba(0,0,0,0.22);
             display: none;
             z-index: 999999 !important;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--naad-line);
             pointer-events: auto;
             margin: 0;
             overscroll-behavior: contain;
+            color: var(--naad-fg);
           }
 
           .nested-submenu::before {
@@ -867,14 +869,14 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             height: 0;
             border-style: solid;
             border-width: 8px 8px 8px 0;
-            border-color: transparent #ffffff transparent transparent;
+            border-color: transparent var(--naad-bg-elevated) transparent transparent;
           }
 
           .nested-submenu.flyout-left::before {
             left: auto;
             right: -8px;
             border-width: 8px 0 8px 8px;
-            border-color: transparent transparent transparent #ffffff;
+            border-color: transparent transparent transparent var(--naad-bg-elevated);
           }
 
           .nested-submenu.is-open {
@@ -886,7 +888,7 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            color: #000000;
+            color: var(--naad-fg);
             font-size: 14px;
             font-weight: bold;
             border-left: 3px solid transparent;
@@ -895,86 +897,21 @@ export default function Sidebar({ collapsed, onCollapseToggle }: SidebarProps) {
           }
 
           .nested-submenu-item:hover {
-            background: #f1f5f9;
-            color: #000000;
-            border-left: 3px solid #3b82f6;
+            background: color-mix(in srgb, var(--naad-primary) 14%, var(--naad-bg-muted));
+            color: var(--naad-fg);
+            border-left: 3px solid var(--naad-accent);
           }
 
           .nested-submenu-item.active {
-            background: #eff6ff;
-            border-left: 3px solid #3b82f6;
-            color: #1d4ed8;
+            background: color-mix(in srgb, var(--naad-primary) 18%, transparent);
+            border-left: 3px solid var(--naad-accent);
+            color: var(--naad-accent);
           }
 
-          /* Dark mode – sidebar menu & submenus */
-          .dark .sidebar-menu-item {
-            color: #e2e8f0;
-          }
-          .dark .sidebar-menu-item:hover {
-            background: #334155;
-          }
-          .dark .sidebar-menu-item.active {
-            background: #2563eb;
-            color: white;
-          }
-          .dark .sidebar-submenu {
-            background: #334155;
-            border-color: #475569;
-            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
-          }
-          .dark .sidebar-submenu::before,
-          .dark .sidebar-submenu.flyout-right::before {
-            border-color: transparent #334155 transparent transparent;
-          }
-          .dark .sidebar-submenu.flyout-left::before {
-            border-color: transparent transparent transparent #334155;
-          }
-          .dark .sidebar-submenu-item {
-            color: #e2e8f0;
-          }
-          .dark .sidebar-submenu-item:hover,
-          .dark .sidebar-submenu-item.is-nested-open {
-            background: #475569;
-            color: white;
-            border-left-color: #3b82f6;
-          }
-          .dark .sidebar-submenu-item.active {
-            background: #475569;
-            border-left-color: #3b82f6;
-            color: #93c5fd;
-          }
-          .dark .nested-submenu {
-            background: #475569;
-            border-color: #64748b;
-            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
-          }
-          .dark .nested-submenu::before,
-          .dark .nested-submenu.flyout-right::before {
-            border-color: transparent #475569 transparent transparent;
-          }
-          .dark .nested-submenu.flyout-left::before {
-            border-color: transparent transparent transparent #475569;
-          }
-          .dark .nested-submenu-item {
-            color: #e2e8f0;
-          }
-          .dark .nested-submenu-item:hover {
-            background: #64748b;
-            color: white;
-            border-left-color: #3b82f6;
-          }
-          .dark .nested-submenu-item.active {
-            background: #64748b;
-            border-left-color: #3b82f6;
-            color: #93c5fd;
-          }
-
-          /* Ensure parent containers don't clip submenu horizontally */
           nav {
             overflow-x: visible !important;
           }
-          
-          /* Keep vertical scrolling but allow horizontal overflow for submenus */
+
           aside > nav {
             overflow-y: auto;
             overflow-x: visible;
