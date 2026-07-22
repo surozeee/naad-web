@@ -35,8 +35,11 @@ declare global {
 
 let gsiPromise: Promise<void> | null = null;
 
+const FALLBACK_GOOGLE_CLIENT_ID =
+  '440931120883-btid3s6k65qstivrg1b55ep2f8bmefc5.apps.googleusercontent.com';
+
 export function getGoogleClientId(): string {
-  return (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '').trim();
+  return (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '').trim() || FALLBACK_GOOGLE_CLIENT_ID;
 }
 
 export function loadGoogleIdentityServices(): Promise<void> {

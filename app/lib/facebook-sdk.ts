@@ -33,8 +33,10 @@ declare global {
 
 let fbPromise: Promise<void> | null = null;
 
+const FALLBACK_FACEBOOK_APP_ID = '1401339005236361';
+
 export function getFacebookAppId(): string {
-  return (process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? '').trim();
+  return (process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? '').trim() || FALLBACK_FACEBOOK_APP_ID;
 }
 
 export function loadFacebookSdk(): Promise<void> {
