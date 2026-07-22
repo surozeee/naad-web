@@ -1,6 +1,11 @@
 'use client';
 
-import type { KundaliChart } from '@/app/lib/kundali.types';
+import type {
+  KundaliChart,
+  KundaliInsights,
+  LifeAreaInsight,
+  MuhurtaActivity,
+} from '@/app/lib/kundali.types';
 
 function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'good' | 'bad' | 'warn' | 'neutral' }) {
   const cls =
@@ -41,11 +46,128 @@ function timingTone(q: string): 'good' | 'bad' | 'warn' | 'neutral' {
   return 'neutral';
 }
 
+function strengthTone(s: string): 'good' | 'bad' | 'warn' | 'neutral' {
+  if (s === 'STRONG' || s === 'FAVOURABLE') return 'good';
+  if (s === 'WEAK' || s === 'UNFAVOURABLE') return 'bad';
+  if (s === 'MIXED' || s === 'MODERATE' || s === 'CAUTION') return 'warn';
+  return 'neutral';
+}
+
+function lifeAreaList(insights?: KundaliInsights | null): LifeAreaInsight[] {
+  if (!insights) return [];
+  return [
+    insights.family,
+    insights.education,
+    insights.marital,
+    insights.abroad,
+    insights.business,
+    insights.health,
+    insights.career,
+    insights.finance,
+    insights.children,
+  ].filter((x): x is LifeAreaInsight => Boolean(x));
+}
+
+function InsightCard({ insight }: { insight: LifeAreaInsight }) {
+  return (
+    <div className="rounded-lg border border-gray-100 dark:border-slate-600/80 bg-slate-50/80 dark:bg-slate-700/30 p-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{insight.title}</h4>
+        <Badge tone={strengthTone(insight.strength)}>{insight.strength}</Badge>
+        {insight.houseFocus?.length > 0 && (
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Houses {insight.houseFocus.join(', ')}
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-700 dark:text-gray-300">{insight.summary}</p>
+      {insight.keyFactors?.length > 0 && (
+        <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300 space-y-0.5">
+          {insight.keyFactors.map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
+      )}
+      {insight.guidance?.length > 0 && (
+        <ul className="list-disc pl-5 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+          {insight.guidance.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function MuhurtaCard({ activity }: { activity: MuhurtaActivity }) {
+  return (
+    <div className="rounded-lg border border-gray-100 dark:border-slate-600/80 bg-slate-50/80 dark:bg-slate-700/30 p-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{activity.title}</h4>
+        <Badge tone={strengthTone(activity.suitability)}>{activity.suitability}</Badge>
+        {activity.houseFocus?.length > 0 && (
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Houses {activity.houseFocus.join(', ')}
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-700 dark:text-gray-300">{activity.summary}</p>
+      {activity.keyFactors?.length > 0 && (
+        <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300 space-y-0.5">
+          {activity.keyFactors.map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
+      )}
+      {activity.guidance?.length > 0 && (
+        <ul className="list-disc pl-5 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+          {activity.guidance.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function KundaliDetailsPanel({ chart }: { chart: KundaliChart }) {
   const dignityByCode = new Map((chart.dignities ?? []).map((d) => [d.planetCode, d]));
+  const lifeAreas = lifeAreaList(chart.insights);
+  const goodTimes = chart.insights?.goodTimes;
+  const birthMoment = goodTimes?.birthMoment ?? chart.insights?.goodTime ?? null;
+  const muhurtaActivities = goodTimes?.activities ?? [];
 
   return (
     <div className="space-y-4">
+      {(birthMoment || muhurtaActivities.length > 0) && (
+        <Section title="Good times">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Birth-moment quality and natal leanings for starting business, journey, marriage, and other auspicious work.
+          </p>
+          {birthMoment && <InsightCard insight={birthMoment} />}
+          {muhurtaActivities.length > 0 && (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {muhurtaActivities.map((activity) => (
+                <MuhurtaCard key={activity.activity} activity={activity} />
+              ))}
+            </div>
+          )}
+        </Section>
+      )}
+
+      {lifeAreas.length > 0 && (
+        <Section title="Life areas">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Family, education, marital life, abroad, business, health, career, finance, and children — house/significator reading.
+          </p>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {lifeAreas.map((insight) => (
+              <InsightCard key={insight.area} insight={insight} />
+            ))}
+          </div>
+        </Section>
+      )}
+
       {chart.panchanga && (
         <Section title="Panchanga & timing">
           <div className="flex flex-wrap items-center gap-2">

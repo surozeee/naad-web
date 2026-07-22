@@ -265,8 +265,9 @@ export default function BirthChartPage() {
           <div className="space-y-2">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white">Full chart analysis</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Vimshottari dasha, Mangalik, birth panchanga / timing quality, planetary dignity, houses —
-              derived from Swiss Ephemeris sidereal positions.
+              Vimshottari dasha, Mangalik, good times (business, journey, marriage), life areas
+              (family, education, marital, abroad, business, health, career, finance, children),
+              birth panchanga, planetary dignity, houses — derived from Swiss Ephemeris sidereal positions.
             </p>
             <KundaliDetailsPanel chart={chart} />
           </div>

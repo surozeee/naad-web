@@ -68,6 +68,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
       <RegisterModal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
+        redirectAfterLogin={loginRedirect}
         onSwitchToLogin={() => {
           setShowRegisterModal(false);
           setShowLoginModal(true);

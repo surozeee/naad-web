@@ -184,6 +184,48 @@ export interface PlanetDignity {
   note?: string;
 }
 
+export interface LifeAreaInsight {
+  area: string;
+  title: string;
+  /** STRONG | MODERATE | MIXED | WEAK | UNKNOWN */
+  strength: string;
+  summary: string;
+  houseFocus: number[];
+  keyFactors: string[];
+  guidance: string[];
+}
+
+export interface MuhurtaActivity {
+  activity: string;
+  title: string;
+  /** FAVOURABLE | MODERATE | CAUTION | UNFAVOURABLE | UNKNOWN */
+  suitability: string;
+  summary: string;
+  houseFocus: number[];
+  keyFactors: string[];
+  guidance: string[];
+}
+
+export interface GoodTimesInsight {
+  birthMoment?: LifeAreaInsight | null;
+  activities?: MuhurtaActivity[] | null;
+}
+
+export interface KundaliInsights {
+  goodTimes?: GoodTimesInsight | null;
+  /** @deprecated Prefer goodTimes.birthMoment */
+  goodTime?: LifeAreaInsight | null;
+  family?: LifeAreaInsight | null;
+  education?: LifeAreaInsight | null;
+  marital?: LifeAreaInsight | null;
+  abroad?: LifeAreaInsight | null;
+  business?: LifeAreaInsight | null;
+  health?: LifeAreaInsight | null;
+  career?: LifeAreaInsight | null;
+  finance?: LifeAreaInsight | null;
+  children?: LifeAreaInsight | null;
+}
+
 export interface TransitGenerateRequest {
   date?: string;
   time?: string;
@@ -268,4 +310,5 @@ export interface KundaliChart {
   mangalik?: MangalikInfo | null;
   panchanga?: PanchangaInfo | null;
   dignities?: PlanetDignity[] | null;
+  insights?: KundaliInsights | null;
 }

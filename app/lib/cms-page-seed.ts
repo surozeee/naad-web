@@ -246,7 +246,56 @@ function privacyPolicy(): CmsPageSeed {
   };
 }
 
-const SEEDS: CmsPageSeed[] = [aboutUs(), faq(), privacyPolicy()];
+function termsOfService(): CmsPageSeed {
+  return {
+    name: 'terms',
+    description: 'Terms of service',
+    cssContent: CMS_SHARED_CSS,
+    locales: {
+      en: {
+        title: 'Terms of service',
+        htmlContent: `
+<div class="cms-wrap">
+  <article class="cms-card"><h2>1. Agreement</h2><p>By creating an account or signing in with email, Google, or Facebook, you agree to these Terms of Service and our Privacy Policy.</p></article>
+  <article class="cms-card"><h2>2. Accounts</h2><p>You are responsible for keeping your login credentials secure. Social login accounts must use a valid Google or Facebook identity that you control.</p></article>
+  <article class="cms-card"><h2>3. Services</h2><p>Naad Official provides astrology-related content, calendars, consultations, and related tools for personal guidance. Content is not a substitute for professional legal, medical, or financial advice.</p></article>
+  <article class="cms-card"><h2>4. Acceptable use</h2><ul class="cms-list"><li>Do not misuse the platform, harass others, or attempt unauthorized access</li><li>Do not share another person’s personal data without permission</li><li>Do not reverse-engineer or disrupt our services</li></ul></article>
+  <article class="cms-card"><h2>5. Social sign-in</h2><p>When you continue with Google or Facebook, we receive basic profile information (such as name and email) from that provider to create or sign in to your Customer account. You can disconnect social login by contacting support.</p></article>
+  <article class="cms-card"><h2>6. Changes</h2><p>We may update these terms from time to time. Continued use of the service after changes means you accept the updated terms.</p></article>
+  <article class="cms-card"><h2>7. Contact</h2><p>Questions about these terms: <a href="mailto:info@naadofficial.com">info@naadofficial.com</a> or our Contact us page.</p></article>
+</div>`.trim(),
+      },
+      ne: {
+        title: 'सेवाका सर्तहरू',
+        htmlContent: `
+<div class="cms-wrap">
+  <article class="cms-card"><h2>१. सहमति</h2><p>इमेल, Google वा Facebook बाट खाता बनाउँदा वा साइन इन गर्दा तपाईं यी सेवाका सर्तहरू र हाम्रो गोपनीयता नीतिमा सहमत हुनुहुन्छ।</p></article>
+  <article class="cms-card"><h2>२. खाता</h2><p>तपाईंको लगइन जानकारी सुरक्षित राख्ने जिम्मेवारी तपाईंकै हो। सामाजिक लगइनमा तपाईंले नियन्त्रण गर्ने मान्य Google वा Facebook पहिचान प्रयोग गर्नुपर्छ।</p></article>
+  <article class="cms-card"><h2>३. सेवाहरू</h2><p>Naad Official ले ज्योतिष सामग्री, पात्रो, परामर्श र सम्बन्धित उपकरणहरू व्यक्तिगत मार्गदर्शनका लागि प्रदान गर्छ। यो कानुनी, चिकित्सा वा वित्तीय सल्लाहको विकल्प होइन।</p></article>
+  <article class="cms-card"><h2>४. स्वीकार्य प्रयोग</h2><ul class="cms-list"><li>प्लेटफर्मको दुरुपयोग, उत्पीडन वा अनधिकृत पहुँच नगर्नुहोस्</li><li>अर्काको व्यक्तिगत डाटा अनुमतिबिना नबाँड्नुहोस्</li><li>सेवा अवरुद्ध वा रिभर्स इन्जिनियरिङ नगर्नुहोस्</li></ul></article>
+  <article class="cms-card"><h2>५. सामाजिक साइन-इन</h2><p>Google वा Facebook बाट जारी राख्दा हामी Customer खाता बनाउन/साइन इन गर्न नाम र इमेल जस्ता आधारभूत प्रोफाइल जानकारी प्राप्त गर्छौं। समर्थनसँग सम्पर्क गरी सामाजिक लगइन छुट्याउन सकिन्छ।</p></article>
+  <article class="cms-card"><h2>६. परिवर्तन</h2><p>हामी समय-समयमा यी सर्तहरू अद्यावधिक गर्न सक्छौं। परिवर्तनपछि सेवा प्रयोग जारी राख्नु भनेको अद्यावधिक सर्त स्वीकार गर्नु हो।</p></article>
+  <article class="cms-card"><h2>७. सम्पर्क</h2><p>सर्तसम्बन्धी प्रश्न: <a href="mailto:info@naadofficial.com">info@naadofficial.com</a> वा सम्पर्क पृष्ठ।</p></article>
+</div>`.trim(),
+      },
+      hi: {
+        title: 'सेवा की शर्तें',
+        htmlContent: `
+<div class="cms-wrap">
+  <article class="cms-card"><h2>१. सहमति</h2><p>ईमेल, Google या Facebook से खाता बनाते या साइन इन करते समय आप इन सेवा शर्तों और हमारी गोपनीयता नीति से सहमत होते हैं।</p></article>
+  <article class="cms-card"><h2>२. खाते</h2><p>आपकी लॉगिन जानकारी सुरक्षित रखना आपकी जिम्मेदारी है। सोशल लॉगिन में आपके नियंत्रण वाली मान्य Google या Facebook पहचान का उपयोग करें।</p></article>
+  <article class="cms-card"><h2>३. सेवाएँ</h2><p>Naad Official ज्योतिष सामग्री, कैलेंडर, परामर्श और संबंधित उपकरण व्यक्तिगत मार्गदर्शन के लिए प्रदान करता है। यह कानूनी, चिकित्सकीय या वित्तीय सलाह का विकल्प नहीं है।</p></article>
+  <article class="cms-card"><h2>४. स्वीकार्य उपयोग</h2><ul class="cms-list"><li>प्लेटफ़ॉर्म का दुरुपयोग, उत्पीड़न या अनधिकृत पहुँच न करें</li><li>बिना अनुमति किसी अन्य का व्यक्तिगत डेटा साझा न करें</li><li>सेवाओं को बाधित या रिवर्स-इंजीनियर न करें</li></ul></article>
+  <article class="cms-card"><h2>५. सोशल साइन-इन</h2><p>Google या Facebook से जारी रखने पर हम Customer खाता बनाने/साइन इन के लिए नाम और ईमेल जैसी बुनियादी प्रोफ़ाइल जानकारी प्राप्त करते हैं। सहायता से संपर्क कर सोशल लॉगिन अलग किया जा सकता है।</p></article>
+  <article class="cms-card"><h2>६. बदलाव</h2><p>हम समय-समय पर इन शर्तों को अपडेट कर सकते हैं। बदलाव के बाद सेवा का उपयोग जारी रखना अपडेटेड शर्तों की स्वीकृति माना जाता है।</p></article>
+  <article class="cms-card"><h2>७. संपर्क</h2><p>शर्तों संबंधी प्रश्न: <a href="mailto:info@naadofficial.com">info@naadofficial.com</a> या संपर्क पृष्ठ।</p></article>
+</div>`.trim(),
+      },
+    },
+  };
+}
+
+const SEEDS: CmsPageSeed[] = [aboutUs(), faq(), privacyPolicy(), termsOfService()];
 
 export function listCmsPageSeeds(): CmsPageSeed[] {
   return SEEDS;

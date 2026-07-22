@@ -17,6 +17,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
     pathname === '/about-us' ||
     pathname === '/faq' ||
     pathname === '/privacy-policy' ||
+    pathname === '/terms' ||
     pathname === '/contact-us' ||
     Boolean(pathname?.startsWith('/cms/'));
   const isDashboardRoute =

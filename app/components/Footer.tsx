@@ -56,6 +56,9 @@ export default function Footer() {
                 <Link href="/privacy-policy">Privacy policy</Link>
               </li>
               <li>
+                <Link href="/terms">Terms of service</Link>
+              </li>
+              <li>
                 <a href="mailto:info@naadofficial.com">info@naadofficial.com</a>
               </li>
             </ul>

@@ -6,7 +6,7 @@ const ASTROLOGY_LINKS = [
     href: '/astrology/birth-chart',
     icon: '⭐',
     title: 'Birth Kundali',
-    description: 'Full chart with DOB, time & place — SVG, dasha, mangalik, panchanga',
+    description: 'Full chart with DOB, time & place — SVG, dasha, mangalik, life areas, panchanga',
   },
   {
     href: '/astrology/compatibility',

@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, CheckCircle } from 'lucide-react';
+import { completeAuthSessionAndRedirect } from '@/app/lib/complete-auth-session';
+import { SocialAuthButtons } from '@/app/components/auth/SocialAuthButtons';
+import { runFacebookSocialLogin, runGoogleSocialLogin } from '@/lib/social-login-flow';
 
 const REGISTER_API = '/api/auth/register';
 
@@ -9,6 +12,7 @@ interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToLogin: () => void;
+  redirectAfterLogin?: string;
   t?: (key: string) => string;
 }
 
@@ -28,7 +32,9 @@ const defaults: Record<string, string> = {
   'register.passwordMismatch': 'Passwords do not match',
   'register.passwordWeak': 'Password must be at least 8 characters with uppercase, lowercase, number and special character',
   'register.acceptTerms': 'I agree to the',
-  'register.termsOfService': 'Terms of Service',
+  'register.termsOfService': 'Terms of service',
+  'register.privacyPolicy': 'Privacy policy',
+  'register.and': 'and',
   'register.acceptTermsRequired': 'You must accept the terms',
   'register.createAccount': 'Create account',
   'register.creatingAccount': 'Creating...',
@@ -39,12 +45,17 @@ const defaults: Record<string, string> = {
   'register.passwordLowercase': 'One lowercase letter',
   'register.passwordNumber': 'One number',
   'register.passwordSpecial': 'One special character',
+  'register.or': 'or continue with',
+  'register.google': 'Continue with Google',
+  'register.facebook': 'Continue with Facebook',
+  'register.socialError': 'Sign up failed',
 };
 
 export function RegisterModal({
   isOpen,
   onClose,
   onSwitchToLogin,
+  redirectAfterLogin = '/dashboard',
   t = (k) => defaults[k] ?? k,
 }: RegisterModalProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +69,11 @@ export function RegisterModal({
     acceptTerms: false,
   });
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'GOOGLE' | 'FACEBOOK' | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState('');
+
+  const busy = loading || socialLoading != null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -85,6 +100,15 @@ export function RegisterModal({
   };
 
   const passwordValidation = validatePassword(formData.password);
+
+  const finishAndRedirect = async (data: unknown) => {
+    const err = await completeAuthSessionAndRedirect(data, redirectAfterLogin);
+    if (err) {
+      setError(err === 'Login failed' ? t('register.socialError') : err);
+      return;
+    }
+    setRedirecting(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +151,37 @@ export function RegisterModal({
     }
   };
 
+  const handleSocial = async (provider: 'GOOGLE' | 'FACEBOOK') => {
+    setError('');
+    if (!formData.acceptTerms) {
+      setError(t('register.acceptTermsRequired'));
+      return;
+    }
+    setSocialLoading(provider);
+    try {
+      const result =
+        provider === 'GOOGLE' ? await runGoogleSocialLogin() : await runFacebookSocialLogin();
+      if (!result.ok) {
+        setError(result.message || t('register.socialError'));
+        return;
+      }
+      await finishAndRedirect(result.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('register.socialError'));
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
   if (!isOpen) return null;
+  if (redirecting) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-3 bg-purple-100 dark:bg-purple-900/30">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-300 border-t-purple-700" aria-hidden />
+        <p className="text-base font-medium text-purple-800 dark:text-purple-200">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
@@ -154,7 +208,7 @@ export function RegisterModal({
               placeholder={t('register.fullNamePlaceholder')}
               className="auth-form-input"
               required
-              disabled={loading}
+              disabled={busy}
             />
           </div>
           <div className="auth-form-group">
@@ -171,7 +225,7 @@ export function RegisterModal({
               placeholder={t('register.emailPlaceholder')}
               className="auth-form-input"
               required
-              disabled={loading}
+              disabled={busy}
             />
           </div>
           <div className="auth-form-group">
@@ -187,7 +241,7 @@ export function RegisterModal({
               onChange={handleChange}
               placeholder={t('register.phonePlaceholder')}
               className="auth-form-input"
-              disabled={loading}
+              disabled={busy}
             />
           </div>
           <div className="auth-form-group">
@@ -205,13 +259,13 @@ export function RegisterModal({
                 placeholder={t('register.passwordPlaceholder')}
                 className="auth-form-input"
                 required
-                disabled={loading}
+                disabled={busy}
               />
               <button
                 type="button"
                 className="auth-password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
+                disabled={busy}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -249,13 +303,13 @@ export function RegisterModal({
                 placeholder={t('register.confirmPasswordPlaceholder')}
                 className={`auth-form-input ${formData.confirmPassword && formData.password !== formData.confirmPassword ? 'auth-input-error' : ''}`}
                 required
-                disabled={loading}
+                disabled={busy}
               />
               <button
                 type="button"
                 className="auth-password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                disabled={loading}
+                disabled={busy}
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -274,12 +328,16 @@ export function RegisterModal({
                 onChange={handleChange}
                 className="auth-checkbox-input"
                 required
-                disabled={loading}
+                disabled={busy}
               />
               <span>
                 {t('register.acceptTerms')}{' '}
                 <a href="/terms" target="_blank" rel="noopener noreferrer" className="auth-terms-link">
                   {t('register.termsOfService')}
+                </a>{' '}
+                {t('register.and')}{' '}
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="auth-terms-link">
+                  {t('register.privacyPolicy')}
                 </a>
               </span>
             </label>
@@ -288,12 +346,24 @@ export function RegisterModal({
           <button
             type="submit"
             className="auth-btn-primary auth-btn-full"
-            disabled={loading || !passwordValidation.isValid || !formData.acceptTerms}
+            disabled={busy || !passwordValidation.isValid || !formData.acceptTerms}
           >
             {loading ? t('register.creatingAccount') : t('register.createAccount')}
             {!loading && <ArrowRight size={18} />}
           </button>
         </form>
+
+        <SocialAuthButtons
+          orLabel={t('register.or')}
+          googleLabel={t('register.google')}
+          facebookLabel={t('register.facebook')}
+          loadingLabel={t('register.creatingAccount')}
+          busy={busy}
+          socialLoading={socialLoading}
+          onGoogle={() => void handleSocial('GOOGLE')}
+          onFacebook={() => void handleSocial('FACEBOOK')}
+        />
+
         <div className="auth-footer">
           <p>
             {t('register.alreadyHaveAccount')}{' '}

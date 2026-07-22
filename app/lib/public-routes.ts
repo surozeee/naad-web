@@ -9,6 +9,7 @@ export const PUBLIC_MARKETING_PATHS = [
   '/about-us',
   '/faq',
   '/privacy-policy',
+  '/terms',
   '/contact-us',
 ] as const;
 

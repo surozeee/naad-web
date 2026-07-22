@@ -2,24 +2,17 @@
 
 import { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
-import {
-  authProfileFromLoginUser,
-  authProfileFromUserApi,
-  saveAuthProfileToLocalStorage,
-} from '@/app/lib/auth-storage';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
-import { resolvePostLoginRedirect } from '@/app/lib/login-redirect';
-import { getProfile } from '@/app/lib/profile.service';
+import { completeAuthSessionAndRedirect } from '@/app/lib/complete-auth-session';
+import { SocialAuthButtons } from '@/app/components/auth/SocialAuthButtons';
 import { runLoginFlow } from '@/lib/login-flow';
-import { parseLoginResponse, waitForAuthenticatedSession } from '@/lib/login-client';
-import { clearSessionCache } from '@/lib/auth-fetch';
+import { runFacebookSocialLogin, runGoogleSocialLogin } from '@/lib/social-login-flow';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
-  /** Where to redirect after successful login (e.g. from ?redirect= when auth required). */
   redirectAfterLogin?: string;
   t?: (key: string) => string;
 }
@@ -37,6 +30,13 @@ const defaults: Record<string, string> = {
   'login.error': 'Login failed',
   'login.noAccount': "Don't have an account?",
   'login.signUp': 'Sign up',
+  'login.or': 'or continue with',
+  'login.google': 'Continue with Google',
+  'login.facebook': 'Continue with Facebook',
+  'login.termsNotice': 'By continuing you agree to our',
+  'login.termsOfService': 'Terms of service',
+  'login.and': 'and',
+  'login.privacyPolicy': 'Privacy policy',
 };
 
 export function LoginModal({
@@ -51,8 +51,20 @@ export function LoginModal({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'GOOGLE' | 'FACEBOOK' | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState('');
+
+  const busy = loading || socialLoading != null;
+
+  const finishAndRedirect = async (data: unknown) => {
+    const err = await completeAuthSessionAndRedirect(data, redirectAfterLogin);
+    if (err) {
+      setError(err === 'Login failed' ? t('login.error') : err);
+      return;
+    }
+    setRedirecting(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,53 +78,31 @@ export function LoginModal({
       const loginResult = await runLoginFlow(email.trim(), password, headers);
       if (!loginResult.ok) {
         setError(loginResult.message || t('login.error'));
-        setLoading(false);
         return;
       }
-
-      const parsed = parseLoginResponse(loginResult.data);
-      if (!parsed?.accessToken) {
-        setError(t('login.error') ?? 'Login failed');
-        setLoading(false);
-        return;
-      }
-
-      clearSessionCache();
-
-      const sessionVisible =
-        parsed.sessionReady || (await waitForAuthenticatedSession(5000));
-      if (!sessionVisible) {
-        setError('Session could not be established. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      const loginUser = parsed.user;
-      let authProfile = authProfileFromLoginUser(loginUser);
-
-      try {
-        const apiProfile = await getProfile();
-        if (apiProfile) {
-          authProfile = authProfileFromUserApi(apiProfile);
-        }
-      } catch {
-        // Fall back to login payload role hints when profile fetch fails.
-      }
-
-      saveAuthProfileToLocalStorage(authProfile);
-
-      const destination = resolvePostLoginRedirect(
-        authProfile.userType,
-        authProfile.role,
-        redirectAfterLogin
-      );
-
-      setRedirecting(true);
-      window.location.assign(destination);
+      await finishAndRedirect(loginResult.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : (t('login.error') ?? 'Login failed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSocial = async (provider: 'GOOGLE' | 'FACEBOOK') => {
+    setError('');
+    setSocialLoading(provider);
+    try {
+      const result =
+        provider === 'GOOGLE' ? await runGoogleSocialLogin() : await runFacebookSocialLogin();
+      if (!result.ok) {
+        setError(result.message || t('login.error'));
+        return;
+      }
+      await finishAndRedirect(result.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : (t('login.error') ?? 'Login failed'));
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -150,7 +140,7 @@ export function LoginModal({
               placeholder={t('login.emailPlaceholder')}
               className="auth-form-input"
               required
-              disabled={loading}
+              disabled={busy}
             />
           </div>
           <div className="auth-form-group">
@@ -172,13 +162,13 @@ export function LoginModal({
                 placeholder={t('login.passwordPlaceholder')}
                 className="auth-form-input"
                 required
-                disabled={loading}
+                disabled={busy}
               />
               <button
                 type="button"
                 className="auth-password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
+                disabled={busy}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -189,12 +179,36 @@ export function LoginModal({
           <button
             type="submit"
             className="auth-btn-primary auth-btn-full"
-            disabled={loading || !email || !password}
+            disabled={busy || !email || !password}
           >
             {loading ? t('login.loggingIn') : t('login.login')}
             {!loading && <ArrowRight size={18} />}
           </button>
         </form>
+
+        <SocialAuthButtons
+          orLabel={t('login.or')}
+          googleLabel={t('login.google')}
+          facebookLabel={t('login.facebook')}
+          loadingLabel={t('login.loggingIn')}
+          busy={busy}
+          socialLoading={socialLoading}
+          onGoogle={() => void handleSocial('GOOGLE')}
+          onFacebook={() => void handleSocial('FACEBOOK')}
+        />
+
+        <p className="auth-legal-note">
+          {t('login.termsNotice')}{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="auth-terms-link">
+            {t('login.termsOfService')}
+          </a>{' '}
+          {t('login.and')}{' '}
+          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="auth-terms-link">
+            {t('login.privacyPolicy')}
+          </a>
+          .
+        </p>
+
         <div className="auth-footer">
           <p>
             {t('login.noAccount')}{' '}
