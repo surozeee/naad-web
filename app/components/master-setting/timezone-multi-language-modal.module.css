@@ -1,0 +1,334 @@
+.panel {
+  max-width: 640px;
+  width: 92vw;
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+  overflow-x: visible;
+}
+
+.header {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.875rem;
+  margin-bottom: 0;
+  overflow: visible;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #000000;
+  letter-spacing: -0.02em;
+}
+
+.fieldsRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.localeField {
+  flex: 0 1 220px;
+  min-width: 160px;
+  margin-bottom: 0;
+}
+
+.localField {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.localeSelect {
+  width: 100%;
+  min-height: 46px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #000000 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px;
+  padding: 10px 40px 10px 14px !important;
+  line-height: 1.4;
+  cursor: pointer;
+  appearance: auto;
+  box-sizing: border-box;
+}
+
+.body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  color: #000000;
+}
+
+.entityCard {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.entityEyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  opacity: 0.72;
+}
+
+.entityName {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  letter-spacing: -0.02em;
+}
+
+.entityCode {
+  font-size: 12px;
+  font-weight: 700;
+  color: #000000;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.defaultBadge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #000000;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 2px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.defaultLine {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #000000;
+  font-weight: 500;
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #000000;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #000000;
+}
+
+.localInput {
+  min-height: 46px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000000 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px;
+}
+
+.localInput::placeholder {
+  color: #000000;
+  opacity: 0.45;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.actions :global(.btn-primary),
+.actions :global(.btn-secondary) {
+  min-height: 42px;
+  padding: 10px 20px;
+  font-weight: 700;
+}
+
+.savedTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: #000000;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.savedList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty {
+  font-size: 13px;
+  font-weight: 500;
+  color: #000000;
+  opacity: 0.75;
+  padding: 0.9rem 1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px dashed #cbd5e1;
+  line-height: 1.5;
+}
+
+.savedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.65rem 0.85rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.savedMain {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.savedCode {
+  font-weight: 800;
+  color: #000000;
+  min-width: 36px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.savedName {
+  color: #000000;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.savedActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.closeBtn {
+  min-height: 42px;
+  font-weight: 700;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+  background: #ffffff !important;
+}
+
+.closeBtn:hover {
+  background: #fef2f2 !important;
+  border-color: #f87171 !important;
+  color: #991b1b !important;
+}
+
+/* Dark mode: white text, dark surfaces */
+:global(html[data-theme='dark']) .panel {
+  color: #ffffff;
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+:global(html[data-theme='dark']) .header {
+  border-bottom-color: #334155;
+}
+
+:global(html[data-theme='dark']) .title,
+:global(html[data-theme='dark']) .body,
+:global(html[data-theme='dark']) .entityEyebrow,
+:global(html[data-theme='dark']) .entityName,
+:global(html[data-theme='dark']) .defaultLine,
+:global(html[data-theme='dark']) .hint,
+:global(html[data-theme='dark']) .fieldLabel,
+:global(html[data-theme='dark']) .savedTitle,
+:global(html[data-theme='dark']) .savedCode,
+:global(html[data-theme='dark']) .savedName,
+:global(html[data-theme='dark']) .empty {
+  color: #ffffff;
+}
+
+:global(html[data-theme='dark']) .entityCard {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+:global(html[data-theme='dark']) .entityCode {
+  color: #ffffff;
+  background: #312e81;
+  border-color: #4338ca;
+}
+
+:global(html[data-theme='dark']) .defaultBadge {
+  color: #ffffff;
+  background: #064e3b;
+  border-color: #059669;
+}
+
+:global(html[data-theme='dark']) .localInput,
+:global(html[data-theme='dark']) .localeSelect {
+  color: #ffffff !important;
+  background: #0f172a !important;
+  border-color: #475569 !important;
+}
+
+:global(html[data-theme='dark']) .localInput::placeholder {
+  color: #ffffff;
+  opacity: 0.45;
+}
+
+:global(html[data-theme='dark']) .empty {
+  background: #1f2937;
+  border-color: #475569;
+}
+
+:global(html[data-theme='dark']) .savedRow {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+:global(html[data-theme='dark']) .closeBtn {
+  background: #1f2937 !important;
+  border-color: #f87171 !important;
+  color: #fecaca !important;
+}
+
+:global(html[data-theme='dark']) .closeBtn:hover {
+  background: #7f1d1d !important;
+  color: #ffffff !important;
+}

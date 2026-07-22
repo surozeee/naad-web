@@ -37,6 +37,11 @@ import type {
   NepaliCalendarRequest,
   NepaliCalendarListRequest,
   NepaliCalendarResponse,
+  TimezoneRequest,
+  TimezoneListRequest,
+  TimezoneResponse,
+  TimezoneLocalRequest,
+  TimezoneLocalResponse,
 } from '@/app/lib/master.types';
 
 const BASE = '/api/master';
@@ -233,6 +238,40 @@ export const countryLocaleApi = {
 };
 
 export const nepaliCalendarApi = crud<NepaliCalendarResponse, NepaliCalendarRequest, NepaliCalendarRequest, NepaliCalendarListRequest>('nepali-calendar');
+export const timezoneApi = crud<TimezoneResponse, TimezoneRequest, TimezoneRequest, TimezoneListRequest>('timezone');
+
+export const timezoneLocalApi = {
+  getByTimezoneId: async (timezoneId: string): Promise<TimezoneLocalResponse[]> => {
+    const r = await request<TimezoneLocalResponse[] | { data?: TimezoneLocalResponse[] }>(
+      'GET',
+      'timezone-local/get-by-timezone-id',
+      { headers: { timezoneId } }
+    );
+    const data = Array.isArray(r) ? r : (r as { data?: TimezoneLocalResponse[] }).data;
+    return Array.isArray(data) ? data : [];
+  },
+  upsert: async (body: TimezoneLocalRequest): Promise<TimezoneLocalResponse | undefined> => {
+    const r = await request<TimezoneLocalResponse>('POST', 'timezone-local/upsert', {
+      body: body as object,
+    });
+    return r.data ?? undefined;
+  },
+  create: async (body: TimezoneLocalRequest): Promise<TimezoneLocalResponse | undefined> => {
+    const r = await request<TimezoneLocalResponse>('POST', 'timezone-local/create', {
+      body: body as object,
+    });
+    return r.data ?? undefined;
+  },
+  update: async (id: string, body: TimezoneLocalRequest): Promise<TimezoneLocalResponse | undefined> => {
+    const r = await request<TimezoneLocalResponse>('PUT', 'timezone-local/update', {
+      body: body as object,
+      headers: { id },
+    });
+    return r.data ?? undefined;
+  },
+  delete: (id: string) =>
+    request<void>('DELETE', 'timezone-local/delete', { headers: { id } }),
+};
 
 export const masterService = {
   country: countryApi,
@@ -248,6 +287,8 @@ export const masterService = {
   color: colorApi,
   colorLocale: colorLocaleApi,
   nepaliCalendar: nepaliCalendarApi,
+  timezone: timezoneApi,
+  timezoneLocal: timezoneLocalApi,
 };
 
 export default masterService;

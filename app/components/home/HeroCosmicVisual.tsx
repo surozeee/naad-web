@@ -29,9 +29,11 @@ const ORBIT_RADII = [46, 64, 84, 102, 122, 142, 158, 174];
 
 function polar(cx: number, cy: number, radius: number, deg: number) {
   const rad = (deg * Math.PI) / 180;
+  // Fixed precision avoids SSR/client float drift → hydration mismatch
+  const round = (n: number) => Math.round(n * 1000) / 1000;
   return {
-    x: cx + Math.cos(rad) * radius,
-    y: cy + Math.sin(rad) * radius,
+    x: round(cx + Math.cos(rad) * radius),
+    y: round(cy + Math.sin(rad) * radius),
   };
 }
 

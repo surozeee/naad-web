@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin } from 'lucide-react';
+import ActiveTimezoneSelect from '@/app/components/kundali/ActiveTimezoneSelect';
 import { getGoogleMapsApiKey, loadGoogleMaps } from '@/app/lib/google-maps';
 import { resolveTimezone } from '@/app/lib/timezone-from-location';
 
@@ -255,19 +256,26 @@ export default function BirthPlaceMapPicker({ value, birthDate, onChange }: Prop
       )}
 
       <div className="grid sm:grid-cols-1 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timezone</label>
-          <input
-            value={value.timezone}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white text-sm"
-            title={
-              value.timezoneSource
-                ? `Resolved via ${value.timezoneSource}${value.countryCode ? ` (${value.countryCode})` : ''}`
-                : undefined
-            }
-          />
-        </div>
+        <ActiveTimezoneSelect
+          value={value.timezone}
+          disabled={resolvingTz}
+          onChange={(zoneId) => {
+            onChangeRef.current({
+              ...value,
+              timezone: zoneId,
+              timezoneSource: value.timezoneSource ?? 'browser',
+            });
+          }}
+        />
+        {value.timezoneSource && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">
+            {value.timezoneSource === 'google'
+              ? 'Suggested from Google Time Zone API — you can override above.'
+              : value.timezoneSource === 'country'
+                ? `Suggested from country${value.countryCode ? ` (${value.countryCode})` : ''} — you can override above.`
+                : 'You can pick any active master timezone.'}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const NAAD_API_BASE = 'https://api-naad.jojolapatech.com';
 
@@ -12,6 +13,10 @@ const nextConfig: NextConfig = {
       process.env.NEXTAUTH_XSRF_TOKEN ??
       process.env.NEXT_AUTH_XSRF_TOKEN ??
       '',
+  },
+  // Prevent Turbopack from inferring workspace root as ./app
+  turbopack: {
+    root: path.resolve(process.cwd()),
   },
 };
 

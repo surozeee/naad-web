@@ -1,0 +1,279 @@
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wrap:focus-within,
+.open {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+}
+
+.disabled {
+  opacity: 0.65;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  color: #64748b;
+  background: #f8fafc;
+  border: none;
+  border-right: 1px solid #e2e8f0;
+  border-radius: 8px 0 0 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.trigger {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f172a;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 0 14px;
+  min-height: 38px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 0 8px 8px 0;
+}
+
+.popover {
+  position: absolute;
+  z-index: 50;
+  left: 0;
+  width: min(292px, calc(100vw - 32px));
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.popoverBelow {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
+
+.popoverAbove {
+  bottom: calc(100% + 6px);
+  top: auto;
+}
+
+.clockHeader {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 14px 10px;
+  background: #2563eb;
+  color: #fff;
+}
+
+.seg {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.segActive {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.colon {
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.7;
+  margin: 0 2px;
+}
+
+.periodToggle {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.periodBtn {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.periodActive {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.clockBody {
+  display: flex;
+  justify-content: center;
+  padding: 12px 10px 4px;
+}
+
+.dial {
+  width: 220px;
+  height: 220px;
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dialFace {
+  fill: #f1f5f9;
+}
+
+.hand {
+  stroke: #2563eb;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.handKnob {
+  fill: #2563eb;
+}
+
+.centerDot {
+  fill: #2563eb;
+}
+
+.tickHit {
+  fill: transparent;
+}
+
+.tickHitActive {
+  fill: #2563eb;
+}
+
+.tickLabel {
+  fill: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.tickLabelActive {
+  fill: #fff;
+}
+
+.clockFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 12px 12px;
+}
+
+.footerBtn {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.footerBtn:hover {
+  background: #eff6ff;
+}
+
+:global(html[data-theme='dark']) .wrap,
+:global(html.dark) .wrap {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global(html[data-theme='dark']) .wrap:focus-within,
+:global(html.dark) .wrap:focus-within,
+:global(html[data-theme='dark']) .open,
+:global(html.dark) .open {
+  border-color: #475569;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+:global(html[data-theme='dark']) .iconBtn,
+:global(html.dark) .iconBtn {
+  color: #94a3b8;
+  background: #0f172a;
+  border-right-color: #334155;
+}
+
+:global(html[data-theme='dark']) .iconBtn:hover,
+:global(html.dark) .iconBtn:hover {
+  color: #60a5fa;
+  background: #172554;
+}
+
+:global(html[data-theme='dark']) .trigger,
+:global(html.dark) .trigger {
+  color: #f8fafc;
+}
+
+:global(html[data-theme='dark']) .popover,
+:global(html.dark) .popover {
+  background: #0f172a;
+  border-color: #334155;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+}
+
+:global(html[data-theme='dark']) .clockHeader,
+:global(html.dark) .clockHeader {
+  background: #1d4ed8;
+}
+
+:global(html[data-theme='dark']) .dialFace,
+:global(html.dark) .dialFace {
+  fill: #1e293b;
+}
+
+:global(html[data-theme='dark']) .tickLabel,
+:global(html.dark) .tickLabel {
+  fill: #e2e8f0;
+}
+
+:global(html[data-theme='dark']) .footerBtn,
+:global(html.dark) .footerBtn {
+  color: #93c5fd;
+}
+
+:global(html[data-theme='dark']) .footerBtn:hover,
+:global(html.dark) .footerBtn:hover {
+  background: #172554;
+}

@@ -29,7 +29,8 @@ export function publicBackendHeaders(options?: { json?: boolean }): Record<strin
 }
 
 /**
- * Try public backend paths first, then the secured path (with optional PUBLIC_API_BEARER).
+ * Try candidates in order. Continue on auth failure; also continue on 404 so a missing
+ * public route can fall through to the secured master path when a bearer is configured.
  */
 export async function publicBackendRequest(
   candidates: string[],
@@ -47,10 +48,18 @@ export async function publicBackendRequest(
     try {
       const res = await backendFetch(backendUrl(path), { ...init, headers });
       last = res;
-      // Prefer a successful or non-auth response from a public path.
-      if (res.ok || (res.status !== 401 && res.status !== 403)) {
+      if (res.ok) {
         return res;
       }
+      // Try next candidate for auth gaps or undeployed public routes.
+      if (res.status === 401 || res.status === 403 || res.status === 404) {
+        continue;
+      }
+      // For 5xx on a public path, still try the next candidate before giving up.
+      if (res.status >= 500 && candidates.indexOf(path) < candidates.length - 1) {
+        continue;
+      }
+      return res;
     } catch {
       continue;
     }

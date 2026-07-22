@@ -225,3 +225,38 @@ export interface NepaliCalendarResponse extends NepaliCalendarRequest {
   createdAt?: string;
   lastModifiedAt?: string;
 }
+
+// ---- Timezone ----
+export interface TimezoneRequest {
+  /** Timezone enum constant (e.g. ASIA_KATHMANDU) */
+  name: string;
+  code: string;
+  utcOffset: string;
+}
+
+export interface TimezoneResponse {
+  id: string;
+  name: string;
+  /** IANA zone id (e.g. Asia/Kathmandu) */
+  zoneId?: string;
+  code: string;
+  utcOffset: string;
+  status?: StatusEnum;
+  createdAt?: string;
+  lastModifiedAt?: string;
+}
+
+export type TimezoneListRequest = MasterListRequest;
+
+export interface TimezoneLocalRequest {
+  timezoneId: string;
+  language: string;
+  name: string;
+}
+
+export interface TimezoneLocalResponse {
+  id: string;
+  timezoneId: string;
+  language: string;
+  name: string;
+}

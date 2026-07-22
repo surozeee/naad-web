@@ -26,6 +26,12 @@ export default function GeneralSettingsPage() {
             <p className="text-gray-600 dark:text-gray-400 text-sm">Lucky-color palette (name + hex) for horoscope</p>
           </a>
 
+          <a href="/master-setting/general/timezone" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
+            <div className="text-5xl mb-4">🕒</div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Timezone</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">IANA timezones, UTC offsets &amp; locales</p>
+          </a>
+
           <a href="/master-setting/general/nepali-calendar" className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-all text-center">
             <div className="text-5xl mb-4">📅</div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Nepali Calendar Days</h3>

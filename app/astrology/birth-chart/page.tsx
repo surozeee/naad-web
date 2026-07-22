@@ -1,12 +1,16 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { useLocale } from '@/app/components/LocaleProvider';
 import BirthPlaceMapPicker, {
   type BirthPlaceSelection,
 } from '../../components/kundali/BirthPlaceMapPicker';
 import KundaliChartView from '../../components/kundali/KundaliChartView';
 import KundaliDetailsPanel from '../../components/kundali/KundaliDetailsPanel';
+import { DateInputWithCalendarMode } from '@/app/components/ui/DateInputWithCalendarMode';
+import { BirthTimeField } from '@/app/components/ui/BirthTimeField';
+import { ensureOfficialLibrary } from '@/app/components/ui/nepali-datepicker';
 import { kundaliApi } from '@/app/lib/kundali.service';
 import type {
   AyanamsaType,
@@ -14,7 +18,7 @@ import type {
   HouseSystemType,
   KundaliChart,
 } from '@/app/lib/kundali.types';
-import { getStoredUiLanguage } from '@/app/lib/ui-language';
+import { defaultCalendarMode, type CalendarMode } from '@/app/lib/date-bridge';
 
 const DEFAULT_PLACE: BirthPlaceSelection = {
   placeName: 'Kathmandu, Nepal',
@@ -26,10 +30,12 @@ const DEFAULT_PLACE: BirthPlaceSelection = {
 };
 
 export default function BirthChartPage() {
+  const { language } = useLocale();
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('1990-05-15');
   const [birthTime, setBirthTime] = useState('10:30');
   const [place, setPlace] = useState<BirthPlaceSelection>(DEFAULT_PLACE);
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>(() => defaultCalendarMode(language));
   const [ayanamsa, setAyanamsa] = useState<AyanamsaType>('LAHIRI');
   const [houseSystem, setHouseSystem] = useState<HouseSystemType>('WHOLE_SIGN');
   const [chartStyle, setChartStyle] = useState<ChartStyleType>('NORTH_INDIAN');
@@ -37,7 +43,13 @@ export default function BirthChartPage() {
   const [error, setError] = useState<string | null>(null);
   const [chart, setChart] = useState<KundaliChart | null>(null);
 
-  const language = useMemo(() => getStoredUiLanguage(), []);
+  useEffect(() => {
+    setCalendarMode(defaultCalendarMode(language));
+  }, [language]);
+
+  useEffect(() => {
+    void ensureOfficialLibrary();
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -48,7 +60,7 @@ export default function BirthChartPage() {
         throw new Error('Date and a map place selection are required');
       }
       if (!place.timezone.trim()) {
-        throw new Error('Timezone could not be resolved for this place');
+        throw new Error('Timezone is required — pick an active timezone');
       }
       const time = birthTime.length === 5 ? `${birthTime}:00` : birthTime;
       const result = await kundaliApi.generate({
@@ -103,47 +115,27 @@ export default function BirthChartPage() {
               />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Date of birth
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Time of birth
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={birthTime}
-                  onChange={(e) => setBirthTime(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Date of birth
+              </label>
+              <DateInputWithCalendarMode
+                id="kundali-birth-date"
+                valueAd={birthDate}
+                onChangeAd={setBirthDate}
+                calendarMode={calendarMode}
+                onCalendarModeChange={setCalendarMode}
+                togglePosition="end"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Time of birth
+              </label>
+              <BirthTimeField id="kundali-birth-time" value={birthTime} onChange={setBirthTime} />
             </div>
 
             <BirthPlaceMapPicker value={place} birthDate={birthDate} onChange={setPlace} />
-
-            {place.timezoneSource && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Timezone{' '}
-                <span className="font-medium text-gray-700 dark:text-gray-300">{place.timezone}</span>
-                {' · '}
-                {place.timezoneSource === 'google'
-                  ? 'from Google Time Zone API'
-                  : place.timezoneSource === 'country'
-                    ? `from country${place.countryCode ? ` (${place.countryCode})` : ''}`
-                    : 'from browser'}
-              </p>
-            )}
 
             <div className="grid sm:grid-cols-3 gap-3">
               <div>
