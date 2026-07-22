@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
       process.env.NEXTAUTH_XSRF_TOKEN ??
       process.env.NEXT_AUTH_XSRF_TOKEN ??
       '',
+    // Social login (public client IDs — must be on next.config env for reliable client access)
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '',
+    NEXT_PUBLIC_FACEBOOK_APP_ID: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? '',
   },
   // Prevent Turbopack from inferring workspace root as ./app
   turbopack: {
