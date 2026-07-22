@@ -45,8 +45,9 @@ export function DateInputWithCalendarMode({
   const useNepaliDigits = isNepaliUiLanguage(language);
   const inlineToggle = showToggle && togglePosition === 'end';
   const inputClass = [
-    'w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white',
-    error && !inlineToggle ? 'border-rose-500' : '',
+    styles.themedInput,
+    'w-full px-4 py-2 rounded-lg',
+    error && !inlineToggle ? styles.themedInputError : '',
     className ?? '',
   ]
     .filter(Boolean)

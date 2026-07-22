@@ -1,12 +1,22 @@
 'use client';
 
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '../../components/DashboardLayout';
 import { musicApi, musicTypeApi } from '@/app/lib/crm.service';
-import { Play, Pause, Search, Info } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Search,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
+  Music2,
+  Gauge,
+} from 'lucide-react';
+import styles from './listen.module.css';
 
-/** Active music type option: id for API, name for display, type for URL param matching */
 interface ActiveMusicTypeOption {
   id: string;
   name: string;
@@ -19,6 +29,10 @@ interface Track {
   artist: string;
   mp3Url: string;
 }
+
+const PAGE_SIZE = 12;
+const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+const SKIP_SECONDS = 10;
 
 function mapToTrack(raw: Record<string, unknown>): Track {
   const musicType = raw.musicType as Record<string, unknown> | undefined;
@@ -38,13 +52,10 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-/** Show duration as --:-- when unknown */
 function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return '--:--';
   return formatTime(seconds);
 }
-
-const PAGE_SIZE = 12;
 
 function ListenPageContent() {
   const searchParams = useSearchParams();
@@ -54,21 +65,44 @@ function ListenPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [searchKey, setSearchKey] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [musicTypeId, setMusicTypeId] = useState<string>('');
+  const [musicTypeId, setMusicTypeId] = useState('');
   const [pageNo, setPageNo] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [showInfoTooltip, setShowInfoTooltip] = useState(false);
+
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [volume, setVolume] = useState(0.9);
+  const [muted, setMuted] = useState(false);
+  const [buffering, setBuffering] = useState(false);
+
   const isSeekingRef = useRef(false);
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const playRequestRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const currentTrack = tracks.find((t) => t.id === playingId) ?? null;
+  const currentTrack = useMemo(
+    () => tracks.find((t) => t.id === playingId) ?? null,
+    [tracks, playingId]
+  );
+  const currentIndex = useMemo(
+    () => tracks.findIndex((t) => t.id === playingId),
+    [tracks, playingId]
+  );
 
-  // Fetch active music types only
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
+
+
   useEffect(() => {
     let cancelled = false;
     musicTypeApi
@@ -82,29 +116,33 @@ function ListenPageContent() {
       .then((res) => {
         if (cancelled) return;
         const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
-        const options: ActiveMusicTypeOption[] = list.map((row) => ({
-          id: String(row.id ?? ''),
-          name: String(row.name ?? row.type ?? ''),
-          type: row.type != null ? String(row.type) : undefined,
-        }));
-        setTypeOptions(options);
+        setTypeOptions(
+          list.map((row) => ({
+            id: String(row.id ?? ''),
+            name: String(row.name ?? row.type ?? ''),
+            type: row.type != null ? String(row.type) : undefined,
+          }))
+        );
       })
       .catch(() => {
         if (!cancelled) setTypeOptions([]);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Initialize musicTypeId from URL: ?musicTypeId=xxx or ?musicType=MANTRA (resolve to id when options loaded)
   useEffect(() => {
     const idParam = searchParams.get('musicTypeId');
     const typeParam = searchParams.get('musicType');
-    if (idParam && idParam.trim()) {
+    if (idParam?.trim()) {
       setMusicTypeId(idParam.trim());
       return;
     }
-    if (typeParam && typeParam.trim() && typeOptions.length > 0) {
-      const found = typeOptions.find((o) => (o.type || o.name).toUpperCase() === typeParam.trim().toUpperCase());
+    if (typeParam?.trim() && typeOptions.length > 0) {
+      const found = typeOptions.find(
+        (o) => (o.type || o.name).toUpperCase() === typeParam.trim().toUpperCase()
+      );
       if (found) setMusicTypeId(found.id);
     }
   }, [searchParams, typeOptions]);
@@ -125,8 +163,13 @@ function ListenPageContent() {
       .then((res) => {
         if (cancelled) return;
         const list = (res.result ?? res.content ?? []) as Record<string, unknown>[];
-        const total = (res as { totalElements?: number }).totalElements ?? (res as { total?: number }).total ?? list.length;
-        const totalP = (res as { totalPages?: number }).totalPages ?? Math.max(1, Math.ceil(total / PAGE_SIZE));
+        const total =
+          (res as { totalElements?: number }).totalElements ??
+          (res as { total?: number }).total ??
+          list.length;
+        const totalP =
+          (res as { totalPages?: number }).totalPages ??
+          Math.max(1, Math.ceil(total / PAGE_SIZE));
         setTracks(list.map(mapToTrack));
         setTotalElements(total);
         setTotalPages(totalP);
@@ -138,26 +181,138 @@ function ListenPageContent() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pageNo, searchKey, musicTypeId]);
 
-  const handlePlay = (track: Track) => {
-    if (!track.mp3Url) return;
+  const applyRate = useCallback((rate: number) => {
+    const audio = audioRef.current;
+    if (audio) audio.playbackRate = rate;
+    setPlaybackRate(rate);
+  }, []);
+
+  const seekTo = useCallback((timeSeconds: number) => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (playingId === track.id) {
+    const mediaDuration =
+      Number.isFinite(audio.duration) && audio.duration > 0
+        ? audio.duration
+        : durationRef.current;
+    if (!Number.isFinite(mediaDuration) || mediaDuration <= 0) return;
+
+    const target = Math.min(Math.max(0, timeSeconds), Math.max(0, mediaDuration - 0.05));
+    const wasPlaying = !audio.paused;
+
+    const apply = () => {
+      try {
+        const fastSeek = (audio as HTMLAudioElement & { fastSeek?: (t: number) => void }).fastSeek;
+        if (typeof fastSeek === 'function') fastSeek.call(audio, target);
+        else audio.currentTime = target;
+      } catch {
+        audio.currentTime = target;
+      }
+      currentTimeRef.current = target;
+      setCurrentTime(target);
+    };
+
+    apply();
+
+    const onSeeked = () => {
+      if (Math.abs(audio.currentTime - target) > 0.35) {
+        try {
+          audio.currentTime = target;
+        } catch {
+          /* ignore */
+        }
+      }
+      currentTimeRef.current = audio.currentTime;
+      setCurrentTime(audio.currentTime);
+      if (wasPlaying && audio.paused) {
+        audio.play().catch(() => {});
+      }
+    };
+    audio.addEventListener('seeked', onSeeked, { once: true });
+    window.setTimeout(() => {
+      if (Math.abs(audio.currentTime - target) > 0.35) apply();
+    }, 120);
+  }, []);
+
+  const streamUrlFor = useCallback((trackId: string) => `/api/bucket/public/stream/${trackId}`, []);
+
+  const playTrack = useCallback(
+    async (track: Track) => {
+      if (!track.mp3Url && !track.id) return;
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (playingId === track.id) {
+        if (audio.paused) audio.play().catch(() => {});
+        else audio.pause();
+        return;
+      }
+
+      const requestId = playRequestRef.current + 1;
+      playRequestRef.current = requestId;
+      setBuffering(true);
+      setPlayingId(track.id);
+      setCurrentTime(0);
+      setDuration(0);
+      currentTimeRef.current = 0;
+      durationRef.current = 0;
+
+      // Same-origin Range stream (YouTube-style progressive buffer + seek)
+      const playableUrl = streamUrlFor(track.id);
+      if (playRequestRef.current !== requestId) return;
+
       audio.pause();
-      setPlayingId(null);
-      setIsPlaying(false);
-      return;
-    }
-    audio.src = track.mp3Url;
-    setCurrentTime(0);
-    setDuration(0);
-    audio.play().catch(() => {});
-    setPlayingId(track.id);
-    setIsPlaying(true);
-  };
+      audio.src = playableUrl;
+      audio.preload = 'auto';
+      audio.playbackRate = playbackRate;
+      audio.volume = muted ? 0 : volume;
+      try {
+        audio.load();
+      } catch {
+        /* ignore */
+      }
+
+      const start = () => {
+        if (playRequestRef.current !== requestId) return;
+        setBuffering(false);
+        audio.playbackRate = playbackRate;
+        audio.play().catch(() => setBuffering(false));
+      };
+
+      if (audio.readyState >= 2) start();
+      else {
+        audio.addEventListener('canplay', start, { once: true });
+        audio.addEventListener(
+          'error',
+          () => {
+            if (playRequestRef.current !== requestId) return;
+            // Fallback to direct mp3 URL if stream proxy unavailable
+            if (track.mp3Url) {
+              audio.src = track.mp3Url;
+              audio.load();
+              audio.play().catch(() => {});
+            }
+            setBuffering(false);
+          },
+          { once: true }
+        );
+      }
+    },
+    [muted, playbackRate, playingId, streamUrlFor, volume]
+  );
+
+  const playByOffset = useCallback(
+    (offset: number) => {
+      if (currentIndex < 0) return;
+      const next = tracks[currentIndex + offset];
+      if (next?.mp3Url) void playTrack(next);
+    },
+    [currentIndex, playTrack, tracks]
+  );
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -165,297 +320,362 @@ function ListenPageContent() {
     if (playingId) {
       if (audio.paused) audio.play().catch(() => {});
       else audio.pause();
-    } else if (currentTrack?.mp3Url) {
-      handlePlay(currentTrack);
+      return;
     }
+    const first = tracks.find((t) => t.mp3Url);
+    if (first) void playTrack(first);
   };
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const pct = Number(e.target.value);
+  const skipBy = (seconds: number) => {
     const audio = audioRef.current;
-    if (!audio || !Number.isFinite(duration) || duration <= 0) return;
-    const time = (pct / 100) * duration;
-    audio.currentTime = time;
+    if (!audio) return;
+    const base = Number.isFinite(audio.currentTime) ? audio.currentTime : currentTimeRef.current;
+    seekTo(base + seconds);
+  };
+
+  const onSliderInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    isSeekingRef.current = true;
+    const pct = Number(e.target.value);
+    const d = durationRef.current;
+    if (!Number.isFinite(d) || d <= 0) return;
+    const time = (pct / 100) * d;
+    currentTimeRef.current = time;
     setCurrentTime(time);
   };
 
-  const handleSliderMouseDown = () => { isSeekingRef.current = true; };
-  const handleSliderMouseUp = () => { isSeekingRef.current = false; };
+  const commitSliderSeek = () => {
+    seekTo(currentTimeRef.current);
+    isSeekingRef.current = false;
+  };
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
     const onEnded = () => {
-      setPlayingId(null);
+      const idx = tracks.findIndex((t) => t.id === playingId);
+      const next = idx >= 0 ? tracks.slice(idx + 1).find((t) => t.mp3Url) : undefined;
+      if (next) {
+        void playTrack(next);
+        return;
+      }
       setIsPlaying(false);
+      setCurrentTime(0);
+      setPlayingId(null);
     };
     const onTimeUpdate = () => {
       if (!isSeekingRef.current) setCurrentTime(audio.currentTime);
       const d = audio.duration;
       if (Number.isFinite(d) && d > 0) setDuration((prev) => (prev !== d ? d : prev));
     };
-    const setDurationIfValid = (d: number) => {
+    const setDurationIfValid = () => {
+      const d = audio.duration;
       if (Number.isFinite(d) && d > 0) setDuration(d);
     };
-    const onLoadedMetadata = () => setDurationIfValid(audio.duration);
-    const onDurationChange = () => setDurationIfValid(audio.duration);
-    const onLoadedData = () => setDurationIfValid(audio.duration);
-    const onCanPlay = () => setDurationIfValid(audio.duration);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
+
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('durationchange', onDurationChange);
-    audio.addEventListener('loadeddata', onLoadedData);
-    audio.addEventListener('canplay', onCanPlay);
+    audio.addEventListener('loadedmetadata', setDurationIfValid);
+    audio.addEventListener('durationchange', setDurationIfValid);
+    audio.addEventListener('loadeddata', setDurationIfValid);
+    audio.addEventListener('canplay', setDurationIfValid);
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     return () => {
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('durationchange', onDurationChange);
-      audio.removeEventListener('loadeddata', onLoadedData);
-      audio.removeEventListener('canplay', onCanPlay);
+      audio.removeEventListener('loadedmetadata', setDurationIfValid);
+      audio.removeEventListener('durationchange', setDurationIfValid);
+      audio.removeEventListener('loadeddata', setDurationIfValid);
+      audio.removeEventListener('canplay', setDurationIfValid);
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
     };
-  }, []);
+  }, [playTrack, playingId, tracks]);
 
-  // Poll for duration when playing and duration unknown (some streams set it late)
   useEffect(() => {
-    if (!currentTrack?.mp3Url || !isPlaying || (Number.isFinite(duration) && duration > 0)) return;
     const audio = audioRef.current;
     if (!audio) return;
-    const interval = setInterval(() => {
-      const d = audio.duration;
-      if (Number.isFinite(d) && d > 0) {
-        setDuration(d);
-        return;
-      }
-    }, 400);
-    const stop = setTimeout(() => clearInterval(interval), 8000);
-    return () => {
-      clearInterval(interval);
-      clearTimeout(stop);
-    };
-  }, [currentTrack?.mp3Url, isPlaying, duration]);
+    audio.volume = muted ? 0 : volume;
+  }, [muted, volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) audio.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchKey(searchInput.trim());
-    setPageNo(0);
-  };
-
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <header className="border-b border-gray-200 dark:border-slate-700 pb-6">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Music
-            </h1>
-            <div
-              className="page-header-info-wrap"
-              onMouseEnter={() => setShowInfoTooltip(true)}
-              onMouseLeave={() => setShowInfoTooltip(false)}
-            >
-              <button type="button" aria-label="Page information" className="page-header-info-btn dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">
-                <Info size={18} />
-              </button>
-              {showInfoTooltip && (
-                <div className="page-header-info-tooltip dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
-                  <div className="page-header-info-tooltip-arrow dark:bg-slate-700 dark:border-slate-600" />
-                  Listen to devotional music, mantras, bhajans, and chants
-                </div>
-              )}
-            </div>
+      <div className={styles.page}>
+        <header className={styles.header}>
+          <div>
+            <h1 className={styles.title}>Listen</h1>
+            <p className={styles.subtitle}>
+              Professional MP3 player with slow / fast playback for mantras, bhajans, and chants.
+            </p>
           </div>
         </header>
 
-        {/* Search + filter toolbar */}
-        <section className="rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50/50 dark:bg-slate-800/50 p-4">
-          <div className="flex flex-col sm:flex-row gap-4 flex-wrap items-stretch sm:items-center">
-            <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 flex items-center gap-2">
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+        <section className={styles.toolbar}>
+          <form
+            className={styles.searchForm}
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSearchKey(searchInput.trim());
+              setPageNo(0);
+            }}
+          >
+            <div className={styles.searchWrap}>
+              <Search size={16} className={styles.searchIcon} />
+              <input
+                type="search"
+                className={styles.searchInput}
+                placeholder="Search tracks..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+            <button type="submit" className={styles.btn}>
+              Search
+            </button>
+          </form>
+          <select
+            className={styles.select}
+            value={musicTypeId}
+            onChange={(e) => {
+              setMusicTypeId(e.target.value);
+              setPageNo(0);
+            }}
+            aria-label="Music type"
+          >
+            <option value="">All types</option>
+            {typeOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.name}
+              </option>
+            ))}
+          </select>
+        </section>
+
+        <audio ref={audioRef} className="hidden" preload="auto" />
+
+        <section className={styles.player} aria-label="MP3 player">
+          <div className={styles.playerInner}>
+            <div className={styles.playerTop}>
+              <div className={styles.art} aria-hidden>
+                <Music2 size={28} />
+              </div>
+              <div className={styles.meta}>
+                <p className={styles.nowLabel}>{buffering ? 'Loading audio' : 'Now playing'}</p>
+                <h2 className={styles.trackTitle} title={currentTrack?.title ?? 'Select a track'}>
+                  {currentTrack?.title ?? 'Select a track'}
+                </h2>
+                <p className={styles.trackArtist}>{currentTrack?.artist ?? '—'}</p>
+              </div>
+            </div>
+
+            <div className={styles.controls}>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => playByOffset(-1)}
+                disabled={currentIndex <= 0}
+                aria-label="Previous track"
+              >
+                <SkipBack size={18} />
+              </button>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => skipBy(-SKIP_SECONDS)}
+                disabled={!currentTrack}
+                aria-label={`Rewind ${SKIP_SECONDS} seconds`}
+                title={`-${SKIP_SECONDS}s`}
+              >
+                -{SKIP_SECONDS}s
+              </button>
+              <button
+                type="button"
+                className={styles.playBtn}
+                onClick={togglePlayPause}
+                disabled={!currentTrack && !tracks.some((t) => t.mp3Url)}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+              </button>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => skipBy(SKIP_SECONDS)}
+                disabled={!currentTrack}
+                aria-label={`Forward ${SKIP_SECONDS} seconds`}
+                title={`+${SKIP_SECONDS}s`}
+              >
+                +{SKIP_SECONDS}s
+              </button>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => playByOffset(1)}
+                disabled={currentIndex < 0 || currentIndex >= tracks.length - 1}
+                aria-label="Next track"
+              >
+                <SkipForward size={18} />
+              </button>
+            </div>
+
+            <div className={styles.progressRow}>
+              <span className={styles.time}>{formatTime(currentTime)}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={0.1}
+                value={progress}
+                disabled={!currentTrack || buffering}
+                onChange={onSliderInput}
+                onInput={onSliderInput}
+                onMouseDown={() => {
+                  isSeekingRef.current = true;
+                }}
+                onMouseUp={commitSliderSeek}
+                onTouchStart={() => {
+                  isSeekingRef.current = true;
+                }}
+                onTouchEnd={commitSliderSeek}
+                onKeyUp={commitSliderSeek}
+                className={styles.slider}
+                style={{
+                  background: `linear-gradient(to right, var(--naad-primary) 0%, var(--naad-primary) ${progress}%, var(--naad-line) ${progress}%, var(--naad-line) 100%)`,
+                }}
+                aria-label="Seek"
+              />
+              <span className={`${styles.time} ${styles.timeEnd}`}>{formatDuration(duration)}</span>
+            </div>
+
+            <div className={styles.bottomRow}>
+              <div className={styles.speedGroup} role="group" aria-label="Playback speed">
+                <span className={styles.speedLabel}>
+                  <Gauge size={12} style={{ display: 'inline', marginRight: 4 }} />
+                  Speed
+                </span>
+                {SPEED_OPTIONS.map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    className={`${styles.speedBtn} ${playbackRate === rate ? styles.speedBtnActive : ''}`.trim()}
+                    onClick={() => applyRate(rate)}
+                    aria-pressed={playbackRate === rate}
+                    title={rate < 1 ? 'Slower' : rate > 1 ? 'Faster' : 'Normal'}
+                  >
+                    {rate === 1 ? '1x' : `${rate}x`}
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.volumeGroup}>
+                <button
+                  type="button"
+                  className={styles.iconBtn}
+                  onClick={() => setMuted((m) => !m)}
+                  aria-label={muted || volume === 0 ? 'Unmute' : 'Mute'}
+                >
+                  {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                </button>
                 <input
-                  type="search"
-                  placeholder="Search tracks..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={muted ? 0 : volume}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    setVolume(next);
+                    setMuted(next === 0);
+                  }}
+                  className={`${styles.slider} ${styles.volumeSlider}`}
+                  style={{
+                    background: `linear-gradient(to right, var(--naad-primary) 0%, var(--naad-primary) ${(muted ? 0 : volume) * 100}%, var(--naad-line) ${(muted ? 0 : volume) * 100}%, var(--naad-line) 100%)`,
+                  }}
+                  aria-label="Volume"
                 />
               </div>
-              <button
-                type="submit"
-                className="shrink-0 px-4 py-2.5 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition shadow-sm"
-              >
-                Search
-              </button>
-            </form>
-            <div className="flex items-center gap-2">
-              <label htmlFor="music-type-filter" className="text-sm font-medium text-gray-600 dark:text-gray-400 shrink-0">
-                Type
-              </label>
-              <select
-                id="music-type-filter"
-                value={musicTypeId}
-                onChange={(e) => { setMusicTypeId(e.target.value); setPageNo(0); }}
-                className="rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-800 dark:text-white px-3 py-2.5 min-w-[160px] focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-              >
-                <option value="">All types</option>
-                {typeOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>{opt.name}</option>
-                ))}
-              </select>
             </div>
           </div>
         </section>
 
-        <audio ref={audioRef} className="hidden" preload="metadata" />
-
-        {/* Now playing bar */}
-        {currentTrack && (
-          <div className="sticky top-0 z-10 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-md shadow-gray-200/60 dark:shadow-none">
-            <div className="flex items-center gap-4 px-4 py-3">
-              <button
-                type="button"
-                onClick={togglePlayPause}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white shadow-md transition hover:bg-purple-700 active:scale-95 disabled:opacity-50"
-                disabled={!currentTrack?.mp3Url}
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-              >
-                {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-0.5" />}
-              </button>
-              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <div className="flex shrink-0 items-baseline gap-1 text-sm font-medium tabular-nums text-gray-600 dark:text-gray-300">
-                    <span className="text-gray-900 dark:text-white">{formatTime(currentTime)}</span>
-                    <span className="text-gray-400 dark:text-gray-500">/</span>
-                    <span className={duration > 0 ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}>{formatDuration(duration)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={0.1}
-                    value={progress}
-                    onChange={handleSeek}
-                    onMouseDown={handleSliderMouseDown}
-                    onMouseUp={handleSliderMouseUp}
-                    onMouseLeave={handleSliderMouseUp}
-                    onTouchStart={handleSliderMouseDown}
-                    onTouchEnd={handleSliderMouseUp}
-                    className="mantra-slider h-2 flex-1 min-w-0 cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, rgb(147 51 234) 0%, rgb(147 51 234) ${progress}%, rgb(226 232 240) ${progress}%, rgb(226 232 240) 100%)`,
-                    }}
-                  />
-                </div>
-                <div className="min-w-0 shrink">
-                  <p className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Now playing</p>
-                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-white" title={currentTrack.title}>
-                    {currentTrack.title}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-lg p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
-            {error}
-          </div>
-        )}
+        {error ? <div className={styles.error}>{error}</div> : null}
 
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-slate-700 animate-pulse">
-                <div className="h-12 bg-gray-200 dark:bg-slate-600 rounded mb-4" />
-                <div className="h-5 bg-gray-200 dark:bg-slate-600 rounded mb-2 w-3/4 mx-auto" />
-                <div className="h-4 bg-gray-200 dark:bg-slate-600 rounded mb-4 w-1/2 mx-auto" />
-                <div className="h-10 bg-gray-200 dark:bg-slate-600 rounded" />
-              </div>
+          <div className={styles.grid}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className={styles.skeleton} />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={styles.grid}>
               {tracks.map((track) => {
                 const isActive = playingId === track.id;
                 return (
-                  <div
+                  <article
                     key={track.id}
-                    className={`rounded-xl border p-6 transition-shadow hover:shadow-lg ${
-                      isActive
-                        ? 'border-purple-300 dark:border-purple-600 bg-purple-50/30 dark:bg-purple-900/20 shadow-md'
-                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800'
-                    }`}
+                    className={`${styles.card} ${isActive ? styles.cardActive : ''}`.trim()}
                   >
-                    <div className="text-4xl mb-4 text-center text-purple-600 dark:text-purple-400">🕉️</div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 text-center line-clamp-2">
-                      {track.title}
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-4">
-                      {track.artist}
-                    </p>
+                    <div className={styles.cardArt}>
+                      <Music2 size={28} />
+                    </div>
+                    <h3 className={styles.cardTitle}>{track.title}</h3>
+                    <p className={styles.cardArtist}>{track.artist}</p>
                     {track.mp3Url ? (
                       <button
                         type="button"
-                        onClick={() => handlePlay(track)}
-                        className={`block w-full px-4 py-2.5 rounded-lg transition-all font-semibold text-sm ${
-                          isActive
-                            ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm'
-                            : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
-                        }`}
+                        className={`${styles.cardPlay} ${isActive && isPlaying ? styles.cardPlayActive : ''}`.trim()}
+                        onClick={() => void playTrack(track)}
                       >
-                        {isActive ? 'Pause' : 'Play'}
+                        {isActive && isPlaying ? 'Pause' : isActive ? 'Resume' : 'Play'}
                       </button>
                     ) : (
-                      <span className="block w-full px-4 py-2.5 bg-gray-300 dark:bg-slate-600 text-gray-500 dark:text-slate-400 rounded-lg font-semibold text-sm text-center cursor-not-allowed">
-                        No audio
-                      </span>
+                      <span className={`${styles.cardPlay} ${styles.cardDisabled}`}>No audio</span>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+            {totalPages > 1 ? (
+              <div className={styles.pager}>
                 <button
                   type="button"
+                  className={styles.pagerBtn}
                   onClick={() => setPageNo((p) => Math.max(0, p - 1))}
                   disabled={pageNo === 0}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-700"
                 >
                   Previous
                 </button>
-                <span className="text-sm text-gray-600 dark:text-gray-400 px-2">
+                <span className={styles.pagerInfo}>
                   Page {pageNo + 1} of {totalPages} ({totalElements} tracks)
                 </span>
                 <button
                   type="button"
+                  className={styles.pagerBtn}
                   onClick={() => setPageNo((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={pageNo >= totalPages - 1}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-700"
                 >
                   Next
                 </button>
               </div>
-            )}
+            ) : null}
           </>
         )}
 
-        {!loading && !error && tracks.length === 0 && (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No tracks found. Try a different search or type.</p>
-        )}
+        {!loading && !error && tracks.length === 0 ? (
+          <p className={styles.empty}>No tracks found. Try a different search or type.</p>
+        ) : null}
       </div>
     </DashboardLayout>
   );
@@ -466,9 +686,7 @@ export default function ListenPage() {
     <Suspense
       fallback={
         <DashboardLayout>
-          <div className="flex items-center justify-center min-h-[200px] text-slate-500 dark:text-slate-400">
-            Loading...
-          </div>
+          <div className={styles.loadingNote}>Loading player...</div>
         </DashboardLayout>
       }
     >

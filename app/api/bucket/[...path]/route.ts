@@ -5,6 +5,9 @@ import { backendHeadersFromSession, backendUrl } from '@/app/lib/backend-api';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   return proxy(request, await params, 'GET');
 }
+export async function HEAD(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  return proxy(request, await params, 'HEAD');
+}
 export async function POST(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   return proxy(request, await params, 'POST');
 }
@@ -20,6 +23,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
 const BUCKET_HEADERS = ['id', 'status'];
 
+function isBinaryStreamPath(pathSegments: string[]): boolean {
+  // /api/bucket/stream/{id} or /api/bucket/public/stream/{id}
+  if (pathSegments[0] === 'stream') return true;
+  return pathSegments[0] === 'public' && pathSegments[1] === 'stream';
+}
+
 async function proxy(request: NextRequest, params: { path: string[] }, method: string) {
   try {
     const pathSegments = params.path ?? [];
@@ -29,13 +38,26 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
     const backendPath = `/bucket/${pathSegments.join('/')}`;
     const search = request.nextUrl.searchParams.toString();
     const url = backendUrl(backendPath) + (search ? `?${search}` : '');
-    const forwardHeaders = await backendHeadersFromSession(request);
+    const stream = isBinaryStreamPath(pathSegments);
+    const forwardHeaders = await backendHeadersFromSession(request, {
+      includeJsonContentType: !stream,
+    });
     BUCKET_HEADERS.forEach((h) => {
       const v = request.headers.get(h) ?? request.headers.get(h.toLowerCase());
       if (v) forwardHeaders[h] = v;
     });
+
+    // Critical for YouTube-style seek/buffer: forward Range / conditional headers
+    if (stream) {
+      delete forwardHeaders['Content-Type'];
+      const range = request.headers.get('range');
+      if (range) forwardHeaders.Range = range;
+      const ifRange = request.headers.get('if-range');
+      if (ifRange) forwardHeaders['If-Range'] = ifRange;
+    }
+
     let body: BodyInit | undefined;
-    if (method !== 'GET' && method !== 'DELETE') {
+    if (method !== 'GET' && method !== 'DELETE' && method !== 'HEAD') {
       const contentType = request.headers.get('content-type');
       if (contentType?.startsWith('multipart/form-data')) {
         body = await request.arrayBuffer();
@@ -48,11 +70,40 @@ async function proxy(request: NextRequest, params: { path: string[] }, method: s
         }
       }
     }
+
     const res = await fetch(url, {
       method,
       headers: forwardHeaders,
       body: body || undefined,
     });
+
+    if (stream) {
+      const outHeaders = new Headers();
+      const pass = [
+        'content-type',
+        'content-length',
+        'content-range',
+        'accept-ranges',
+        'cache-control',
+        'etag',
+        'last-modified',
+      ];
+      for (const name of pass) {
+        const value = res.headers.get(name);
+        if (value) outHeaders.set(name, value);
+      }
+      outHeaders.set('Accept-Ranges', res.headers.get('accept-ranges') || 'bytes');
+      // Ensure browser <audio> can use buffered ranges through same-origin proxy
+      outHeaders.set(
+        'Access-Control-Expose-Headers',
+        'Accept-Ranges, Content-Range, Content-Length, Content-Type'
+      );
+      return new NextResponse(method === 'HEAD' ? null : res.body, {
+        status: res.status,
+        headers: outHeaders,
+      });
+    }
+
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (e) {

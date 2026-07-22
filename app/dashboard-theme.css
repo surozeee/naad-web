@@ -438,3 +438,299 @@ html.dark .dashboard-layout :is(.dark\:hover\:bg-slate-700:hover, .hover\:bg-gra
 .dashboard-layout .rs__input-container {
   color: var(--naad-fg) !important;
 }
+
+/* —— AD/BS datepicker popup (english + nepali) follow Cosmic / Celestial / Divine —— */
+.english-datepicker,
+.nepali-datepicker,
+.custom-nepali-datepicker {
+  background: var(--naad-card-bg, #fff) !important;
+  border-color: var(--naad-line, #e2e8f0) !important;
+  color: var(--naad-fg, #1e293b) !important;
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--naad-ink, #0f172a) 28%, transparent) !important;
+}
+
+.english-datepicker .datepicker-header,
+.nepali-datepicker .datepicker-header,
+.custom-nepali-datepicker .datepicker-header {
+  background: linear-gradient(
+    135deg,
+    var(--naad-primary, #5b3cc4) 0%,
+    var(--naad-primary-hover, #6c63ff) 100%
+  ) !important;
+  color: var(--naad-btn-on-primary, #fff) !important;
+}
+
+.english-datepicker .nav-btn,
+.nepali-datepicker .nav-btn,
+.custom-nepali-datepicker .nav-btn,
+.english-datepicker .month-year,
+.nepali-datepicker .month-year,
+.custom-nepali-datepicker .month-year {
+  color: var(--naad-btn-on-primary, #fff) !important;
+}
+
+.english-datepicker .day,
+.nepali-datepicker .day,
+.custom-nepali-datepicker .day {
+  color: var(--naad-fg, #1e293b) !important;
+}
+
+.english-datepicker .day:hover,
+.nepali-datepicker .day:hover,
+.custom-nepali-datepicker .day:hover {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 16%, transparent) !important;
+  color: var(--naad-fg, #1e293b) !important;
+}
+
+.english-datepicker .day.other-month,
+.nepali-datepicker .day.other-month,
+.custom-nepali-datepicker .day.other-month {
+  color: var(--naad-fg-muted, #94a3b8) !important;
+}
+
+.english-datepicker .day.today,
+.nepali-datepicker .day.today,
+.custom-nepali-datepicker .day.today {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 22%, transparent) !important;
+  color: var(--naad-primary, #5b3cc4) !important;
+  font-weight: 700;
+}
+
+.english-datepicker .day.selected,
+.nepali-datepicker .day.selected,
+.custom-nepali-datepicker .day.selected,
+.english-datepicker .day.selected:hover,
+.nepali-datepicker .day.selected:hover,
+.custom-nepali-datepicker .day.selected:hover {
+  background: var(--naad-primary, #5b3cc4) !important;
+  color: var(--naad-btn-on-primary, #fff) !important;
+}
+
+.english-datepicker .day.disabled,
+.nepali-datepicker .day.disabled,
+.custom-nepali-datepicker .day.disabled {
+  color: var(--naad-fg-muted, #64748b) !important;
+  background: var(--naad-bg-muted, #f1f5f9) !important;
+  opacity: 0.55;
+}
+
+.english-datepicker .datepicker-body,
+.nepali-datepicker .datepicker-body,
+.custom-nepali-datepicker .datepicker-body {
+  background: var(--naad-card-bg, #fff) !important;
+}
+
+.english-datepicker .weekdays,
+.nepali-datepicker .weekdays,
+.custom-nepali-datepicker .weekdays {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 16%, var(--naad-card-bg, #fff)) !important;
+  border: 1px solid color-mix(in srgb, var(--naad-primary, #5b3cc4) 22%, var(--naad-line, #e2e8f0)) !important;
+  border-radius: 6px;
+  padding: 4px 2px !important;
+  margin-bottom: 8px !important;
+}
+
+.english-datepicker .weekday,
+.nepali-datepicker .weekday,
+.custom-nepali-datepicker .weekday {
+  color: var(--naad-fg-muted, #64748b) !important;
+  background: transparent !important;
+}
+
+.english-datepicker .weekday:nth-child(7),
+.nepali-datepicker .weekday:nth-child(7),
+.custom-nepali-datepicker .weekday:nth-child(7) {
+  color: var(--naad-error, #ef4444) !important;
+}
+
+.english-datepicker .datepicker-footer,
+.nepali-datepicker .datepicker-footer,
+.custom-nepali-datepicker .datepicker-footer {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 10%, var(--naad-card-bg, #fff)) !important;
+  border-top: 1px solid var(--naad-line, #e2e8f0) !important;
+}
+
+.english-datepicker .today-btn,
+.nepali-datepicker .today-btn,
+.custom-nepali-datepicker .today-btn,
+.english-datepicker .btn-today,
+.nepali-datepicker .btn-today,
+.custom-nepali-datepicker .btn-today,
+.english-datepicker .clear-btn,
+.nepali-datepicker .clear-btn,
+.custom-nepali-datepicker .clear-btn {
+  background: var(--naad-primary, #5b3cc4) !important;
+  color: var(--naad-btn-on-primary, #fff) !important;
+  border-color: var(--naad-primary, #5b3cc4) !important;
+}
+
+.english-datepicker .today-btn:hover,
+.nepali-datepicker .today-btn:hover,
+.custom-nepali-datepicker .today-btn:hover,
+.english-datepicker .btn-today:hover,
+.nepali-datepicker .btn-today:hover,
+.custom-nepali-datepicker .btn-today:hover,
+.english-datepicker .clear-btn:hover,
+.nepali-datepicker .clear-btn:hover,
+.custom-nepali-datepicker .clear-btn:hover {
+  background: var(--naad-primary-hover, #6c63ff) !important;
+}
+
+.english-datepicker-modal-content,
+.nepali-datepicker-modal-content {
+  background: var(--naad-card-bg, #fff) !important;
+  color: var(--naad-fg, #1e293b) !important;
+}
+
+.nepali-datepicker[style*='position: fixed'],
+.english-datepicker[style*='position: fixed'] {
+  background: var(--naad-card-bg, #fff) !important;
+  border-color: var(--naad-line, #e2e8f0) !important;
+}
+
+/* —— Organization / Add Event modals (Cosmic / Celestial / Divine) —— */
+html[data-theme='cosmic'] .modal-content,
+html[data-theme='divine'] .modal-content,
+html.dark .modal-content {
+  color-scheme: dark;
+}
+
+html[data-theme='celestial'] .modal-content {
+  color-scheme: light;
+}
+
+.modal-overlay {
+  background: color-mix(in srgb, var(--naad-ink, #000) 62%, transparent) !important;
+  backdrop-filter: blur(2px);
+}
+
+.modal-content,
+.modal-content.organization-modal {
+  background: var(--naad-card-bg, #fff) !important;
+  color: var(--naad-fg, #111827) !important;
+  border: 1px solid var(--naad-line, #e2e8f0) !important;
+  box-shadow: 0 25px 80px color-mix(in srgb, var(--naad-ink, #000) 35%, transparent) !important;
+}
+
+.modal-content .modal-header {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 12%, var(--naad-card-bg, #fff));
+  border-bottom: 1px solid var(--naad-line, #e2e8f0) !important;
+}
+
+.modal-content .modal-header h2 {
+  color: var(--naad-fg, #111827) !important;
+}
+
+.modal-content .modal-close-btn {
+  background: var(--naad-bg-muted, #f3f4f6) !important;
+  color: var(--naad-fg-muted, #6b7280) !important;
+}
+
+.modal-content .modal-close-btn:hover {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 16%, var(--naad-bg-muted, #e5e7eb)) !important;
+  color: var(--naad-fg, #374151) !important;
+}
+
+.modal-content .organization-form,
+.modal-content .form-label,
+.modal-content .form-group,
+.modal-content .permission-detail-value {
+  color: var(--naad-fg, #1e293b);
+}
+
+.modal-content .form-label {
+  color: var(--naad-fg-muted, #64748b) !important;
+}
+
+.modal-content .required {
+  color: var(--naad-error, #dc2626) !important;
+}
+
+.modal-content .form-error,
+.modal-content .form-input.error {
+  color: var(--naad-error, #dc2626);
+}
+
+.modal-content .form-input.error {
+  border-color: var(--naad-error, #dc2626) !important;
+}
+
+.modal-content :is(input, select, textarea, .form-input):not([type='checkbox']):not([type='radio']),
+.modal-content .custom-nepali-datepicker-input,
+.modal-content input.custom-nepali-datepicker-input,
+#event-calendar-create-modal :is(input, select, textarea, .form-input),
+#event-calendar-create-modal .custom-nepali-datepicker-input {
+  background: var(--naad-bg-muted, #f8fafc) !important;
+  color: var(--naad-fg, #0f172a) !important;
+  border: 1px solid var(--naad-line, #e2e8f0) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.modal-content :is(input, select, textarea, .form-input)::placeholder,
+.modal-content .custom-nepali-datepicker-input::placeholder,
+#event-calendar-create-modal :is(input, .form-input)::placeholder {
+  color: var(--naad-fg-muted, #94a3b8) !important;
+}
+
+.modal-content :is(input, select, textarea, .form-input):hover,
+.modal-content .custom-nepali-datepicker-input:hover,
+#event-calendar-create-modal .custom-nepali-datepicker-input:hover {
+  border-color: color-mix(in srgb, var(--naad-primary, #5b3cc4) 40%, var(--naad-line, #e2e8f0)) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.modal-content :is(input, select, textarea, .form-input):focus,
+.modal-content .custom-nepali-datepicker-input:focus,
+#event-calendar-create-modal .custom-nepali-datepicker-input:focus {
+  outline: none !important;
+  border-color: var(--naad-primary, #5b3cc4) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--naad-primary, #5b3cc4) 22%, transparent) !important;
+  transform: none !important;
+}
+
+.modal-content select option {
+  background: var(--naad-card-bg, #fff);
+  color: var(--naad-fg, #0f172a);
+}
+
+.modal-content input[type='time'],
+#event-calendar-create-modal input[type='time'] {
+  color-scheme: inherit;
+}
+
+.modal-content .form-actions {
+  border-top-color: var(--naad-line, #e2e8f0) !important;
+}
+
+.modal-content .btn-secondary,
+.modal-content .btn-cancel {
+  background: var(--naad-bg-muted, #f1f5f9) !important;
+  color: var(--naad-fg, #475569) !important;
+  border: 1px solid var(--naad-line, #e2e8f0) !important;
+}
+
+.modal-content .btn-secondary:hover,
+.modal-content .btn-cancel:hover {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 12%, var(--naad-bg-muted, #e2e8f0)) !important;
+  border-color: color-mix(in srgb, var(--naad-primary, #5b3cc4) 35%, var(--naad-line, #cbd5e1)) !important;
+}
+
+.modal-content .btn-primary {
+  background: var(--naad-primary, #5b3cc4) !important;
+  color: var(--naad-btn-on-primary, #fff) !important;
+  border-color: var(--naad-primary, #5b3cc4) !important;
+}
+
+.modal-content .btn-primary:hover:not(:disabled) {
+  background: var(--naad-primary-hover, #6c63ff) !important;
+}
+
+#event-calendar-create-modal.modal-content {
+  background: var(--naad-card-bg) !important;
+}
+
+#event-calendar-create-modal .modal-header {
+  border-radius: 24px 24px 0 0;
+}

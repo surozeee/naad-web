@@ -537,12 +537,7 @@ body {
   background: var(--naad-bg-muted, #ffffff);
   transition: all 0.2s;
 }
-.dark .form-input {
-  color: var(--naad-fg, #ffffff);
-  background: var(--naad-bg-muted, #1e293b);
-  border-color: var(--naad-line, #475569);
-}
-.dark .form-input::placeholder {
+.form-input::placeholder {
   color: var(--naad-fg-muted, #94a3b8);
 }
 .form-input:focus {
@@ -550,8 +545,8 @@ body {
   border-color: var(--naad-primary, #1e40af);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--naad-primary, #1e40af) 18%, transparent);
 }
-.form-input.error { border-color: #dc2626; }
-.form-error { font-size: 0.8125rem; color: #dc2626; margin-top: 4px; }
+.form-input.error { border-color: var(--naad-error, #dc2626); }
+.form-error { font-size: 0.8125rem; color: var(--naad-error, #dc2626); margin-top: 4px; }
 
 .form-actions {
   display: flex;

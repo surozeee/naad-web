@@ -683,22 +683,52 @@ export default function EventCalendarPage() {
         </PageHeaderWithInfo>
 
         {error && (
-          <div className="error-message" style={{ marginBottom: 16, padding: 12, background: '#fef2f2', color: '#b91c1c', borderRadius: 8 }}>
+          <div
+            className="error-message"
+            style={{
+              marginBottom: 16,
+              padding: 12,
+              background: 'color-mix(in srgb, var(--naad-error) 12%, var(--naad-card-bg))',
+              color: 'var(--naad-error)',
+              borderRadius: 8,
+            }}
+          >
             {error}
           </div>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2.1fr) minmax(320px, 1fr)', gap: 20 }}>
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700" style={{ overflow: 'hidden' }}>
-            <div style={{ padding: 16, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div
+            className="rounded-xl shadow-lg"
+            style={{
+              overflow: 'hidden',
+              background: 'var(--naad-card-bg)',
+              border: '1px solid var(--naad-line)',
+              color: 'var(--naad-fg)',
+            }}
+          >
+            <div
+              style={{
+                padding: 16,
+                borderBottom: '1px solid var(--naad-line)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+                background: 'color-mix(in srgb, var(--naad-primary) 8%, var(--naad-card-bg))',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <CalendarDays size={20} color='var(--naad-primary)' />
+                <CalendarDays size={20} color="var(--naad-primary)" />
                 <div>
-                  <div className="text-sm font-semibold text-black dark:text-slate-200">{monthTitle}</div>
-                  <div className="text-xs text-black dark:text-slate-400" style={{ marginTop: 4 }}>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--naad-fg)' }}>
+                    {monthTitle}
+                  </div>
+                  <div className="text-xs" style={{ marginTop: 4, color: 'var(--naad-fg-muted)' }}>
                     Selected: {selectedDateTitle}
                   </div>
-                  <div className="text-xs text-black dark:text-slate-400" style={{ marginTop: 2 }}>
+                  <div className="text-xs" style={{ marginTop: 2, color: 'var(--naad-fg-muted)' }}>
                     {calendarMode === 'BS' ? 'English' : 'Nepali'}: {secondarySelectedDateTitle}
                   </div>
                 </div>
@@ -721,7 +751,12 @@ export default function EventCalendarPage() {
                       setSelectedBsDate(formatBsDate(bsToday));
                     }
                   }}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-black"
+                  className="rounded-md px-3 py-2 text-sm"
+                  style={{
+                    border: '1px solid var(--naad-line)',
+                    background: 'var(--naad-bg-muted)',
+                    color: 'var(--naad-fg)',
+                  }}
                 >
                   <option value="BS">BS</option>
                   <option value="AD">AD</option>
@@ -737,7 +772,12 @@ export default function EventCalendarPage() {
                       setCurrentAdMonth((prev) => (prev ? { ...prev, month } : prev));
                     }
                   }}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-black"
+                  className="rounded-md px-3 py-2 text-sm"
+                  style={{
+                    border: '1px solid var(--naad-line)',
+                    background: 'var(--naad-bg-muted)',
+                    color: 'var(--naad-fg)',
+                  }}
                 >
                   {monthOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -756,7 +796,12 @@ export default function EventCalendarPage() {
                       setCurrentAdMonth((prev) => (prev ? { ...prev, year } : prev));
                     }
                   }}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-black"
+                  className="rounded-md px-3 py-2 text-sm"
+                  style={{
+                    border: '1px solid var(--naad-line)',
+                    background: 'var(--naad-bg-muted)',
+                    color: 'var(--naad-fg)',
+                  }}
                 >
                   {yearOptions.map((year) => (
                     <option key={year} value={year}>
@@ -805,7 +850,13 @@ export default function EventCalendarPage() {
 
             {viewMode === 'grid' ? (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: '1px solid #e2e8f0' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                    borderBottom: '1px solid var(--naad-line)',
+                  }}
+                >
                   {weekdayLabels.map((day, idx) => {
                     const isSaturdayColumn = idx === 6;
                     return (
@@ -813,20 +864,20 @@ export default function EventCalendarPage() {
                       key={`${day.primary}-${idx}`}
                       style={{
                         padding: '12px 10px',
-                        borderRight: '1px solid #e2e8f0',
-                        background: 'var(--naad-bg-muted)',
+                        borderRight: idx !== 6 ? '1px solid var(--naad-line)' : 'none',
+                        background: 'color-mix(in srgb, var(--naad-primary) 16%, var(--naad-card-bg))',
                         textAlign: 'center',
                       }}
                     >
                       <div
                         className="text-xs font-semibold"
-                        style={{ color: isSaturdayColumn ? '#dc2626' : '#000000' }}
+                        style={{ color: isSaturdayColumn ? 'var(--naad-error)' : 'var(--naad-fg-muted)' }}
                       >
                         {day.primary}
                       </div>
                       <div
                         className="text-[11px]"
-                        style={{ color: isSaturdayColumn ? '#f87171' : '#000000' }}
+                        style={{ color: isSaturdayColumn ? 'var(--naad-error)' : 'var(--naad-fg-muted)' }}
                       >
                         {day.secondary}
                       </div>
@@ -842,23 +893,33 @@ export default function EventCalendarPage() {
                     const isSaturdayColumn = index % 7 === 6;
                     const dayEvents = events.filter((event) => adDateToBsString(new Date(event.startDate)) === day.bsDate);
                     const visibleDayEvents = dayEvents.slice(0, 2);
+                    const onPrimary = 'var(--naad-btn-on-primary)';
                     const primaryDateColor = isSelected
-                      ? '#ffffff'
+                      ? onPrimary
                       : isSaturdayColumn
-                        ? isOutsideMonth
-                          ? '#fca5a5'
-                          : '#dc2626'
+                        ? 'var(--naad-error)'
                         : isOutsideMonth
                           ? 'var(--naad-fg-muted)'
-                          : '#000000';
-                    const secondaryDateColor = isSelected ? 'rgba(255,255,255,0.9)' : isOutsideMonth ? 'var(--naad-fg-muted)' : '#000000';
+                          : 'var(--naad-fg)';
+                    const secondaryDateColor = isSelected
+                      ? 'color-mix(in srgb, var(--naad-btn-on-primary) 90%, transparent)'
+                      : isOutsideMonth
+                        ? 'var(--naad-fg-muted)'
+                        : 'var(--naad-fg-muted)';
                     const eventTextColor = isSelected
-                      ? '#ffffff'
+                      ? onPrimary
                       : isOutsideMonth
                         ? 'var(--naad-fg-muted)'
                         : isSaturdayColumn
-                          ? '#7f1d1d'
-                          : '#000000';
+                          ? 'var(--naad-error)'
+                          : 'var(--naad-fg)';
+                    const cellBg = isSelected
+                      ? 'var(--naad-primary)'
+                      : isToday
+                        ? 'color-mix(in srgb, var(--naad-primary) 22%, var(--naad-card-bg))'
+                        : day.inCurrentMonth
+                          ? 'var(--naad-card-bg)'
+                          : 'var(--naad-bg-muted)';
                     return (
                       <button
                         key={`${day.bsDate}-${index}`}
@@ -871,12 +932,13 @@ export default function EventCalendarPage() {
                         style={{
                           minHeight: 132,
                           padding: 10,
-                          borderRight: index % 7 !== 6 ? '1px solid #e2e8f0' : 'none',
-                          borderBottom: '1px solid #e2e8f0',
-                          background: isSelected ? '#0f5fae' : day.inCurrentMonth ? '#ffffff' : 'var(--naad-bg-muted)',
-                          color: isSelected ? '#ffffff' : 'var(--naad-fg)',
+                          borderRight: index % 7 !== 6 ? '1px solid var(--naad-line)' : 'none',
+                          borderBottom: '1px solid var(--naad-line)',
+                          background: cellBg,
+                          color: isSelected ? onPrimary : 'var(--naad-fg)',
                           textAlign: 'left',
                           position: 'relative',
+                          boxShadow: isToday && !isSelected ? 'inset 0 0 0 2px var(--naad-primary)' : undefined,
                         }}
                       >
                         {isToday && (
@@ -887,7 +949,7 @@ export default function EventCalendarPage() {
                               right: 8,
                               fontSize: 10,
                               fontWeight: 700,
-                              color: isSelected ? '#fff' : '#dc2626',
+                              color: isSelected ? onPrimary : 'var(--naad-primary)',
                             }}
                           >
                             आज
@@ -946,13 +1008,13 @@ export default function EventCalendarPage() {
                                   textOverflow: 'ellipsis',
                                   textAlign: 'left',
                                   background: isSelected
-                                    ? 'rgba(255,255,255,0.16)'
+                                    ? 'color-mix(in srgb, var(--naad-btn-on-primary) 16%, transparent)'
                                     : isOutsideMonth
                                       ? 'var(--naad-line)'
-                                      : '#eff6ff',
+                                      : 'color-mix(in srgb, var(--naad-primary) 14%, var(--naad-card-bg))',
                                   border: isSelected
-                                    ? '1px solid rgba(255,255,255,0.18)'
-                                    : '1px solid #bfdbfe',
+                                    ? '1px solid color-mix(in srgb, var(--naad-btn-on-primary) 22%, transparent)'
+                                    : '1px solid color-mix(in srgb, var(--naad-primary) 35%, var(--naad-line))',
                                 }}
                               >
                                 {event.name}
@@ -964,7 +1026,7 @@ export default function EventCalendarPage() {
                                   fontSize: 10,
                                   lineHeight: 1,
                                   fontWeight: 700,
-                                  color: isSelected ? 'rgba(255,255,255,0.92)' : 'var(--naad-primary)',
+                                  color: isSelected ? 'color-mix(in srgb, var(--naad-btn-on-primary) 92%, transparent)' : 'var(--naad-primary)',
                                 }}
                               >
                                 +{dayEvents.length - visibleDayEvents.length} more
@@ -1001,36 +1063,55 @@ export default function EventCalendarPage() {
                       type="button"
                       onClick={() => setSelectedBsDate(day.bsDate)}
                       style={{
-                        border: day.bsDate === selectedBsDate ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                        border:
+                          day.bsDate === selectedBsDate
+                            ? '2px solid var(--naad-primary)'
+                            : '1px solid var(--naad-line)',
                         borderRadius: 12,
                         padding: 14,
                         textAlign: 'left',
                         background: 'var(--naad-card-bg)',
+                        color: 'var(--naad-fg)',
                       }}
                     >
-                      <div className="text-sm font-semibold text-black">
+                      <div className="text-sm font-semibold" style={{ color: 'var(--naad-fg)' }}>
                         {calendarMode === 'BS' ? day.bsDate : day.adDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}
                       </div>
-                      <div className="text-xs text-black" style={{ marginTop: 4 }}>
+                      <div className="text-xs" style={{ marginTop: 4, color: 'var(--naad-fg-muted)' }}>
                         {calendarMode === 'BS'
                           ? day.adDate.toLocaleDateString('en-US', { dateStyle: 'medium' })
                           : day.bsDate}
                       </div>
-                      <div className="text-sm text-black" style={{ marginTop: 8 }}>
+                      <div className="text-sm" style={{ marginTop: 8, color: 'var(--naad-fg)' }}>
                         {day.eventCount} event{day.eventCount > 1 ? 's' : ''}
                       </div>
                     </button>
                   ))}
-                {calendarDays.every((day) => day.eventCount === 0) && <div className="text-sm text-black">No event dates in this month.</div>}
+                {calendarDays.every((day) => day.eventCount === 0) && (
+                  <div className="text-sm" style={{ color: 'var(--naad-fg-muted)' }}>
+                    No event dates in this month.
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-200 dark:border-slate-700">
+          <div
+            className="rounded-xl p-5 shadow-lg"
+            style={{
+              background: 'var(--naad-card-bg)',
+              border: '1px solid var(--naad-line)',
+              color: 'var(--naad-fg)',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
               <div>
-                <h2 className="text-xl font-bold text-black dark:text-slate-100">Selected Date</h2>
-                <p className="text-sm text-black dark:text-slate-400">Pick a Nepali date, review events, and add one directly on that day.</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--naad-fg)' }}>
+                  Selected Date
+                </h2>
+                <p className="text-sm" style={{ color: 'var(--naad-fg-muted)' }}>
+                  Pick a Nepali date, review events, and add one directly on that day.
+                </p>
               </div>
               <button type="button" className="btn-primary btn-small" onClick={() => openAddModal(selectedBsDate)}>
                 <Plus size={16} />
@@ -1038,52 +1119,84 @@ export default function EventCalendarPage() {
               </button>
             </div>
 
-            <div style={{ borderRadius: 12, background: 'var(--naad-bg-muted)', padding: 14, marginBottom: 16 }}>
-              <div className="text-sm text-black">{calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}</div>
-              <div className="text-lg font-bold text-black">{selectedMonthLabel || 'Loading...'}</div>
-              <div className="text-sm text-black" style={{ marginTop: 8 }}>Selected date: {selectedDateTitle}</div>
-              <div className="text-sm text-black" style={{ marginTop: 6 }}>
+            <div
+              style={{
+                borderRadius: 12,
+                background: 'color-mix(in srgb, var(--naad-primary) 10%, var(--naad-bg-muted))',
+                border: '1px solid var(--naad-line)',
+                padding: 14,
+                marginBottom: 16,
+              }}
+            >
+              <div className="text-sm" style={{ color: 'var(--naad-fg-muted)' }}>
+                {calendarMode === 'BS' ? 'Current BS Month' : 'Current AD Month'}
+              </div>
+              <div className="text-lg font-bold" style={{ color: 'var(--naad-fg)' }}>
+                {selectedMonthLabel || 'Loading...'}
+              </div>
+              <div className="text-sm" style={{ marginTop: 8, color: 'var(--naad-fg)' }}>
+                Selected date: {selectedDateTitle}
+              </div>
+              <div className="text-sm" style={{ marginTop: 6, color: 'var(--naad-fg-muted)' }}>
                 {calendarMode === 'BS' ? 'English date' : 'Nepali date'}: {secondarySelectedDateTitle}
               </div>
-              <div className="text-sm text-black" style={{ marginTop: 6 }}>
+              <div className="text-sm" style={{ marginTop: 6, color: 'var(--naad-fg-muted)' }}>
                 {selectedDayEvents.length} event{selectedDayEvents.length === 1 ? '' : 's'} scheduled
               </div>
             </div>
 
             {loading ? (
-              <div className="text-sm text-black">Loading events...</div>
+              <div className="text-sm" style={{ color: 'var(--naad-fg-muted)' }}>
+                Loading events...
+              </div>
             ) : selectedDayEvents.length === 0 ? (
-              <div className="text-sm text-black">No events found for this date.</div>
+              <div className="text-sm" style={{ color: 'var(--naad-fg-muted)' }}>
+                No events found for this date.
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {selectedDayEvents.map((event) => (
-                  <div key={event.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 14 }}>
+                  <div
+                    key={event.id}
+                    style={{
+                      border: '1px solid var(--naad-line)',
+                      borderRadius: 12,
+                      padding: 14,
+                      background: 'color-mix(in srgb, var(--naad-primary) 6%, var(--naad-card-bg))',
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 8 }}>
                       <div>
-                        <div className="text-base font-semibold text-black">{event.name}</div>
-                        <div className="text-xs text-black" style={{ marginTop: 4 }}>
+                        <div className="text-base font-semibold" style={{ color: 'var(--naad-fg)' }}>
+                          {event.name}
+                        </div>
+                        <div className="text-xs" style={{ marginTop: 4, color: 'var(--naad-fg-muted)' }}>
                           {formatDisplayDateTime(event.startDate)} to {formatDisplayDateTime(event.endDate)}
                         </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
-                      <div className="text-sm text-black" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="text-sm" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--naad-fg)' }}>
                         <Clock3 size={14} />
                         <span>{formatTime(event.startDate)} - {formatTime(event.endDate)}</span>
                       </div>
                       {event.categoryName && (
-                        <div className="text-sm text-black" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="text-sm" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--naad-fg)' }}>
                           <Tag size={14} />
                           <span>{event.categoryName}</span>
                         </div>
                       )}
                       {event.address && (
-                        <div className="text-sm text-black" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="text-sm" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--naad-fg)' }}>
                           <MapPin size={14} />
                           <span>{event.address}</span>
                         </div>
                       )}
-                      {event.description && <p className="text-sm text-black" style={{ marginTop: 4 }}>{event.description}</p>}
+                      {event.description && (
+                        <p className="text-sm" style={{ marginTop: 4, color: 'var(--naad-fg-muted)' }}>
+                          {event.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

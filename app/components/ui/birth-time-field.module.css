@@ -4,17 +4,17 @@
   align-items: stretch;
   width: 100%;
   min-height: 40px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--naad-line, #e2e8f0);
   border-radius: 8px;
-  background: #fff;
+  background: var(--naad-card-bg, #fff);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .wrap:focus-within,
 .open {
-  border-color: #94a3b8;
-  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+  border-color: var(--naad-primary, #5b3cc4);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--naad-primary, #5b3cc4) 22%, transparent);
 }
 
 .disabled {
@@ -28,18 +28,18 @@
   align-items: center;
   justify-content: center;
   padding: 0 12px;
-  color: #64748b;
-  background: #f8fafc;
+  color: var(--naad-fg-muted, #64748b);
+  background: var(--naad-bg-muted, #f8fafc);
   border: none;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--naad-line, #e2e8f0);
   border-radius: 8px 0 0 8px;
   flex-shrink: 0;
   cursor: pointer;
 }
 
 .iconBtn:hover {
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--naad-primary, #5b3cc4);
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 14%, var(--naad-bg-muted, #f8fafc));
 }
 
 .trigger {
@@ -49,7 +49,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #0f172a;
+  color: var(--naad-fg, #0f172a);
   font-size: 0.9375rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -66,9 +66,9 @@
   left: 0;
   width: min(292px, calc(100vw - 32px));
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+  border: 1px solid var(--naad-line, #e2e8f0);
+  background: var(--naad-card-bg, #fff);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--naad-ink, #0f172a) 28%, transparent);
   overflow: hidden;
 }
 
@@ -87,14 +87,18 @@
   align-items: center;
   gap: 2px;
   padding: 14px 14px 10px;
-  background: #2563eb;
-  color: #fff;
+  background: linear-gradient(
+    135deg,
+    var(--naad-primary, #5b3cc4) 0%,
+    var(--naad-primary-hover, #6c63ff) 100%
+  );
+  color: var(--naad-btn-on-primary, #fff);
 }
 
 .seg {
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--naad-btn-on-primary, #fff) 55%, transparent);
   font-size: 2rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -105,8 +109,8 @@
 }
 
 .segActive {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.14);
+  color: var(--naad-btn-on-primary, #fff);
+  background: color-mix(in srgb, var(--naad-btn-on-primary, #fff) 16%, transparent);
 }
 
 .colon {
@@ -127,7 +131,7 @@
 .periodBtn {
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--naad-btn-on-primary, #fff) 55%, transparent);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -137,8 +141,8 @@
 }
 
 .periodActive {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.18);
+  color: var(--naad-btn-on-primary, #fff);
+  background: color-mix(in srgb, var(--naad-btn-on-primary, #fff) 18%, transparent);
 }
 
 .clockBody {
@@ -156,21 +160,21 @@
 }
 
 .dialFace {
-  fill: #f1f5f9;
+  fill: var(--naad-bg-muted, #f1f5f9);
 }
 
 .hand {
-  stroke: #2563eb;
+  stroke: var(--naad-primary, #5b3cc4);
   stroke-width: 2.5;
   stroke-linecap: round;
 }
 
 .handKnob {
-  fill: #2563eb;
+  fill: var(--naad-primary, #5b3cc4);
 }
 
 .centerDot {
-  fill: #2563eb;
+  fill: var(--naad-primary, #5b3cc4);
 }
 
 .tickHit {
@@ -178,18 +182,18 @@
 }
 
 .tickHitActive {
-  fill: #2563eb;
+  fill: var(--naad-primary, #5b3cc4);
 }
 
 .tickLabel {
-  fill: #334155;
+  fill: var(--naad-fg, #334155);
   font-size: 14px;
   font-weight: 600;
   pointer-events: none;
 }
 
 .tickLabelActive {
-  fill: #fff;
+  fill: var(--naad-btn-on-primary, #fff);
 }
 
 .clockFooter {
@@ -201,7 +205,7 @@
 .footerBtn {
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--naad-primary, #5b3cc4);
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -211,69 +215,5 @@
 }
 
 .footerBtn:hover {
-  background: #eff6ff;
-}
-
-:global(html[data-theme='dark']) .wrap,
-:global(html.dark) .wrap {
-  background: #1e293b;
-  border-color: #334155;
-}
-
-:global(html[data-theme='dark']) .wrap:focus-within,
-:global(html.dark) .wrap:focus-within,
-:global(html[data-theme='dark']) .open,
-:global(html.dark) .open {
-  border-color: #475569;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-:global(html[data-theme='dark']) .iconBtn,
-:global(html.dark) .iconBtn {
-  color: #94a3b8;
-  background: #0f172a;
-  border-right-color: #334155;
-}
-
-:global(html[data-theme='dark']) .iconBtn:hover,
-:global(html.dark) .iconBtn:hover {
-  color: #60a5fa;
-  background: #172554;
-}
-
-:global(html[data-theme='dark']) .trigger,
-:global(html.dark) .trigger {
-  color: #f8fafc;
-}
-
-:global(html[data-theme='dark']) .popover,
-:global(html.dark) .popover {
-  background: #0f172a;
-  border-color: #334155;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
-}
-
-:global(html[data-theme='dark']) .clockHeader,
-:global(html.dark) .clockHeader {
-  background: #1d4ed8;
-}
-
-:global(html[data-theme='dark']) .dialFace,
-:global(html.dark) .dialFace {
-  fill: #1e293b;
-}
-
-:global(html[data-theme='dark']) .tickLabel,
-:global(html.dark) .tickLabel {
-  fill: #e2e8f0;
-}
-
-:global(html[data-theme='dark']) .footerBtn,
-:global(html.dark) .footerBtn {
-  color: #93c5fd;
-}
-
-:global(html[data-theme='dark']) .footerBtn:hover,
-:global(html.dark) .footerBtn:hover {
-  background: #172554;
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 12%, transparent);
 }
