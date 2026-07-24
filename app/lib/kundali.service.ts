@@ -38,6 +38,7 @@ function formatApiError(json: { message?: string; code?: string }, status: numbe
 
 function withAdBirthDate<T extends { birthDate?: string }>(person: T): T {
   if (!person.birthDate) return person;
+  // Heuristic converts years like 2046 BS even when caller forgot forceBs
   return { ...person, birthDate: ensureAdYmd(person.birthDate) };
 }
 

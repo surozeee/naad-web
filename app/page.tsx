@@ -1,11 +1,17 @@
 'use client';
 
-import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  type ComponentType,
+  type ReactNode,
+} from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Footer from './components/Footer';
 import { useAuthModal } from './components/AuthModalContext';
-import HeroCosmicVisual from './components/home/HeroCosmicVisual';
 import {
   AstrologerMotionIcon,
   CalendarMotionIcon,
@@ -14,6 +20,11 @@ import {
   MatchMotionIcon,
   TransitsMotionIcon,
 } from './components/home/ServiceMotionIcons';
+
+const HeroCosmicVisual = dynamic(() => import('./components/home/HeroCosmicVisual'), {
+  ssr: false,
+  loading: () => <div className="naad-hero-visual" aria-hidden />,
+});
 
 type ServiceIcon = ComponentType<{ className?: string }>;
 
@@ -152,6 +163,27 @@ const EXPLORE = [
   },
 ];
 
+/** One shared observer for all homepage reveals — avoids N IntersectionObservers. */
+let sharedRevealObserver: IntersectionObserver | null = null;
+const revealTargets = new WeakMap<Element, boolean>();
+
+function getRevealObserver(): IntersectionObserver | null {
+  if (typeof window === 'undefined') return null;
+  if (sharedRevealObserver) return sharedRevealObserver;
+  sharedRevealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-revealed');
+        const once = revealTargets.get(entry.target) !== false;
+        if (once) sharedRevealObserver?.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
+  );
+  return sharedRevealObserver;
+}
+
 function useRevealOnScroll<T extends HTMLElement>(options?: { once?: boolean }) {
   const ref = useRef<T | null>(null);
   const once = options?.once ?? true;
@@ -164,21 +196,12 @@ function useRevealOnScroll<T extends HTMLElement>(options?: { once?: boolean }) 
       el.classList.add('is-revealed');
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed');
-            if (once) io.unobserve(entry.target);
-          } else if (!once) {
-            entry.target.classList.remove('is-revealed');
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    revealTargets.set(el, once);
+    const io = getRevealObserver();
+    io?.observe(el);
+    return () => {
+      io?.unobserve(el);
+    };
   }, [once]);
 
   return ref;
@@ -224,12 +247,12 @@ function RevealStep({
   );
 }
 
+/** Lightweight static wash — no blur filters / continuous orb animation. */
 function SectionAmbient({ variant = 'ink' }: { variant?: 'ink' | 'soft' }) {
   return (
-    <div className={`naad-section-ambient naad-section-ambient--${variant}`} aria-hidden>
-      <span className="naad-section-ambient-orb naad-section-ambient-orb--a" />
-      <span className="naad-section-ambient-orb naad-section-ambient-orb--b" />
-      <span className="naad-section-ambient-stars" />
+    <div className={`naad-section-ambient naad-section-ambient--static naad-section-ambient--${variant}`} aria-hidden>
+      <span className="naad-section-ambient-glow naad-section-ambient-glow--a" />
+      <span className="naad-section-ambient-glow naad-section-ambient-glow--b" />
     </div>
   );
 }
@@ -272,7 +295,7 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section-ink naad-section--motion">
+      <section className="naad-section naad-section-ink naad-section--motion naad-section--lazy">
         <SectionAmbient variant="ink" />
         <div className="naad-section-inner">
           <Reveal>
@@ -291,7 +314,7 @@ function HomeContent() {
                 <Reveal key={service.href} className="naad-service-showcase-item" delay={index}>
                   <Link
                     href={service.href}
-                    className={`naad-service-card naad-service-card--float naad-service-card--${service.tone}`}
+                    className={`naad-service-card naad-service-card--${service.tone}`}
                     style={{ ['--naad-card-i' as string]: String(index) }}
                   >
                     <span className="naad-service-card-icon" aria-hidden>
@@ -313,8 +336,7 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section--motion">
-        <SectionAmbient variant="soft" />
+      <section className="naad-section naad-section--lazy">
         <div className="naad-section-inner">
           <Reveal>
             <div className="naad-section-head">
@@ -336,7 +358,7 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section-ink naad-section--motion">
+      <section className="naad-section naad-section-ink naad-section--motion naad-section--lazy">
         <SectionAmbient variant="ink" />
         <div className="naad-section-inner">
           <Reveal>
@@ -345,12 +367,13 @@ function HomeContent() {
               <p>Access curated horoscope content for every zodiac — prepared for daily and long-range planning.</p>
             </div>
           </Reveal>
-          <div className="naad-zodiac-strip" role="list">
-            {ZODIAC.map((z, index) => (
-              <Reveal key={z.name} className="naad-zodiac-chip-wrap" delay={index}>
+          <Reveal>
+            <div className="naad-zodiac-strip" role="list">
+              {ZODIAC.map((z, index) => (
                 <Link
+                  key={z.name}
                   href="/horoscope"
-                  className="naad-zodiac-chip naad-zodiac-chip--live"
+                  className="naad-zodiac-chip"
                   role="listitem"
                   title={`${z.name} horoscope`}
                   style={{ ['--naad-chip-i' as string]: String(index) }}
@@ -360,10 +383,10 @@ function HomeContent() {
                   </span>
                   <em>{z.name}</em>
                 </Link>
-              </Reveal>
-            ))}
-          </div>
-          <Reveal delay={2}>
+              ))}
+            </div>
+          </Reveal>
+          <Reveal delay={1}>
             <div className="naad-inline-link">
               <Link href="/horoscope">Browse all readings →</Link>
             </div>
@@ -371,8 +394,7 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section--motion">
-        <SectionAmbient variant="soft" />
+      <section className="naad-section naad-section--lazy">
         <div className="naad-section-inner">
           <Reveal>
             <div className="naad-section-head">
@@ -382,8 +404,8 @@ function HomeContent() {
           </Reveal>
           <div className="naad-home-pillars">
             {PILLARS.map((item, index) => (
-              <Reveal key={item.title} delay={index} className="naad-reveal--lift">
-                <article className="naad-home-pillar naad-home-pillar--live">
+              <Reveal key={item.title} delay={index}>
+                <article className="naad-home-pillar">
                   <h3>{item.title}</h3>
                   <p>{item.text}</p>
                 </article>
@@ -393,10 +415,9 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-home-band naad-home-band--motion">
-        <SectionAmbient variant="ink" />
+      <section className="naad-home-band naad-section--lazy">
         <div className="naad-section-inner naad-home-band-inner">
-          <Reveal className="naad-reveal--lift">
+          <Reveal>
             <div>
               <h2>Private astrologer consultations</h2>
               <p>
@@ -418,8 +439,7 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section--motion">
-        <SectionAmbient variant="soft" />
+      <section className="naad-section naad-section--lazy">
         <div className="naad-section-inner">
           <Reveal>
             <div className="naad-section-head">
@@ -430,7 +450,7 @@ function HomeContent() {
           <div className="naad-service-row">
             {EXPLORE.map((item, index) => (
               <Reveal key={item.href} delay={index} className="naad-reveal--slide">
-                <Link href={item.href} className="naad-service-link naad-service-link--live">
+                <Link href={item.href} className="naad-service-link">
                   <div>
                     <h3>{item.title}</h3>
                     <p>{item.text}</p>
@@ -445,10 +465,9 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="naad-section naad-section-ink naad-home-close naad-section--motion">
-        <SectionAmbient variant="ink" />
+      <section className="naad-section naad-section-ink naad-home-close naad-section--lazy">
         <div className="naad-section-inner">
-          <Reveal className="naad-reveal--lift">
+          <Reveal>
             <div className="naad-section-head">
               <h2>Begin with today’s forecast</h2>
               <p>A clear reading for your sign — available whenever you need grounded perspective.</p>

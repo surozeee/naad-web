@@ -588,6 +588,94 @@ html.dark .dashboard-layout :is(.dark\:hover\:bg-slate-700:hover, .hover\:bg-gra
   border-color: var(--naad-line, #e2e8f0) !important;
 }
 
+/* Month / year picker grids — readable on Cosmic / Celestial / Divine */
+.english-datepicker .month-list-view,
+.nepali-datepicker .month-list-view,
+.custom-nepali-datepicker .month-list-view,
+.english-datepicker .year-view,
+.nepali-datepicker .year-view,
+.custom-nepali-datepicker .year-view,
+.english-datepicker .decade-view,
+.nepali-datepicker .decade-view,
+.custom-nepali-datepicker .decade-view {
+  background: transparent !important;
+}
+
+.english-datepicker .month-item,
+.nepali-datepicker .month-item,
+.custom-nepali-datepicker .month-item,
+.english-datepicker .year-item,
+.nepali-datepicker .year-item,
+.custom-nepali-datepicker .year-item {
+  color: var(--naad-fg, #1e293b) !important;
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 10%, var(--naad-card-bg, #fff)) !important;
+  border: 1px solid color-mix(in srgb, var(--naad-primary, #5b3cc4) 18%, var(--naad-line, #e2e8f0)) !important;
+  box-shadow: none !important;
+}
+
+.english-datepicker .month-item:hover,
+.nepali-datepicker .month-item:hover,
+.custom-nepali-datepicker .month-item:hover,
+.english-datepicker .year-item:hover,
+.nepali-datepicker .year-item:hover,
+.custom-nepali-datepicker .year-item:hover {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 22%, var(--naad-card-bg, #fff)) !important;
+  color: var(--naad-fg, #1e293b) !important;
+  border-color: color-mix(in srgb, var(--naad-primary, #5b3cc4) 40%, var(--naad-line, #e2e8f0)) !important;
+  transform: none;
+}
+
+.english-datepicker .month-item.current,
+.nepali-datepicker .month-item.current,
+.custom-nepali-datepicker .month-item.current,
+.english-datepicker .year-item.current,
+.nepali-datepicker .year-item.current,
+.custom-nepali-datepicker .year-item.current {
+  background: color-mix(in srgb, var(--naad-primary, #5b3cc4) 28%, var(--naad-card-bg, #fff)) !important;
+  color: var(--naad-fg, #1e293b) !important;
+  border-color: color-mix(in srgb, var(--naad-primary, #5b3cc4) 55%, transparent) !important;
+  font-weight: 600;
+}
+
+.english-datepicker .month-item.selected,
+.nepali-datepicker .month-item.selected,
+.custom-nepali-datepicker .month-item.selected,
+.english-datepicker .year-item.selected,
+.nepali-datepicker .year-item.selected,
+.custom-nepali-datepicker .year-item.selected,
+.english-datepicker .month-item.current.selected,
+.nepali-datepicker .month-item.current.selected,
+.custom-nepali-datepicker .month-item.current.selected,
+.english-datepicker .year-item.current.selected,
+.nepali-datepicker .year-item.current.selected,
+.custom-nepali-datepicker .year-item.current.selected {
+  background: var(--naad-primary, #5b3cc4) !important;
+  color: var(--naad-btn-on-primary, #fff) !important;
+  border-color: var(--naad-primary, #5b3cc4) !important;
+  font-weight: 700;
+}
+
+.english-datepicker .year-display,
+.nepali-datepicker .year-display,
+.custom-nepali-datepicker .year-display,
+.english-datepicker .year-range,
+.nepali-datepicker .year-range,
+.custom-nepali-datepicker .year-range,
+.english-datepicker .clickable-year,
+.nepali-datepicker .clickable-year,
+.custom-nepali-datepicker .clickable-year {
+  color: var(--naad-btn-on-primary, #fff) !important;
+}
+
+.english-datepicker .clickable-year:hover,
+.nepali-datepicker .clickable-year:hover,
+.custom-nepali-datepicker .clickable-year:hover,
+.english-datepicker .year-range:hover,
+.nepali-datepicker .year-range:hover,
+.custom-nepali-datepicker .year-range:hover {
+  background: color-mix(in srgb, var(--naad-btn-on-primary, #fff) 14%, transparent) !important;
+}
+
 /* —— Organization / Add Event modals (Cosmic / Celestial / Divine) —— */
 html[data-theme='cosmic'] .modal-content,
 html[data-theme='divine'] .modal-content,

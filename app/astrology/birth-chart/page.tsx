@@ -18,7 +18,7 @@ import type {
   HouseSystemType,
   KundaliChart,
 } from '@/app/lib/kundali.types';
-import { defaultCalendarMode, ensureAdYmd, type CalendarMode } from '@/app/lib/date-bridge';
+import { defaultCalendarMode, toApiAdDate, convertBetweenCalendars, adStringToBS, looksLikeBsYmd, type CalendarMode } from '@/app/lib/date-bridge';
 
 const DEFAULT_PLACE: BirthPlaceSelection = {
   placeName: 'Kathmandu, Nepal',
@@ -44,11 +44,24 @@ export default function BirthChartPage() {
   const [chart, setChart] = useState<KundaliChart | null>(null);
 
   useEffect(() => {
-    setCalendarMode(defaultCalendarMode(language));
+    const next = defaultCalendarMode(language);
+    setCalendarMode((prev) => {
+      if (prev === next) return prev;
+      setBirthDate((d) => convertBetweenCalendars(d, prev, next));
+      return next;
+    });
   }, [language]);
 
   useEffect(() => {
-    void ensureOfficialLibrary();
+    // One-shot: if UI starts in BS, convert the AD default into BS after converters load
+    void ensureOfficialLibrary().then(() => {
+      setBirthDate((d) => {
+        if (!d || calendarMode !== 'BS') return d;
+        if (looksLikeBsYmd(d)) return d;
+        return adStringToBS(d) || d;
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only align initial AD default once library is ready
   }, []);
 
   async function onSubmit(e: FormEvent) {
@@ -56,9 +69,14 @@ export default function BirthChartPage() {
     setError(null);
     setLoading(true);
     try {
-      const birthDateAd = ensureAdYmd(birthDate);
+      // Convert based on the selected AD/BS toggle
+      const birthDateAd = toApiAdDate(birthDate, calendarMode);
       if (!birthDateAd || Number.isNaN(place.latitude) || Number.isNaN(place.longitude)) {
-        throw new Error('Date and a map place selection are required');
+        throw new Error(
+          !birthDateAd
+            ? 'Could not convert birth date to English (A.D.). Wait for the calendar to load and try again.'
+            : 'Date and a map place selection are required'
+        );
       }
       if (!place.timezone.trim()) {
         throw new Error('Timezone is required — pick an active timezone');
@@ -122,10 +140,13 @@ export default function BirthChartPage() {
               </label>
               <DateInputWithCalendarMode
                 id="kundali-birth-date"
-                valueAd={birthDate}
-                onChangeAd={setBirthDate}
+                value={birthDate}
+                onChange={setBirthDate}
                 calendarMode={calendarMode}
-                onCalendarModeChange={setCalendarMode}
+                onCalendarModeChange={(next) => {
+                  setBirthDate((d) => convertBetweenCalendars(d, calendarMode, next));
+                  setCalendarMode(next);
+                }}
                 togglePosition="end"
               />
             </div>
@@ -136,7 +157,11 @@ export default function BirthChartPage() {
               <BirthTimeField id="kundali-birth-time" value={birthTime} onChange={setBirthTime} />
             </div>
 
-            <BirthPlaceMapPicker value={place} birthDate={birthDate} onChange={setPlace} />
+            <BirthPlaceMapPicker
+              value={place}
+              birthDate={toApiAdDate(birthDate, calendarMode) || undefined}
+              onChange={setPlace}
+            />
 
             <div className="grid sm:grid-cols-3 gap-3">
               <div>

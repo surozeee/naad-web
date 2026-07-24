@@ -12,7 +12,14 @@ import { BirthTimeField } from '@/app/components/ui/BirthTimeField';
 import { ensureOfficialLibrary } from '@/app/components/ui/nepali-datepicker';
 import { kundaliApi } from '@/app/lib/kundali.service';
 import type { KundaliMatchResult } from '@/app/lib/kundali.types';
-import { defaultCalendarMode, ensureAdYmd, type CalendarMode } from '@/app/lib/date-bridge';
+import {
+  adStringToBS,
+  convertBetweenCalendars,
+  defaultCalendarMode,
+  looksLikeBsYmd,
+  toApiAdDate,
+  type CalendarMode,
+} from '@/app/lib/date-bridge';
 
 const DEFAULT_PLACE: BirthPlaceSelection = {
   placeName: 'Kathmandu, Nepal',
@@ -47,26 +54,49 @@ export default function CompatibilityPage() {
   const [result, setResult] = useState<KundaliMatchResult | null>(null);
 
   useEffect(() => {
-    setCalendarMode(defaultCalendarMode(language));
+    const next = defaultCalendarMode(language);
+    setCalendarMode((prev) => {
+      if (prev === next) return prev;
+      setMale((m) => ({ ...m, birthDate: convertBetweenCalendars(m.birthDate, prev, next) }));
+      setFemale((f) => ({ ...f, birthDate: convertBetweenCalendars(f.birthDate, prev, next) }));
+      return next;
+    });
   }, [language]);
 
   useEffect(() => {
-    void ensureOfficialLibrary();
+    void ensureOfficialLibrary().then(() => {
+      if (calendarMode !== 'BS') return;
+      const toBs = (d: string) => (d && !looksLikeBsYmd(d) ? adStringToBS(d) || d : d);
+      setMale((m) => ({ ...m, birthDate: toBs(m.birthDate) }));
+      setFemale((f) => ({ ...f, birthDate: toBs(f.birthDate) }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only align initial AD defaults once
   }, []);
+
+  function handleCalendarModeChange(next: CalendarMode) {
+    if (next === calendarMode) return;
+    setMale((m) => ({ ...m, birthDate: convertBetweenCalendars(m.birthDate, calendarMode, next) }));
+    setFemale((f) => ({ ...f, birthDate: convertBetweenCalendars(f.birthDate, calendarMode, next) }));
+    setCalendarMode(next);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const maleBirthDateAd = ensureAdYmd(male.birthDate);
-      const femaleBirthDateAd = ensureAdYmd(female.birthDate);
+      const maleBirthDateAd = toApiAdDate(male.birthDate, calendarMode);
+      const femaleBirthDateAd = toApiAdDate(female.birthDate, calendarMode);
 
       for (const [label, person, birthDateAd] of [
         ['Groom', male, maleBirthDateAd],
         ['Bride', female, femaleBirthDateAd],
       ] as const) {
-        if (!birthDateAd) throw new Error(`${label}: date of birth is required`);
+        if (!birthDateAd) {
+          throw new Error(
+            `${label}: could not convert date of birth to English (A.D.). Wait for the calendar to load and try again.`
+          );
+        }
         if (!person.place.timezone.trim()) {
           throw new Error(`${label}: timezone is required — pick an active timezone`);
         }
@@ -126,7 +156,7 @@ export default function CompatibilityPage() {
               person={male}
               onChange={setMale}
               calendarMode={calendarMode}
-              onCalendarModeChange={setCalendarMode}
+              onCalendarModeChange={handleCalendarModeChange}
               dateId="match-male-dob"
             />
             <PersonSection
@@ -135,7 +165,7 @@ export default function CompatibilityPage() {
               person={female}
               onChange={setFemale}
               calendarMode={calendarMode}
-              onCalendarModeChange={setCalendarMode}
+              onCalendarModeChange={handleCalendarModeChange}
               dateId="match-female-dob"
             />
           </div>
@@ -207,8 +237,8 @@ function PersonSection({
         </label>
         <DateInputWithCalendarMode
           id={dateId}
-          valueAd={person.birthDate}
-          onChangeAd={(birthDate) => onChange({ ...person, birthDate })}
+          value={person.birthDate}
+          onChange={(birthDate) => onChange({ ...person, birthDate })}
           calendarMode={calendarMode}
           onCalendarModeChange={onCalendarModeChange}
           togglePosition="end"
@@ -227,7 +257,7 @@ function PersonSection({
 
       <BirthPlaceMapPicker
         value={person.place}
-        birthDate={person.birthDate}
+        birthDate={toApiAdDate(person.birthDate, calendarMode) || undefined}
         onChange={(place) => onChange({ ...person, place })}
       />
     </div>

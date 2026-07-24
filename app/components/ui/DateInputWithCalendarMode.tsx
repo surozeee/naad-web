@@ -5,18 +5,20 @@ import { EnglishDatepicker } from '@/app/components/ui/english-datepicker';
 import { NepaliDatepicker } from '@/app/components/ui/nepali-datepicker';
 import { CalendarModeToggle, type CalendarMode } from '@/app/components/ui/CalendarModeToggle';
 import {
-  adStringToBS,
-  bsStringToAD,
   isNepaliUiLanguage,
+  nepaliToEnglishDigits,
 } from '@/app/lib/date-bridge';
 import styles from './calendar-mode-toggle.module.css';
 
 type DateInputWithCalendarModeProps = {
   id: string;
   name?: string;
-  /** Stored value in AD (YYYY-MM-DD) for API. */
-  valueAd: string;
-  onChangeAd: (adYmd: string) => void;
+  /**
+   * Date in the active `calendarMode` (AD or BS YYYY-MM-DD).
+   * Convert with `toApiAdDate(value, calendarMode)` before API calls.
+   */
+  value: string;
+  onChange: (ymd: string) => void;
   calendarMode: CalendarMode;
   onCalendarModeChange?: (mode: CalendarMode) => void;
   /** When false, only the picker is shown (use a shared toggle elsewhere). Default true. */
@@ -28,11 +30,15 @@ type DateInputWithCalendarModeProps = {
   error?: boolean;
 };
 
+function normalizeYmd(value: string): string {
+  return nepaliToEnglishDigits((value || '').trim()).slice(0, 10);
+}
+
 export function DateInputWithCalendarMode({
   id,
   name,
-  valueAd,
-  onChangeAd,
+  value,
+  onChange,
   calendarMode,
   onCalendarModeChange,
   showToggle = true,
@@ -53,14 +59,20 @@ export function DateInputWithCalendarMode({
     .filter(Boolean)
     .join(' ');
 
+  function handleCalendarModeChange(next: CalendarMode) {
+    if (next === calendarMode) return;
+    // Parent converts stored dates for the new mode (supports shared toggles)
+    onCalendarModeChange?.(next);
+  }
+
   const picker =
     calendarMode === 'BS' ? (
       <NepaliDatepicker
         id={id}
         name={name}
         key={`${id}-bs-${useNepaliDigits ? 'ne' : 'en'}`}
-        value={valueAd ? adStringToBS(valueAd) : ''}
-        onChange={(v) => onChangeAd(bsStringToAD(v))}
+        value={value}
+        onChange={(v) => onChange(normalizeYmd(v))}
         placeholder={placeholder ?? 'Select date (BS)'}
         className={inputClass}
         options={{
@@ -74,8 +86,8 @@ export function DateInputWithCalendarMode({
       <EnglishDatepicker
         id={id}
         name={name}
-        value={valueAd}
-        onChange={onChangeAd}
+        value={value}
+        onChange={(v) => onChange(normalizeYmd(v))}
         placeholder={placeholder ?? 'Select date (AD)'}
         className={inputClass}
         options={{ dateFormat: 'YYYY-MM-DD' }}
@@ -93,7 +105,7 @@ export function DateInputWithCalendarMode({
         {showToggle ? (
           <CalendarModeToggle
             value={calendarMode}
-            onChange={onCalendarModeChange ?? (() => {})}
+            onChange={handleCalendarModeChange}
             className={styles.toggleInline}
           />
         ) : null}
@@ -103,10 +115,7 @@ export function DateInputWithCalendarMode({
 
   return (
     <div className={styles.dateRow}>
-      <CalendarModeToggle
-        value={calendarMode}
-        onChange={onCalendarModeChange ?? (() => {})}
-      />
+      <CalendarModeToggle value={calendarMode} onChange={handleCalendarModeChange} />
       <div className={styles.dateInputWrap}>{picker}</div>
     </div>
   );

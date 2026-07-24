@@ -1,10 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
 type PlanetDef = {
   id: string;
-  /** Orbit radius from sun center */
   radius: number;
-  /** Starting angle in degrees (0 = right, -90 = top) */
   startDeg: number;
   size: number;
   className: string;
@@ -14,6 +14,7 @@ type PlanetDef = {
   reverse?: boolean;
 };
 
+/** Fewer outer planets = fewer animated SVG layers (keeps visual intent). */
 const PLANETS: PlanetDef[] = [
   { id: 'mercury', radius: 46, startDeg: -40, size: 3.8, className: 'naad-planet--mercury', duration: '14s' },
   { id: 'venus', radius: 64, startDeg: 55, size: 5.4, className: 'naad-planet--venus', duration: '22s' },
@@ -21,15 +22,14 @@ const PLANETS: PlanetDef[] = [
   { id: 'mars', radius: 102, startDeg: 150, size: 4.8, className: 'naad-planet--mars', duration: '42s', reverse: true },
   { id: 'jupiter', radius: 122, startDeg: 20, size: 9.5, className: 'naad-planet--jupiter', duration: '58s' },
   { id: 'saturn', radius: 142, startDeg: -160, size: 7.8, className: 'naad-planet--saturn', duration: '74s', ring: true },
-  { id: 'uranus', radius: 158, startDeg: 95, size: 5.6, className: 'naad-planet--uranus', duration: '96s', reverse: true },
-  { id: 'neptune', radius: 174, startDeg: -70, size: 5.2, className: 'naad-planet--neptune', duration: '118s' },
 ];
 
-const ORBIT_RADII = [46, 64, 84, 102, 122, 142, 158, 174];
+const ORBIT_RADII = [46, 64, 84, 102, 122, 142];
+
+const SIGNS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'] as const;
 
 function polar(cx: number, cy: number, radius: number, deg: number) {
   const rad = (deg * Math.PI) / 180;
-  // Fixed precision avoids SSR/client float drift → hydration mismatch
   const round = (n: number) => Math.round(n * 1000) / 1000;
   return {
     x: round(cx + Math.cos(rad) * radius),
@@ -39,10 +39,29 @@ function polar(cx: number, cy: number, radius: number, deg: number) {
 
 /** Professional cosmic hero visual — sun + multi-planet orbits + zodiac ring */
 export default function HeroCosmicVisual() {
-  const signs = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      el.classList.add('is-paused');
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        el.classList.toggle('is-paused', !entry?.isIntersecting);
+      },
+      { rootMargin: '80px', threshold: 0.05 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <div className="naad-hero-visual" aria-hidden>
+    <div ref={rootRef} className="naad-hero-visual" aria-hidden>
       <svg className="naad-cosmos" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="naad-sun-core" cx="50%" cy="45%" r="55%">
@@ -55,18 +74,10 @@ export default function HeroCosmicVisual() {
             <stop offset="70%" stopColor="var(--naad-primary)" stopOpacity="0.12" />
             <stop offset="100%" stopColor="var(--naad-primary)" stopOpacity="0" />
           </radialGradient>
-          <filter id="naad-soft-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         <circle className="naad-cosmos-halo" cx="200" cy="200" r="182" fill="url(#naad-sun-halo)" />
 
-        {/* Orbital paths */}
         {ORBIT_RADII.map((r, i) => (
           <circle
             key={r}
@@ -77,19 +88,17 @@ export default function HeroCosmicVisual() {
           />
         ))}
 
-        {/* Asteroid belt accents between Mars & Jupiter */}
         <g className="naad-asteroid-belt">
-          {Array.from({ length: 18 }, (_, i) => {
-            const deg = i * 20 - 8;
-            const radius = 110 + (i % 3) * 2.5;
+          {Array.from({ length: 8 }, (_, i) => {
+            const deg = i * 45 - 8;
+            const radius = 110 + (i % 2) * 3;
             const p = polar(200, 200, radius, deg);
-            return <circle key={i} cx={p.x} cy={p.y} r={i % 4 === 0 ? 1.4 : 0.9} className="naad-asteroid" />;
+            return <circle key={i} cx={p.x} cy={p.y} r={i % 2 === 0 ? 1.3 : 0.9} className="naad-asteroid" />;
           })}
         </g>
 
-        {/* Zodiac ring */}
         <g className="naad-zodiac-ring">
-          {signs.map((sign, i) => {
+          {SIGNS.map((sign, i) => {
             const angle = i * 30 - 90;
             const inner = polar(200, 200, 186, angle);
             const outer = polar(200, 200, 196, angle);
@@ -111,7 +120,6 @@ export default function HeroCosmicVisual() {
           })}
         </g>
 
-        {/* Planets */}
         {PLANETS.map((planet) => {
           const pos = polar(200, 200, planet.radius, planet.startDeg);
           const moonPos = planet.moon
@@ -124,13 +132,7 @@ export default function HeroCosmicVisual() {
               className={`naad-orbit${planet.reverse ? ' is-reverse' : ''}`}
               style={{ animationDuration: planet.duration }}
             >
-              <circle
-                className={`naad-planet ${planet.className}`}
-                cx={pos.x}
-                cy={pos.y}
-                r={planet.size}
-                filter={planet.id === 'earth' || planet.id === 'jupiter' ? 'url(#naad-soft-glow)' : undefined}
-              />
+              <circle className={`naad-planet ${planet.className}`} cx={pos.x} cy={pos.y} r={planet.size} />
               {planet.ring ? (
                 <ellipse
                   className="naad-saturn-ring"
@@ -147,8 +149,7 @@ export default function HeroCosmicVisual() {
           );
         })}
 
-        {/* Sun */}
-        <g className="naad-sun" filter="url(#naad-soft-glow)">
+        <g className="naad-sun">
           <circle className="naad-sun-pulse" cx="200" cy="200" r="32" fill="url(#naad-sun-halo)" />
           <circle cx="200" cy="200" r="16" fill="url(#naad-sun-core)" />
           <circle cx="195" cy="195" r="3.5" fill="var(--naad-hero-fg)" fillOpacity="0.35" />
