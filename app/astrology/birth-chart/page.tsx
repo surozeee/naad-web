@@ -18,7 +18,7 @@ import type {
   HouseSystemType,
   KundaliChart,
 } from '@/app/lib/kundali.types';
-import { defaultCalendarMode, type CalendarMode } from '@/app/lib/date-bridge';
+import { defaultCalendarMode, ensureAdYmd, type CalendarMode } from '@/app/lib/date-bridge';
 
 const DEFAULT_PLACE: BirthPlaceSelection = {
   placeName: 'Kathmandu, Nepal',
@@ -56,7 +56,8 @@ export default function BirthChartPage() {
     setError(null);
     setLoading(true);
     try {
-      if (!birthDate || Number.isNaN(place.latitude) || Number.isNaN(place.longitude)) {
+      const birthDateAd = ensureAdYmd(birthDate);
+      if (!birthDateAd || Number.isNaN(place.latitude) || Number.isNaN(place.longitude)) {
         throw new Error('Date and a map place selection are required');
       }
       if (!place.timezone.trim()) {
@@ -65,7 +66,7 @@ export default function BirthChartPage() {
       const time = birthTime.length === 5 ? `${birthTime}:00` : birthTime;
       const result = await kundaliApi.generate({
         name: name.trim() || undefined,
-        birthDate,
+        birthDate: birthDateAd,
         birthTime: time,
         timezone: place.timezone,
         latitude: place.latitude,

@@ -12,7 +12,7 @@ import { BirthTimeField } from '@/app/components/ui/BirthTimeField';
 import { ensureOfficialLibrary } from '@/app/components/ui/nepali-datepicker';
 import { kundaliApi } from '@/app/lib/kundali.service';
 import type { KundaliMatchResult } from '@/app/lib/kundali.types';
-import { defaultCalendarMode, type CalendarMode } from '@/app/lib/date-bridge';
+import { defaultCalendarMode, ensureAdYmd, type CalendarMode } from '@/app/lib/date-bridge';
 
 const DEFAULT_PLACE: BirthPlaceSelection = {
   placeName: 'Kathmandu, Nepal',
@@ -59,11 +59,14 @@ export default function CompatibilityPage() {
     setError(null);
     setLoading(true);
     try {
-      for (const [label, person] of [
-        ['Groom', male],
-        ['Bride', female],
+      const maleBirthDateAd = ensureAdYmd(male.birthDate);
+      const femaleBirthDateAd = ensureAdYmd(female.birthDate);
+
+      for (const [label, person, birthDateAd] of [
+        ['Groom', male, maleBirthDateAd],
+        ['Bride', female, femaleBirthDateAd],
       ] as const) {
-        if (!person.birthDate) throw new Error(`${label}: date of birth is required`);
+        if (!birthDateAd) throw new Error(`${label}: date of birth is required`);
         if (!person.place.timezone.trim()) {
           throw new Error(`${label}: timezone is required — pick an active timezone`);
         }
@@ -76,7 +79,7 @@ export default function CompatibilityPage() {
         language,
         male: {
           name: male.name.trim() || undefined,
-          birthDate: male.birthDate,
+          birthDate: maleBirthDateAd,
           birthTime: male.birthTime,
           timezone: male.place.timezone,
           latitude: male.place.latitude,
@@ -85,7 +88,7 @@ export default function CompatibilityPage() {
         },
         female: {
           name: female.name.trim() || undefined,
-          birthDate: female.birthDate,
+          birthDate: femaleBirthDateAd,
           birthTime: female.birthTime,
           timezone: female.place.timezone,
           latitude: female.place.latitude,

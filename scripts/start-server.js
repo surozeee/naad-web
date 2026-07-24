@@ -61,6 +61,9 @@ const PROD_DEFAULTS = {
   NEXT_PUBLIC_XSRF_TOKEN: 'BquLOJXXt2ng415MpvK4a8F0CF/w/1iawsnFqHzPGeo=',
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'AIzaSyBP9Gw1tc3mGgHiTE3VAbXlMFrOM5rTBXg',
   GOOGLE_MAPS_API_KEY: 'AIzaSyBP9Gw1tc3mGgHiTE3VAbXlMFrOM5rTBXg',
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID:
+    '440931120883-btid3s6k65qstivrg1b55ep2f8bmefc5.apps.googleusercontent.com',
+  NEXT_PUBLIC_FACEBOOK_APP_ID: '1401339005236361',
   BACKEND_URL: 'https://api-naad.jojolapatech.com',
   NEXT_PUBLIC_BACKEND_URL: 'https://api-naad.jojolapatech.com',
   NEXT_PUBLIC_API_URL: 'https://api-naad.jojolapatech.com',
@@ -97,6 +100,21 @@ if (hasMapsKey) {
   console.log('   Google Maps key loaded (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)');
 } else {
   console.warn('   ⚠ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY not set — map place selection disabled');
+  console.warn('   Set it in .env.production and rebuild (NEXT_PUBLIC_* is baked at build time)');
+}
+
+const hasGoogleClientId = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim());
+const hasFacebookAppId = Boolean(process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim());
+if (hasGoogleClientId) {
+  console.log('   Google OAuth client ID loaded (NEXT_PUBLIC_GOOGLE_CLIENT_ID)');
+} else {
+  console.warn('   ⚠ NEXT_PUBLIC_GOOGLE_CLIENT_ID not set — Google social login disabled');
+  console.warn('   Set it in .env.production and rebuild (NEXT_PUBLIC_* is baked at build time)');
+}
+if (hasFacebookAppId) {
+  console.log('   Facebook App ID loaded (NEXT_PUBLIC_FACEBOOK_APP_ID)');
+} else {
+  console.warn('   ⚠ NEXT_PUBLIC_FACEBOOK_APP_ID not set — Facebook social login disabled');
   console.warn('   Set it in .env.production and rebuild (NEXT_PUBLIC_* is baked at build time)');
 }
 

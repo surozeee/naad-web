@@ -94,6 +94,11 @@ process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY =
   'AIzaSyBP9Gw1tc3mGgHiTE3VAbXlMFrOM5rTBXg';
 process.env.GOOGLE_MAPS_API_KEY =
   process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+  '440931120883-btid3s6k65qstivrg1b55ep2f8bmefc5.apps.googleusercontent.com';
+process.env.NEXT_PUBLIC_FACEBOOK_APP_ID =
+  process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '1401339005236361';
 process.env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'true';
 process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE = 'false';
 process.env.PORT = process.env.PORT || '4000';
@@ -102,6 +107,15 @@ const mapsKey = (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim();
 if (!mapsKey) {
   console.warn('⚠ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set — birth chart map place selection will be disabled.');
   console.warn('  Add it to .env.production before building (see ENV.md).');
+}
+
+const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim();
+const facebookAppId = (process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '').trim();
+if (!googleClientId) {
+  console.warn('⚠ NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set — Google social login will be disabled.');
+}
+if (!facebookAppId) {
+  console.warn('⚠ NEXT_PUBLIC_FACEBOOK_APP_ID is not set — Facebook social login will be disabled.');
 }
 
 console.log('📋 Environment variables set:');
@@ -114,6 +128,8 @@ console.log(`  NEXTAUTH_URL: ${process.env.NEXTAUTH_URL}`);
 console.log(`  NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '***set***' : '(missing)'}`);
 console.log(`  NEXTAUTH_XSRF_TOKEN: ${process.env.NEXTAUTH_XSRF_TOKEN ? '***set***' : '(missing)'}`);
 console.log(`  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${mapsKey ? '***set***' : '(missing)'}`);
+console.log(`  NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${googleClientId ? '***set***' : '(missing)'}`);
+console.log(`  NEXT_PUBLIC_FACEBOOK_APP_ID: ${facebookAppId ? '***set***' : '(missing)'}`);
 console.log(`  PORT: ${process.env.PORT}`);
 
 try {

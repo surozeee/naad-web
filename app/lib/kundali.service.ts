@@ -11,6 +11,7 @@ import type {
   TransitGenerateRequest,
   TransitSnapshot,
 } from '@/app/lib/kundali.types';
+import { ensureAdYmd } from '@/app/lib/date-bridge';
 import { getXsrfToken } from '@/app/lib/get-xsrf';
 import { getStoredUiLanguage } from '@/app/lib/ui-language';
 
@@ -35,8 +36,14 @@ function formatApiError(json: { message?: string; code?: string }, status: numbe
   return `HTTP ${status}`;
 }
 
+function withAdBirthDate<T extends { birthDate?: string }>(person: T): T {
+  if (!person.birthDate) return person;
+  return { ...person, birthDate: ensureAdYmd(person.birthDate) };
+}
+
 export const kundaliApi = {
   generate: async (body: KundaliGenerateRequest): Promise<KundaliChart> => {
+    const payload = withAdBirthDate(body);
     const res = await publicFetch('/api/public/kundali/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,7 +53,7 @@ export const kundaliApi = {
         houseSystem: 'WHOLE_SIGN',
         chartStyle: 'NORTH_INDIAN',
         timezone: 'Asia/Kathmandu',
-        ...body,
+        ...payload,
       }),
     });
     const json = (await res.json().catch(() => ({}))) as GlobalResponse<KundaliChart> & {
@@ -59,6 +66,8 @@ export const kundaliApi = {
   },
 
   match: async (body: KundaliMatchRequest): Promise<KundaliMatchResult> => {
+    const male = withAdBirthDate(body.male);
+    const female = withAdBirthDate(body.female);
     const res = await publicFetch('/api/public/kundali/match', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,19 +79,19 @@ export const kundaliApi = {
         ...body,
         male: {
           timezone: 'Asia/Kathmandu',
-          ...body.male,
+          ...male,
           birthTime:
-            body.male.birthTime && body.male.birthTime.length === 5
-              ? `${body.male.birthTime}:00`
-              : body.male.birthTime,
+            male.birthTime && male.birthTime.length === 5
+              ? `${male.birthTime}:00`
+              : male.birthTime,
         },
         female: {
           timezone: 'Asia/Kathmandu',
-          ...body.female,
+          ...female,
           birthTime:
-            body.female.birthTime && body.female.birthTime.length === 5
-              ? `${body.female.birthTime}:00`
-              : body.female.birthTime,
+            female.birthTime && female.birthTime.length === 5
+              ? `${female.birthTime}:00`
+              : female.birthTime,
         },
       }),
     });
@@ -96,6 +105,10 @@ export const kundaliApi = {
   },
 
   transits: async (body: TransitGenerateRequest = {}): Promise<TransitSnapshot> => {
+    const date = body.date ? ensureAdYmd(body.date) : body.date;
+    const natalBirthDate = body.natalBirthDate
+      ? ensureAdYmd(body.natalBirthDate)
+      : body.natalBirthDate;
     const res = await publicFetch('/api/public/kundali/transits', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -108,6 +121,8 @@ export const kundaliApi = {
         placeName: 'Kathmandu',
         daysAhead: 120,
         ...body,
+        date,
+        natalBirthDate,
         time:
           body.time && body.time.length === 5 ? `${body.time}:00` : body.time,
         natalBirthTime:
