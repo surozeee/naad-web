@@ -47,20 +47,33 @@ export function looksLikeBsYmd(value: string): boolean {
   return Boolean(parts && looksLikeBsYear(parts.year));
 }
 
+type ConvertFn = (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
+
 type ConvertFns = {
-  ad2bs?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
-  bs2ad?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
+  ad2bs?: ConvertFn;
+  bs2ad?: ConvertFn;
 };
+
+function wrapPartsOnly(
+  fn: ((x: YmdParts) => YmdParts) | undefined
+): ConvertFn | undefined {
+  if (typeof fn !== 'function') return undefined;
+  return (x) => {
+    const parts = typeof x === 'string' ? parseYmd(x) : x;
+    if (!parts) return x;
+    return fn(parts);
+  };
+}
 
 function getConvertFns(): ConvertFns {
   if (typeof window === 'undefined') return {};
   const w = window as unknown as {
-    adtobs?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
-    ad2bs?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
-    bs2ad?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
+    adtobs?: ConvertFn;
+    ad2bs?: ConvertFn;
+    bs2ad?: ConvertFn;
     nepaliFunction?: {
-      ad2bs?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
-      bs2ad?: (x: YmdParts | string, format?: string | boolean) => YmdParts | string;
+      ad2bs?: ConvertFn;
+      bs2ad?: ConvertFn;
     };
     NepaliFunctions?: {
       AD2BS?: (x: YmdParts) => YmdParts;
@@ -68,8 +81,15 @@ function getConvertFns(): ConvertFns {
     };
   };
   return {
-    ad2bs: w.ad2bs ?? w.adtobs ?? w.nepaliFunction?.ad2bs ?? w.NepaliFunctions?.AD2BS,
-    bs2ad: w.bs2ad ?? w.nepaliFunction?.bs2ad ?? w.NepaliFunctions?.BS2AD,
+    ad2bs:
+      w.ad2bs ??
+      w.adtobs ??
+      w.nepaliFunction?.ad2bs ??
+      wrapPartsOnly(w.NepaliFunctions?.AD2BS),
+    bs2ad:
+      w.bs2ad ??
+      w.nepaliFunction?.bs2ad ??
+      wrapPartsOnly(w.NepaliFunctions?.BS2AD),
   };
 }
 
